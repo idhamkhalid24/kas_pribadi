@@ -28,6 +28,9 @@
     .audit-ok{background:#e8f7ef;color:var(--green);border:1px solid #ccefd9}
     .audit-warn{background:#fff8e5;color:#7c5f13;border:1px solid #f2df9b}
     .audit-bad{background:#fff0ee;color:var(--red);border:1px solid #ffd7d0}
+    .pending-upload-list{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+    .pending-upload-row{display:flex;justify-content:space-between;align-items:center;gap:10px;background:white;border:1px solid var(--line);border-radius:13px;padding:10px}
+    .pending-upload-row .btn{width:auto;min-width:78px;padding:8px 10px;min-height:36px;border-radius:11px;font-size:12px}
 
   </style>
 </head>
@@ -78,6 +81,26 @@
         </div>
         <div id="firebaseAuditInfo" class="audit-box audit-warn">Audit: menunggu data Firebase...</div><div class="small" style="margin-top:7px;color:#2563eb;font-weight:800">Jika Firebase bulan lama sudah dihapus, data yang sudah Upload tetap menjadi arsip permanen di Supabase.</div>
       </div>
+
+      <div id="firebasePendingCard" class="card" style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:start;gap:8px;margin-bottom:8px">
+          <div>
+            <b>Cek Belum Upload</b>
+            <div class="small">Scan pendapatan Firebase lama yang belum masuk Supabase</div>
+          </div>
+          <span id="pendingScanStatus" class="firebase-status st-pending">Idle</span>
+        </div>
+        <div class="row">
+          <input type="date" id="pendingStartDate">
+          <input type="date" id="pendingEndDate">
+        </div>
+        <div class="compact-actions" style="margin-top:8px">
+          <button class="btn secondary" onclick="setPendingThisMonth()">Bulan Ini</button>
+          <button class="btn" onclick="scanPendingFirebaseUploads()">Cek Data</button>
+        </div>
+        <div id="pendingUploadSummary" class="audit-box audit-warn" style="margin-top:9px">Pilih rentang tanggal lalu klik Cek Data.</div>
+        <div id="pendingUploadList" class="pending-upload-list"></div>
+      </div>
       <div class="compact-actions" style="margin-bottom:10px"><button class="btn whatsapp" onclick="sendWhatsAppReport()">Kirim WA</button><button class="btn secondary" onclick="openBackupModal()">Backup</button></div>
       <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b id="currentPeriodLabel">Riwayat</b><button class="tab" style="color:var(--red)" onclick="requestClearAll()">Reset</button></div><div id="transactionList" class="list"></div></div>
     </section>
@@ -98,7 +121,7 @@ const FIREBASE_CONFIG={
   appId:"1:861954349314:web:bb8384825daedb8d34ca1b"
 };
 let supabaseClient=null,transactions=[],zakatHistory=[],currentFilter='today',pendingAction=null,currentPage='home';
-let firebaseDb=null,firebaseUnsub=null,firebaseUploadDate='',firebaseIncomeRows=[],firebaseIncomeTotal=0;
+let firebaseDb=null,firebaseUnsub=null,firebaseUploadDate='',firebaseIncomeRows=[],firebaseIncomeTotal=0,pendingFirebaseUploads=[];
 function $(id){return document.getElementById(id)}
 function isSupabaseConfigured(){return SUPABASE_URL&&SUPABASE_ANON_KEY&&!SUPABASE_URL.includes('ISI_')&&!SUPABASE_ANON_KEY.includes('ISI_')}
 function initSupabase(){if(!isSupabaseConfigured()){showToast('Supabase belum disetting');return false}supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);return true}
@@ -142,7 +165,7 @@ async function importTransactions(newTransactions){
   if(error)throw error;
 }
 function getLocalDateString(){const n=new Date();return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`}
-$('inputDate').value=getLocalDateString();$('filterStartDate').value=getLocalDateString();$('filterEndDate').value=getLocalDateString();firebaseUploadDate=getLocalDateString();setTimeout(()=>{if($('firebaseUploadDate'))$('firebaseUploadDate').value=firebaseUploadDate},0);
+$('inputDate').value=getLocalDateString();$('filterStartDate').value=getLocalDateString();$('filterEndDate').value=getLocalDateString();firebaseUploadDate=getLocalDateString();setTimeout(()=>{if($('firebaseUploadDate'))$('firebaseUploadDate').value=firebaseUploadDate;setPendingThisMonth(false)},0);
 function openPasswordModal(cb){pendingAction=cb;$('passwordModal').classList.remove('hidden');$('confirmPasswordInput').value=''}function closePasswordModal(){$('passwordModal').classList.add('hidden');pendingAction=null}$('btnConfirmAction').addEventListener('click',()=>{if($('confirmPasswordInput').value===APP_PASSWORD){const a=pendingAction;closePasswordModal();if(a)a()}else{showToast('Sandi salah');$('confirmPasswordInput').value=''}});
 async function addTransaction(){try{const dateVal=$('inputDate').value,type=$('type').value;let desc=$('description').value.trim();const amount=getActualAmount($('amount').value);if(type==='income'&&!desc)desc='Omset';if(type==='expense'&&!desc){showToast('Deskripsi pengeluaran wajib');return}if(!dateVal||amount<=0){showToast('Nominal tidak valid');return}await saveTransaction({id:Date.now(),date:dateVal,description:desc,amount,type});await loadTransactions();render();$('description').value='';$('amount').value='';$('liveAmountPreview').innerText='';$('inputDate').value=getLocalDateString();closeTransactionModal();showToast('Transaksi tersimpan');goPage('home')}catch(e){showToast('Gagal simpan: '+e.message)}}
 function changeFilter(f){currentFilter=f;$('rangeSelector').classList.toggle('hidden',f!=='range');updateFilterUI();render()}function updateFilterUI(){['today','month','range','all'].forEach(f=>{const el=$('filter-'+f);if(el)el.classList.toggle('active',f===currentFilter)})}
@@ -172,6 +195,108 @@ function startFirebaseWatch(date){
     firebaseIncomeTotal=firebaseIncomeRows.reduce((a,b)=>a+Number(b.amount||0),0);
     renderFirebaseUploadCard();
   },err=>{console.error(err);showToast('Gagal baca Firebase: '+err.message)})
+}
+
+function setPendingThisMonth(show=true){
+  const today=getLocalDateString();
+  const start=today.slice(0,7)+'-01';
+  if($('pendingStartDate'))$('pendingStartDate').value=start;
+  if($('pendingEndDate'))$('pendingEndDate').value=today;
+  if(show)showToast('Rentang diatur ke bulan ini');
+}
+function dateFromInputToMs(date){
+  const parts=String(date||'').split('-').map(Number);
+  if(parts.length!==3||!parts[0]||!parts[1]||!parts[2])return 0;
+  return new Date(parts[0],parts[1]-1,parts[2]).getTime();
+}
+function validatePendingRange(start,end){
+  const sMs=dateFromInputToMs(start),eMs=dateFromInputToMs(end);
+  if(!sMs||!eMs)return 'Tanggal awal dan akhir wajib diisi';
+  if(sMs>eMs)return 'Tanggal awal tidak boleh lebih besar dari tanggal akhir';
+  const days=Math.round((eMs-sMs)/86400000)+1;
+  if(days>370)return 'Maksimal scan 370 hari sekali cek biar ringan';
+  return '';
+}
+function renderPendingUploadList(){
+  const box=$('pendingUploadList'),sum=$('pendingUploadSummary'),status=$('pendingScanStatus');
+  if(!box||!sum||!status)return;
+  const items=pendingFirebaseUploads||[];
+  const totalMissing=items.filter(x=>x.status==='missing').reduce((a,b)=>a+Number(b.firebaseTotal||0),0);
+  const totalDiff=items.filter(x=>x.status==='diff').reduce((a,b)=>a+Math.abs(Number(b.firebaseTotal||0)-Number(b.uploadedAmount||0)),0);
+  if(!items.length){
+    status.className='firebase-status st-uploaded';status.innerText='Aman';
+    sum.className='audit-box audit-ok';sum.innerText='Tidak ada pendapatan Firebase yang belum diupload pada rentang ini.';
+    box.innerHTML='';return;
+  }
+  status.className='firebase-status st-update';status.innerText=`${items.length} Data`;
+  sum.className='audit-box '+(items.some(x=>x.status==='missing')?'audit-warn':'audit-bad');
+  sum.innerText=`Ditemukan ${items.length} tanggal perlu dicek. Belum upload: ${formatRupiah(totalMissing)} · Selisih: ${formatRupiah(totalDiff)}.`;
+  box.innerHTML=items.map(x=>{
+    const label=x.status==='missing'?'BELUM UPLOAD':'SELISIH';
+    const cls=x.status==='missing'?'st-pending':'st-update';
+    const info=x.status==='missing'
+      ? `Firebase ${formatRupiah(x.firebaseTotal)} · ${x.count} transaksi`
+      : `Firebase ${formatRupiah(x.firebaseTotal)} · Supabase ${formatRupiah(x.uploadedAmount)}`;
+    return `<div class="pending-upload-row"><div style="min-width:0"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><b>${escapeHtml(x.date)}</b><span class="firebase-status ${cls}">${label}</span></div><div class="small" style="margin-top:3px">${escapeHtml(info)}</div></div><button class="btn" onclick="uploadPendingFirebaseDate('${x.date}')">${x.status==='missing'?'Upload':'Update'}</button></div>`;
+  }).join('');
+}
+async function scanPendingFirebaseUploads(){
+  if(!firebaseDb)return showToast('Firebase belum aktif');
+  const start=$('pendingStartDate')?.value||getLocalDateString();
+  const end=$('pendingEndDate')?.value||getLocalDateString();
+  const err=validatePendingRange(start,end);
+  if(err)return showToast(err);
+  const status=$('pendingScanStatus'),sum=$('pendingUploadSummary'),box=$('pendingUploadList');
+  if(status){status.className='firebase-status st-pending';status.innerText='Scan...'}
+  if(sum){sum.className='audit-box audit-warn';sum.innerText='Sedang scan Firebase dan membandingkan dengan Supabase...'}
+  if(box)box.innerHTML='';
+  try{
+    const snap=await firebaseDb.collection('transactions').where('dateKey','>=',start).where('dateKey','<=',end).get();
+    const grouped={};
+    snap.docs.forEach(d=>{
+      const t={id:d.id,...d.data()};
+      if(t.deleted)return;
+      const date=String(t.dateKey||'').slice(0,10);
+      if(!date)return;
+      if(!grouped[date])grouped[date]={date,firebaseTotal:0,count:0};
+      grouped[date].firebaseTotal+=Number(t.amount||0);
+      grouped[date].count+=1;
+    });
+    pendingFirebaseUploads=Object.values(grouped).map(row=>{
+      const uploaded=getUploadedFirebaseTransaction(row.date);
+      const uploadedAmount=Number(uploaded?.amount||0);
+      if(!uploaded)return {...row,uploadedAmount,status:'missing'};
+      if(uploadedAmount!==Number(row.firebaseTotal||0))return {...row,uploadedAmount,status:'diff'};
+      return null;
+    }).filter(Boolean).sort((a,b)=>a.date.localeCompare(b.date));
+    renderPendingUploadList();
+  }catch(e){
+    console.error(e);
+    pendingFirebaseUploads=[];
+    if(status){status.className='firebase-status st-pending';status.innerText='Error'}
+    if(sum){sum.className='audit-box audit-bad';sum.innerText='Gagal scan Firebase: '+e.message}
+    showToast('Gagal scan Firebase: '+e.message,5000);
+  }
+}
+async function uploadPendingFirebaseDate(date){
+  const item=(pendingFirebaseUploads||[]).find(x=>x.date===date);
+  if(!item)return showToast('Data tidak ditemukan, scan ulang dulu');
+  await uploadFirebaseIncomeForDate(item.date,item.firebaseTotal,true);
+  pendingFirebaseUploads=pendingFirebaseUploads.filter(x=>x.date!==date);
+  renderPendingUploadList();
+}
+async function uploadFirebaseIncomeForDate(date,total,quiet=false){
+  if(!supabaseClient)return showToast('Supabase belum aktif');
+  if(!total||total<=0)return showToast('Omset Firebase kosong');
+  const row={id:getFirebaseUploadId(date),owner_id:OWNER_ID,date,description:`[FIREBASE:${date}] Omset Kasir Firebase`,amount:Number(total),type:'income'};
+  try{
+    const {error}=await supabaseClient.from('transactions').upsert(row,{onConflict:'id'});
+    if(error)throw error;
+    await loadTransactions();
+    render();
+    if(!quiet)showToast('Omset Firebase diupload. Audit sekarang sama.');
+    else showToast(`Upload ${date} berhasil`);
+  }catch(e){showToast('Gagal upload: '+e.message)}
 }
 function renderFirebaseUploadCard(){
   const totalEl=$('firebaseUploadTotal'),statusEl=$('firebaseUploadStatus'),infoEl=$('firebaseUploadInfo'),btn=$('btnUploadFirebaseIncome'),auditEl=$('firebaseAuditInfo');
@@ -219,17 +344,8 @@ function renderFirebaseUploadCard(){
   }
 }
 async function uploadFirebaseIncome(){
-  if(!supabaseClient)return showToast('Supabase belum aktif');
-  if(!firebaseIncomeTotal||firebaseIncomeTotal<=0)return showToast('Omset Firebase kosong');
   const date=firebaseUploadDate||getLocalDateString();
-  const row={id:getFirebaseUploadId(date),owner_id:OWNER_ID,date,description:`[FIREBASE:${date}] Omset Kasir Firebase`,amount:Number(firebaseIncomeTotal),type:'income'};
-  try{
-    const {error}=await supabaseClient.from('transactions').upsert(row,{onConflict:'id'});
-    if(error)throw error;
-    await loadTransactions();
-    render();
-    showToast('Omset Firebase diupload. Audit sekarang sama.');
-  }catch(e){showToast('Gagal upload: '+e.message)}
+  await uploadFirebaseIncomeForDate(date,firebaseIncomeTotal,false);
 }
 function render(){const f=getFilteredTransactions();let ti=0,te=0;f.forEach(t=>{if(t.type==='income')ti+=t.amount;else te+=t.amount});const profit=ti*.2,net=ti-te,usage=profit>0?(te/profit)*100:0;$('totalIncome').innerText=formatRupiah(ti);$('totalExpense').innerText=formatRupiah(te);$('autoProfit').innerText=formatRupiah(profit);$('netBalance').innerText=formatRupiah(net);const remainingOps=profit-te;$('spendingLimit').innerText=formatRupiah(te);$('operationalUsed').innerText=formatRupiah(remainingOps);$('operationalTotal').innerText=formatRupiah(profit);const spentEl=$('operationalSpent');if(spentEl)spentEl.innerText=formatRupiah(te);validateAndCancelInvalidZakat();const totalProfit=getTotalProfit(),paid=getTotalProfitZakatPaid(),unpaid=getUnpaidProfit(),due=getCurrentZakatDue();$('zakatAmountLarge').innerText=formatRupiah(due);$('totalProfitDisplay').innerText=formatRupiah(totalProfit);$('totalZakatPaidProfit').innerText=formatRupiah(paid);$('unpaidProfitDisplay').innerText=formatRupiah(unpaid);const pay=$('payZakatBtn'),zs=$('zakatPaymentStatusText');if(totalProfit<=0){zs.innerText='Belum ada laba';pay.disabled=true;pay.style.opacity=.5}else if(due<=0){zs.innerText='Zakat lunas';pay.disabled=true;pay.style.opacity=.5}else{zs.innerText='Wajib dibayar';pay.disabled=false;pay.style.opacity=1}const h=getZakatHistory(),prev=$('zakatHistoryPreview'),mini=$('zakatHistoryMiniList');if(h.length){prev.style.display='flex';const valid=h.filter(x=>!x.cancelled).slice(-2).reverse();mini.innerHTML=valid.length?valid.map(x=>`<span class="chip">${formatRupiah(x.zakatPaid)}</span>`).join(''):'<span class="chip">Zakat batal</span>'}else prev.style.display='none';const over=te>profit&&profit>0;$('operationalCard').className='card '+(over?'danger-card':'safe-card');$('limitWarning').innerText=over?'Over budget: pengeluaran lebih dari 20% omset':'';$('statusText').innerText=over?'Bahaya':'Aman';$('statusBadge').style.background=over?'#fff0ee':'#e9f7ef';$('statusBadge').style.color=over?'#c0392b':'#176b43';$('currentPeriodLabel').innerText=getPeriodLabel();const list=$('transactionList');if(!f.length){list.innerHTML='<div class="empty">Belum ada transaksi</div>';renderFirebaseUploadCard();return}list.innerHTML=f.slice(0,80).map(t=>`<div class="item"><div class="left"><div class="icon ${t.type==='income'?'in':'out'}">${t.type==='income'?'+':'-'}</div><div class="desc"><b>${escapeHtml(cleanFirebaseDesc(t.description))}${isFirebaseUploaded(t)?'<span class="lock-badge">FIREBASE LOCK</span>':''}</b><small>${t.date}</small></div></div><div class="right"><b class="num ${t.type==='income'?'green':'red'}">${t.type==='income'?'+':'-'}${formatRupiah(t.amount).replace('Rp','')}</b>${isFirebaseUploaded(t)?'<div class="small blue" style="font-weight:900">LOCK</div>':`<button class="x" onclick="deleteTransaction(${t.id})">×</button>`}</div></div>`).join('')+(f.length>80?`<div class="empty">Ditampilkan 80 dari ${f.length} data biar ringan</div>`:'');renderFirebaseUploadCard()}
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
