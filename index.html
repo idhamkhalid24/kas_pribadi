@@ -66,9 +66,9 @@
           <div>
             <div class="section-title" style="margin:0 0 4px;color:var(--green)">Pendapatan Hari Ini</div>
             <div id="todayFirebaseIncomeHome" class="num green" style="font-size:24px">Rp 0</div>
-            <div id="todayFirebaseIncomeInfo" class="small">Realtime dari Firebase · belum dipotong apapun</div>
+            <div id="todayFirebaseIncomeInfo" class="small">Sama seperti filter Hari Ini di Riwayat</div>
           </div>
-          <span class="lock-badge" style="margin-left:0">FIREBASE</span>
+          <span class="lock-badge" style="margin-left:0;background:#eef2e8;color:var(--green)">RIWAYAT</span>
         </div>
       </div>
       <div class="grid2">
@@ -255,11 +255,15 @@ function getFirebaseUploadId(date){return Number(String(date||'').replace(/\D/g,
 function getUploadedFirebaseTransaction(date){const id=getFirebaseUploadId(date);return transactions.find(t=>Number(t.id)===id || String(t.description||'').startsWith(`[FIREBASE:${date}]`))}
 function initFirebase(){try{if(!window.firebase)return false;if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);firebaseDb=firebase.firestore();return true}catch(e){console.error(e);showToast('Firebase gagal aktif: '+e.message);return false}}
 function renderTodayFirebaseIncomeHome(){
+  // Logika sama seperti filter Hari Ini di Riwayat: hitung pemasukan yang sudah tersimpan di Supabase.
   const totalEl=$('todayFirebaseIncomeHome'),infoEl=$('todayFirebaseIncomeInfo');
-  if(totalEl)totalEl.innerText=formatRupiah(todayFirebaseIncomeTotal||0);
+  const today=getLocalDateString();
+  const rows=(transactions||[]).filter(t=>t.type==='income' && t.date===today);
+  const total=rows.reduce((sum,t)=>sum+Number(t.amount||0),0);
+  const firebaseRows=rows.filter(isFirebaseUploaded).length;
+  if(totalEl)totalEl.innerText=formatRupiah(total||0);
   if(infoEl){
-    const c=todayFirebaseIncomeRows.length;
-    infoEl.innerText=c?`${c} transaksi realtime dari Firebase · belum dipotong apapun`:'Realtime dari Firebase · belum ada transaksi hari ini';
+    infoEl.innerText=rows.length ? (rows.length + ' pemasukan hari ini' + (firebaseRows ? ' · ' + firebaseRows + ' dari Firebase LOCK' : '')) : 'Belum ada pemasukan hari ini di Riwayat';
   }
 }
 function startTodayFirebaseWatch(){
@@ -580,7 +584,7 @@ function escapeHtml(s){return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'
 function openBackupModal(){if(!transactions.length){showToast('Data kosong');return}$('backupOptionModal').classList.remove('hidden')}function closeBackupModal(){$('backupOptionModal').classList.add('hidden')}function showImportModal(){closeBackupModal();$('importModal').classList.remove('hidden')}function closeImportModal(){$('importModal').classList.add('hidden');$('importDataText').value=''}function exportToFile(){const blob=new Blob([JSON.stringify(transactions,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`rocky_backup_${getLocalDateString()}.json`;a.click();URL.revokeObjectURL(url);closeBackupModal();showToast('Backup tersimpan')}function copyToClipboard(){navigator.clipboard.writeText(JSON.stringify(transactions)).then(()=>{closeBackupModal();showToast('Data disalin')}).catch(()=>showToast('Gagal salin'))}
 async function importFromText(){try{const raw=$('importDataText').value.trim();if(!raw){showToast('Data kosong');return}const imported=JSON.parse(raw);if(!Array.isArray(imported))throw new Error('format');const ok=imported.every(i=>i.id&&i.date&&i.description&&typeof i.amount==='number'&&(i.type==='income'||i.type==='expense'));if(!ok)throw new Error('format');await importTransactions(imported);await loadTransactions();render();closeImportModal();showToast('Import berhasil')}catch(e){showToast('Format JSON salah')}}
 function showToast(message,duration=2600){const old=document.querySelector('.toast');if(old)old.remove();const t=document.createElement('div');t.className='toast';t.textContent=message;document.body.appendChild(t);setTimeout(()=>t.remove(),duration)}
-async function initApp(){try{if(!initSupabase())return;initFirebase();await loadTransactions();await loadZakatHistory();render();if(firebaseDb){startFirebaseWatch(firebaseUploadDate||getLocalDateString());startTodayFirebaseWatch();}showToast('Supabase tersambung')}catch(e){console.error(e);showToast('Gagal konek: '+e.message,6000)}}initApp();
+async function initApp(){try{if(!initSupabase())return;initFirebase();await loadTransactions();await loadZakatHistory();render();if(firebaseDb){startFirebaseWatch(firebaseUploadDate||getLocalDateString());}showToast('Supabase tersambung')}catch(e){console.error(e);showToast('Gagal konek: '+e.message,6000)}}initApp();
 </script>
 </body>
 </html>
