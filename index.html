@@ -31,6 +31,22 @@
     .pending-upload-list{display:flex;flex-direction:column;gap:7px;margin-top:10px}
     .pending-upload-row{display:flex;justify-content:space-between;align-items:center;gap:10px;background:white;border:1px solid var(--line);border-radius:13px;padding:10px}
     .pending-upload-row .btn{width:auto;min-width:78px;padding:8px 10px;min-height:36px;border-radius:11px;font-size:12px}
+    .month-valid-card{padding:11px 12px;border-radius:15px;border:1px solid var(--line);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;background:white;box-shadow:var(--shadow)}
+    .month-valid-left{min-width:0}
+    .month-valid-title{font-size:12px;font-weight:900;margin-bottom:3px}
+    .month-valid-desc{font-size:10.5px;color:var(--muted);line-height:1.35}
+    .month-valid-card.ok{background:#f3fbf6;border-color:#ccefd9}
+    .month-valid-card.warn{background:#fff8e5;border-color:#f2df9b}
+    .month-valid-card.bad{background:#fff0ee;border-color:#ffd7d0}
+    .month-valid-card.idle{background:#eef6ff;border-color:#bfdbfe}
+    .summary-net-card{background:linear-gradient(135deg,#ffffff,#f4fbf6);border:1px solid var(--line);border-radius:18px;padding:12px;margin-bottom:10px;box-shadow:var(--shadow)}
+    .summary-net-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:9px}
+    .summary-net-head b{font-size:13px}.summary-net-head small{font-size:10.5px;color:var(--muted);font-weight:800}
+    .summary-net-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+    .summary-net-box{background:white;border:1px solid var(--line);border-radius:14px;padding:9px 7px;min-width:0}
+    .summary-net-box span{display:block;font-size:9px;color:var(--muted);font-weight:900;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .summary-net-box b{display:block;margin-top:4px;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    @media(max-width:360px){.summary-net-grid{grid-template-columns:1fr}.summary-net-box b{font-size:14px}}
 
   </style>
 </head>
@@ -57,7 +73,23 @@
     <div id="transactionModal" class="modal hidden"><div class="box"><h3 style="margin:0 0 12px;text-align:center">Input Transaksi</h3><div class="row"><div class="field"><input type="date" id="inputDate"></div><div class="field"><select id="type" onchange="updatePlaceholder()"><option value="income">Pemasukan</option><option value="expense">Pengeluaran</option></select></div></div><div class="field"><input type="text" id="description" placeholder="Deskripsi"></div><div class="field amount-wrap"><input type="number" id="amount" placeholder="Nominal" oninput="handleSmartAmount(this)"><span id="liveAmountPreview" class="preview"></span></div><div class="row"><button class="btn secondary" onclick="closeTransactionModal()">Batal</button><button class="btn" onclick="addTransaction()">Simpan</button></div><p class="small" style="margin-bottom:0">Catatan: nominal otomatis dikali 1.000 seperti versi sebelumnya.</p></div></div>
 
     <section id="pageHistory" class="page">
+      <div id="netSummaryCard" class="summary-net-card">
+        <div class="summary-net-head"><div><b>Ringkasan Saldo Bersih</b><small style="display:block">Pemasukan - Pengeluaran</small></div><span class="pill">Supabase</span></div>
+        <div class="summary-net-grid">
+          <div class="summary-net-box"><span>Hari Ini</span><b id="netTodaySummary" class="num green">Rp 0</b></div>
+          <div class="summary-net-box"><span>Bulan Ini</span><b id="netMonthSummary" class="num blue">Rp 0</b></div>
+          <div class="summary-net-box"><span>Semua</span><b id="netAllSummary" class="num gold">Rp 0</b></div>
+        </div>
+        <div id="netSummaryNote" class="small" style="margin-top:8px;color:#2563eb;font-weight:800">Data Firebase hari ini dikunci dulu, masuk ringkasan setelah diupload ke Supabase.</div>
+      </div>
       <div class="tabs"><button onclick="changeFilter('today')" id="filter-today" class="tab active">Hari Ini</button><button onclick="changeFilter('month')" id="filter-month" class="tab">Bulan Ini</button><button onclick="changeFilter('range')" id="filter-range" class="tab">Custom</button><button onclick="changeFilter('all')" id="filter-all" class="tab">Semua</button></div>
+      <div id="monthValidityCard" class="month-valid-card idle">
+        <div class="month-valid-left">
+          <div id="monthValidityTitle" class="month-valid-title">Validasi Bulan</div>
+          <div id="monthValidityDesc" class="month-valid-desc">Klik cek untuk memastikan semua omset Firebase bulan ini sudah masuk Supabase.</div>
+        </div>
+        <button id="btnCheckMonthValid" class="btn secondary" style="width:auto;min-width:84px;padding:8px 10px;min-height:36px;border-radius:11px;font-size:12px" onclick="checkMonthValidity()">Cek</button>
+      </div>
       <div id="rangeSelector" class="card hidden"><div class="row"><input type="date" id="filterStartDate" onchange="render()"><input type="date" id="filterEndDate" onchange="render()"></div></div>
       <div id="firebaseUploadCard" class="card firebase-upload-card" style="margin-bottom:10px">
         <div class="firebase-upload-head">
@@ -121,7 +153,7 @@ const FIREBASE_CONFIG={
   appId:"1:861954349314:web:bb8384825daedb8d34ca1b"
 };
 let supabaseClient=null,transactions=[],zakatHistory=[],currentFilter='today',pendingAction=null,currentPage='home';
-let firebaseDb=null,firebaseUnsub=null,firebaseUploadDate='',firebaseIncomeRows=[],firebaseIncomeTotal=0,pendingFirebaseUploads=[];
+let firebaseDb=null,firebaseUnsub=null,firebaseUploadDate='',firebaseIncomeRows=[],firebaseIncomeTotal=0,pendingFirebaseUploads=[],monthValidityBusy=false;
 function $(id){return document.getElementById(id)}
 function isSupabaseConfigured(){return SUPABASE_URL&&SUPABASE_ANON_KEY&&!SUPABASE_URL.includes('ISI_')&&!SUPABASE_ANON_KEY.includes('ISI_')}
 function initSupabase(){if(!isSupabaseConfigured()){showToast('Supabase belum disetting');return false}supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);return true}
@@ -165,13 +197,28 @@ async function importTransactions(newTransactions){
   if(error)throw error;
 }
 function getLocalDateString(){const n=new Date();return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`}
-$('inputDate').value=getLocalDateString();$('filterStartDate').value=getLocalDateString();$('filterEndDate').value=getLocalDateString();firebaseUploadDate=getLocalDateString();setTimeout(()=>{if($('firebaseUploadDate'))$('firebaseUploadDate').value=firebaseUploadDate;setPendingThisMonth(false)},0);
+$('inputDate').value=getLocalDateString();$('filterStartDate').value=getLocalDateString();$('filterEndDate').value=getLocalDateString();firebaseUploadDate=getLocalDateString();setTimeout(()=>{if($('firebaseUploadDate'))$('firebaseUploadDate').value=firebaseUploadDate;setPendingThisMonth(false);updateMonthValidityIdle()},0);
 function openPasswordModal(cb){pendingAction=cb;$('passwordModal').classList.remove('hidden');$('confirmPasswordInput').value=''}function closePasswordModal(){$('passwordModal').classList.add('hidden');pendingAction=null}$('btnConfirmAction').addEventListener('click',()=>{if($('confirmPasswordInput').value===APP_PASSWORD){const a=pendingAction;closePasswordModal();if(a)a()}else{showToast('Sandi salah');$('confirmPasswordInput').value=''}});
 async function addTransaction(){try{const dateVal=$('inputDate').value,type=$('type').value;let desc=$('description').value.trim();const amount=getActualAmount($('amount').value);if(type==='income'&&!desc)desc='Omset';if(type==='expense'&&!desc){showToast('Deskripsi pengeluaran wajib');return}if(!dateVal||amount<=0){showToast('Nominal tidak valid');return}await saveTransaction({id:Date.now(),date:dateVal,description:desc,amount,type});await loadTransactions();render();$('description').value='';$('amount').value='';$('liveAmountPreview').innerText='';$('inputDate').value=getLocalDateString();closeTransactionModal();showToast('Transaksi tersimpan');goPage('home')}catch(e){showToast('Gagal simpan: '+e.message)}}
-function changeFilter(f){currentFilter=f;$('rangeSelector').classList.toggle('hidden',f!=='range');updateFilterUI();render()}function updateFilterUI(){['today','month','range','all'].forEach(f=>{const el=$('filter-'+f);if(el)el.classList.toggle('active',f===currentFilter)})}
+function changeFilter(f){currentFilter=f;$('rangeSelector').classList.toggle('hidden',f!=='range');updateFilterUI();render();updateMonthValidityIdle()}function updateFilterUI(){['today','month','range','all'].forEach(f=>{const el=$('filter-'+f);if(el)el.classList.toggle('active',f===currentFilter)})}
 async function deleteTransaction(id){const t=transactions.find(x=>Number(x.id)===Number(id));if(t&&isFirebaseUploaded(t)){showToast('Data Firebase LOCK. Update dari tombol Upload, bukan dihapus.');return}openPasswordModal(async()=>{try{await deleteTransactionFromDB(id);await loadTransactions();validateAndCancelInvalidZakat();render();showToast('Transaksi dihapus')}catch(e){showToast('Gagal hapus: '+e.message)}})}
 async function requestClearAll(){openPasswordModal(async()=>{if(confirm('Hapus semua data manual? Data FIREBASE LOCK tidak akan dihapus.')){try{await clearManualTransactions();await saveZakatHistory([]);await loadTransactions();render();showToast('Data manual dihapus. FIREBASE LOCK tetap aman.')}catch(e){showToast('Gagal reset: '+e.message)}}})}
 function formatRupiah(n){return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',minimumFractionDigits:0}).format(n||0)}function getActualAmount(raw){if(!raw||isNaN(raw))return 0;return parseFloat(raw)*1000}function handleSmartAmount(input){$('liveAmountPreview').innerText=input.value?formatRupiah(getActualAmount(input.value)):''}function updatePlaceholder(){$('description').placeholder=$('type').value==='expense'?'Contoh: Makan, listrik':'Omset (boleh kosong)'}
+function getNetForRange(mode){
+  const today=getLocalDateString(), month=today.slice(0,7);
+  const rows=transactions.filter(t=>{
+    if(mode==='today')return t.date===today;
+    if(mode==='month')return String(t.date||'').startsWith(month);
+    return true;
+  });
+  return rows.reduce((sum,t)=>sum+(t.type==='income'?Number(t.amount||0):-Number(t.amount||0)),0);
+}
+function updateNetSummary(){
+  const todayNet=getNetForRange('today'), monthNet=getNetForRange('month'), allNet=getNetForRange('all');
+  if($('netTodaySummary')){$('netTodaySummary').innerText=formatRupiah(todayNet);$('netTodaySummary').className='num '+(todayNet<0?'red':'green')}
+  if($('netMonthSummary')){$('netMonthSummary').innerText=formatRupiah(monthNet);$('netMonthSummary').className='num '+(monthNet<0?'red':'blue')}
+  if($('netAllSummary')){$('netAllSummary').innerText=formatRupiah(allNet);$('netAllSummary').className='num '+(allNet<0?'red':'gold')}
+}
 function getFilteredTransactions(){const now=getLocalDateString(),s=$('filterStartDate').value,e=$('filterEndDate').value;return transactions.filter(t=>currentFilter==='today'?t.date===now:currentFilter==='month'?t.date.startsWith(now.substring(0,7)):currentFilter==='range'?t.date>=s&&t.date<=e:true)}
 function getPeriodLabel(){const now=getLocalDateString();if(currentFilter==='today')return `Hari Ini (${now})`;if(currentFilter==='month')return `Bulan Ini`;if(currentFilter==='range')return `${$('filterStartDate').value} s.d ${$('filterEndDate').value}`;return 'Semua Riwayat'}
 function generateWhatsAppReport(){const f=getFilteredTransactions();let ti=0,te=0,inc=[],exp=[];f.forEach(t=>{if(t.type==='income'){ti+=t.amount;inc.push(`📥 ${t.date} | ${t.description} | +${formatRupiah(t.amount)}`)}else{te+=t.amount;exp.push(`📤 ${t.date} | ${t.description} | -${formatRupiah(t.amount)}`)}});let r=`📊 *LAPORAN ROCKY HIJAB*\nPeriode: ${getPeriodLabel()}\n\n💚 Pemasukan: ${formatRupiah(ti)}\n❤️ Pengeluaran: ${formatRupiah(te)}\n💙 Saldo: ${formatRupiah(ti-te)}\n💜 Laba 20%: ${formatRupiah(ti*.2)}\n🕌 Zakat wajib: ${formatRupiah(getCurrentZakatDue())}\n\n`;if(inc.length)r+=`*PEMASUKAN*\n${inc.join('\n')}\n\n`;if(exp.length)r+=`*PENGELUARAN*\n${exp.join('\n')}\n\n`;return r+'_Dikirim dari Rocky Hijab Finance_'}
@@ -195,6 +242,70 @@ function startFirebaseWatch(date){
     firebaseIncomeTotal=firebaseIncomeRows.reduce((a,b)=>a+Number(b.amount||0),0);
     renderFirebaseUploadCard();
   },err=>{console.error(err);showToast('Gagal baca Firebase: '+err.message)})
+}
+
+
+function getCurrentMonthRange(){
+  const today=getLocalDateString();
+  return {start:today.slice(0,7)+'-01', end:today, month:today.slice(0,7)};
+}
+function setMonthValidityUI(state,title,desc){
+  const card=$('monthValidityCard'),t=$('monthValidityTitle'),d=$('monthValidityDesc'),btn=$('btnCheckMonthValid');
+  if(!card||!t||!d)return;
+  card.className='month-valid-card '+(state||'idle');
+  t.innerText=title;
+  d.innerText=desc;
+  if(btn){btn.disabled=monthValidityBusy;btn.innerText=monthValidityBusy?'Cek...':'Cek';}
+}
+function updateMonthValidityIdle(){
+  const r=getCurrentMonthRange();
+  setMonthValidityUI('idle','Validasi Bulan Ini',`Cek ${r.start} s.d ${r.end}: pastikan omset Firebase sudah diupload ke Supabase.`);
+}
+async function checkMonthValidity(){
+  if(!firebaseDb)return showToast('Firebase belum aktif');
+  const r=getCurrentMonthRange();
+  monthValidityBusy=true;
+  setMonthValidityUI('idle','Mengecek Bulan...',`Sedang cek ${r.start} s.d ${r.end}`);
+  try{
+    const snap=await firebaseDb.collection('transactions').where('dateKey','>=',r.start).where('dateKey','<=',r.end).get();
+    const grouped={};
+    snap.docs.map(d=>({id:d.id,...d.data()})).forEach(t=>{
+      if(t.deleted)return;
+      const date=String(t.dateKey||'').slice(0,10);
+      if(!date)return;
+      if(!grouped[date])grouped[date]={firebaseTotal:0,count:0};
+      grouped[date].firebaseTotal+=Number(t.amount||0);
+      grouped[date].count+=1;
+    });
+    const dates=Object.keys(grouped).sort();
+    const missing=[]; const diff=[]; let totalUploaded=0;
+    dates.forEach(date=>{
+      const fb=Number(grouped[date].firebaseTotal||0);
+      const uploaded=getUploadedFirebaseTransaction(date);
+      const up=Number(uploaded?.amount||0);
+      totalUploaded+=up;
+      if(!uploaded)missing.push(date);
+      else if(up!==fb)diff.push(date);
+    });
+    if(!dates.length){
+      setMonthValidityUI('ok','Bulan Valid','Belum ada omset Firebase bulan ini. Tidak ada yang perlu diupload.');
+    }else if(!missing.length&&!diff.length){
+      setMonthValidityUI('ok','Bulan Valid',`${dates.length} hari omset Firebase sudah sama di Supabase. Total bulan: ${formatRupiah(totalUploaded)}.`);
+    }else{
+      const parts=[];
+      if(missing.length)parts.push(`${missing.length} belum upload`);
+      if(diff.length)parts.push(`${diff.length} selisih`);
+      setMonthValidityUI(diff.length?'bad':'warn','Bulan Belum Valid',`${parts.join(' · ')}. Buka Cek Belum Upload lalu upload/update sampai aman.`);
+      if($('pendingStartDate'))$('pendingStartDate').value=r.start;
+      if($('pendingEndDate'))$('pendingEndDate').value=r.end;
+    }
+  }catch(e){
+    console.error(e);
+    setMonthValidityUI('bad','Gagal Cek Bulan',e.message||'Gagal membaca data Firebase');
+  }finally{
+    monthValidityBusy=false;
+    const btn=$('btnCheckMonthValid'); if(btn){btn.disabled=false;btn.innerText='Cek'}
+  }
 }
 
 function setPendingThisMonth(show=true){
@@ -232,12 +343,18 @@ function renderPendingUploadList(){
   sum.className='audit-box '+(items.some(x=>x.status==='missing')?'audit-warn':'audit-bad');
   sum.innerText=`Ditemukan ${items.length} tanggal perlu dicek. Belum upload: ${formatRupiah(totalMissing)} · Selisih: ${formatRupiah(totalDiff)}.`;
   box.innerHTML=items.map(x=>{
-    const label=x.status==='missing'?'BELUM UPLOAD':'SELISIH';
-    const cls=x.status==='missing'?'st-pending':'st-update';
-    const info=x.status==='missing'
-      ? `Firebase ${formatRupiah(x.firebaseTotal)} · ${x.count} transaksi`
-      : `Firebase ${formatRupiah(x.firebaseTotal)} · Supabase ${formatRupiah(x.uploadedAmount)}`;
-    return `<div class="pending-upload-row"><div style="min-width:0"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><b>${escapeHtml(x.date)}</b><span class="firebase-status ${cls}">${label}</span></div><div class="small" style="margin-top:3px">${escapeHtml(info)}</div></div><button class="btn" onclick="uploadPendingFirebaseDate('${x.date}')">${x.status==='missing'?'Upload':'Update'}</button></div>`;
+    const isToday=x.date===getLocalDateString();
+    const label=isToday?'HARI INI BELUM FINAL':(x.status==='missing'?'BELUM UPLOAD':'SELISIH');
+    const cls=isToday?'st-pending':(x.status==='missing'?'st-pending':'st-update');
+    const info=isToday
+      ? `Firebase ${formatRupiah(x.firebaseTotal)} · data masih bisa berubah, upload besok`
+      : (x.status==='missing'
+        ? `Firebase ${formatRupiah(x.firebaseTotal)} · ${x.count} transaksi`
+        : `Firebase ${formatRupiah(x.firebaseTotal)} · Supabase ${formatRupiah(x.uploadedAmount)}`);
+    const btn=isToday
+      ? `<button class="btn secondary" disabled>Lock</button>`
+      : `<button class="btn" onclick="uploadPendingFirebaseDate('${x.date}')">${x.status==='missing'?'Upload':'Update'}</button>`;
+    return `<div class="pending-upload-row"><div style="min-width:0"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><b>${escapeHtml(x.date)}</b><span class="firebase-status ${cls}">${label}</span></div><div class="small" style="margin-top:3px">${escapeHtml(info)}</div></div>${btn}</div>`;
   }).join('');
 }
 async function scanPendingFirebaseUploads(){
@@ -287,6 +404,7 @@ async function uploadPendingFirebaseDate(date){
 }
 async function uploadFirebaseIncomeForDate(date,total,quiet=false){
   if(!supabaseClient)return showToast('Supabase belum aktif');
+  if(date===getLocalDateString())return showToast('Pendapatan hari ini belum final. Upload setelah ganti tanggal.');
   if(!total||total<=0)return showToast('Omset Firebase kosong');
   const row={id:getFirebaseUploadId(date),owner_id:OWNER_ID,date,description:`[FIREBASE:${date}] Omset Kasir Firebase`,amount:Number(total),type:'income'};
   try{
@@ -296,6 +414,7 @@ async function uploadFirebaseIncomeForDate(date,total,quiet=false){
     render();
     if(!quiet)showToast('Omset Firebase diupload. Audit sekarang sama.');
     else showToast(`Upload ${date} berhasil`);
+    updateMonthValidityIdle();
   }catch(e){showToast('Gagal upload: '+e.message)}
 }
 function renderFirebaseUploadCard(){
@@ -307,6 +426,7 @@ function renderFirebaseUploadCard(){
   const fbAmount=Number(firebaseIncomeTotal||0);
   const diff=fbAmount-uploadedAmount;
   const count=firebaseIncomeRows.length;
+  const isToday=firebaseUploadDate===getLocalDateString();
 
   function setAudit(cls, text){
     if(!auditEl)return;
@@ -314,7 +434,12 @@ function renderFirebaseUploadCard(){
     auditEl.innerText=text;
   }
 
-  if(fbAmount<=0){
+  if(isToday){
+    statusEl.className='firebase-status st-pending';statusEl.innerText='Hari Ini';
+    infoEl.innerText=fbAmount>0?`${count} transaksi Firebase · belum final, upload besok`:`${firebaseUploadDate} · hari ini belum ada omset Firebase`;
+    btn.disabled=true;btn.innerText='Belum Final';
+    setAudit('audit-warn',`Audit ${firebaseUploadDate}: HARI INI DIKUNCI. Data masih bisa berubah, jadi belum bisa diupload ke Supabase sebelum ganti tanggal.`);
+  }else if(fbAmount<=0){
     if(uploaded){
       statusEl.className='firebase-status st-uploaded';statusEl.innerText='Arsip Aman';
       infoEl.innerText=`${firebaseUploadDate} · Firebase kosong, arsip Supabase tersimpan ${formatRupiah(uploadedAmount)}`;
@@ -347,7 +472,7 @@ async function uploadFirebaseIncome(){
   const date=firebaseUploadDate||getLocalDateString();
   await uploadFirebaseIncomeForDate(date,firebaseIncomeTotal,false);
 }
-function render(){const f=getFilteredTransactions();let ti=0,te=0;f.forEach(t=>{if(t.type==='income')ti+=t.amount;else te+=t.amount});const profit=ti*.2,net=ti-te,usage=profit>0?(te/profit)*100:0;$('totalIncome').innerText=formatRupiah(ti);$('totalExpense').innerText=formatRupiah(te);$('autoProfit').innerText=formatRupiah(profit);$('netBalance').innerText=formatRupiah(net);const remainingOps=profit-te;$('spendingLimit').innerText=formatRupiah(te);$('operationalUsed').innerText=formatRupiah(remainingOps);$('operationalTotal').innerText=formatRupiah(profit);const spentEl=$('operationalSpent');if(spentEl)spentEl.innerText=formatRupiah(te);validateAndCancelInvalidZakat();const totalProfit=getTotalProfit(),paid=getTotalProfitZakatPaid(),unpaid=getUnpaidProfit(),due=getCurrentZakatDue();$('zakatAmountLarge').innerText=formatRupiah(due);$('totalProfitDisplay').innerText=formatRupiah(totalProfit);$('totalZakatPaidProfit').innerText=formatRupiah(paid);$('unpaidProfitDisplay').innerText=formatRupiah(unpaid);const pay=$('payZakatBtn'),zs=$('zakatPaymentStatusText');if(totalProfit<=0){zs.innerText='Belum ada laba';pay.disabled=true;pay.style.opacity=.5}else if(due<=0){zs.innerText='Zakat lunas';pay.disabled=true;pay.style.opacity=.5}else{zs.innerText='Wajib dibayar';pay.disabled=false;pay.style.opacity=1}const h=getZakatHistory(),prev=$('zakatHistoryPreview'),mini=$('zakatHistoryMiniList');if(h.length){prev.style.display='flex';const valid=h.filter(x=>!x.cancelled).slice(-2).reverse();mini.innerHTML=valid.length?valid.map(x=>`<span class="chip">${formatRupiah(x.zakatPaid)}</span>`).join(''):'<span class="chip">Zakat batal</span>'}else prev.style.display='none';const over=te>profit&&profit>0;$('operationalCard').className='card '+(over?'danger-card':'safe-card');$('limitWarning').innerText=over?'Over budget: pengeluaran lebih dari 20% omset':'';$('statusText').innerText=over?'Bahaya':'Aman';$('statusBadge').style.background=over?'#fff0ee':'#e9f7ef';$('statusBadge').style.color=over?'#c0392b':'#176b43';$('currentPeriodLabel').innerText=getPeriodLabel();const list=$('transactionList');if(!f.length){list.innerHTML='<div class="empty">Belum ada transaksi</div>';renderFirebaseUploadCard();return}list.innerHTML=f.slice(0,80).map(t=>`<div class="item"><div class="left"><div class="icon ${t.type==='income'?'in':'out'}">${t.type==='income'?'+':'-'}</div><div class="desc"><b>${escapeHtml(cleanFirebaseDesc(t.description))}${isFirebaseUploaded(t)?'<span class="lock-badge">FIREBASE LOCK</span>':''}</b><small>${t.date}</small></div></div><div class="right"><b class="num ${t.type==='income'?'green':'red'}">${t.type==='income'?'+':'-'}${formatRupiah(t.amount).replace('Rp','')}</b>${isFirebaseUploaded(t)?'<div class="small blue" style="font-weight:900">LOCK</div>':`<button class="x" onclick="deleteTransaction(${t.id})">×</button>`}</div></div>`).join('')+(f.length>80?`<div class="empty">Ditampilkan 80 dari ${f.length} data biar ringan</div>`:'');renderFirebaseUploadCard()}
+function render(){updateNetSummary();const f=getFilteredTransactions();let ti=0,te=0;f.forEach(t=>{if(t.type==='income')ti+=t.amount;else te+=t.amount});const profit=ti*.2,net=ti-te,usage=profit>0?(te/profit)*100:0;$('totalIncome').innerText=formatRupiah(ti);$('totalExpense').innerText=formatRupiah(te);$('autoProfit').innerText=formatRupiah(profit);$('netBalance').innerText=formatRupiah(net);const remainingOps=profit-te;$('spendingLimit').innerText=formatRupiah(te);$('operationalUsed').innerText=formatRupiah(remainingOps);$('operationalTotal').innerText=formatRupiah(profit);const spentEl=$('operationalSpent');if(spentEl)spentEl.innerText=formatRupiah(te);validateAndCancelInvalidZakat();const totalProfit=getTotalProfit(),paid=getTotalProfitZakatPaid(),unpaid=getUnpaidProfit(),due=getCurrentZakatDue();$('zakatAmountLarge').innerText=formatRupiah(due);$('totalProfitDisplay').innerText=formatRupiah(totalProfit);$('totalZakatPaidProfit').innerText=formatRupiah(paid);$('unpaidProfitDisplay').innerText=formatRupiah(unpaid);const pay=$('payZakatBtn'),zs=$('zakatPaymentStatusText');if(totalProfit<=0){zs.innerText='Belum ada laba';pay.disabled=true;pay.style.opacity=.5}else if(due<=0){zs.innerText='Zakat lunas';pay.disabled=true;pay.style.opacity=.5}else{zs.innerText='Wajib dibayar';pay.disabled=false;pay.style.opacity=1}const h=getZakatHistory(),prev=$('zakatHistoryPreview'),mini=$('zakatHistoryMiniList');if(h.length){prev.style.display='flex';const valid=h.filter(x=>!x.cancelled).slice(-2).reverse();mini.innerHTML=valid.length?valid.map(x=>`<span class="chip">${formatRupiah(x.zakatPaid)}</span>`).join(''):'<span class="chip">Zakat batal</span>'}else prev.style.display='none';const over=te>profit&&profit>0;$('operationalCard').className='card '+(over?'danger-card':'safe-card');$('limitWarning').innerText=over?'Over budget: pengeluaran lebih dari 20% omset':'';$('statusText').innerText=over?'Bahaya':'Aman';$('statusBadge').style.background=over?'#fff0ee':'#e9f7ef';$('statusBadge').style.color=over?'#c0392b':'#176b43';$('currentPeriodLabel').innerText=getPeriodLabel();const list=$('transactionList');if(!f.length){list.innerHTML='<div class="empty">Belum ada transaksi</div>';renderFirebaseUploadCard();return}list.innerHTML=f.slice(0,80).map(t=>`<div class="item"><div class="left"><div class="icon ${t.type==='income'?'in':'out'}">${t.type==='income'?'+':'-'}</div><div class="desc"><b>${escapeHtml(cleanFirebaseDesc(t.description))}${isFirebaseUploaded(t)?'<span class="lock-badge">FIREBASE LOCK</span>':''}</b><small>${t.date}</small></div></div><div class="right"><b class="num ${t.type==='income'?'green':'red'}">${t.type==='income'?'+':'-'}${formatRupiah(t.amount).replace('Rp','')}</b>${isFirebaseUploaded(t)?'<div class="small blue" style="font-weight:900">LOCK</div>':`<button class="x" onclick="deleteTransaction(${t.id})">×</button>`}</div></div>`).join('')+(f.length>80?`<div class="empty">Ditampilkan 80 dari ${f.length} data biar ringan</div>`:'');renderFirebaseUploadCard()}
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
 function openBackupModal(){if(!transactions.length){showToast('Data kosong');return}$('backupOptionModal').classList.remove('hidden')}function closeBackupModal(){$('backupOptionModal').classList.add('hidden')}function showImportModal(){closeBackupModal();$('importModal').classList.remove('hidden')}function closeImportModal(){$('importModal').classList.add('hidden');$('importDataText').value=''}function exportToFile(){const blob=new Blob([JSON.stringify(transactions,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`rocky_backup_${getLocalDateString()}.json`;a.click();URL.revokeObjectURL(url);closeBackupModal();showToast('Backup tersimpan')}function copyToClipboard(){navigator.clipboard.writeText(JSON.stringify(transactions)).then(()=>{closeBackupModal();showToast('Data disalin')}).catch(()=>showToast('Gagal salin'))}
 async function importFromText(){try{const raw=$('importDataText').value.trim();if(!raw){showToast('Data kosong');return}const imported=JSON.parse(raw);if(!Array.isArray(imported))throw new Error('format');const ok=imported.every(i=>i.id&&i.date&&i.description&&typeof i.amount==='number'&&(i.type==='income'||i.type==='expense'));if(!ok)throw new Error('format');await importTransactions(imported);await loadTransactions();render();closeImportModal();showToast('Import berhasil')}catch(e){showToast('Format JSON salah')}}
