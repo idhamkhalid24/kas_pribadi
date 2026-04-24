@@ -5,13 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Rocky Hijab Finance</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
   <style>
     :root{
       --bg:#f6f7f2;--card:#ffffff;--ink:#172015;--muted:#758071;--line:#e4e8dd;
       --green:#176b43;--green2:#0f5132;--gold:#b08a2e;--red:#c0392b;--blue:#2563eb;
       --shadow:0 6px 18px rgba(23,32,21,.07);--r:16px;
     }
-    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:Arial,Helvetica,sans-serif;font-size:14px}button,input,select,textarea{font:inherit}button{border:0;cursor:pointer} .num{font-family:Arial,Helvetica,sans-serif;font-variant-numeric:tabular-nums;font-weight:800;letter-spacing:-.2px}.app{max-width:440px;margin:0 auto;min-height:100vh;padding:12px 12px 76px}.top{position:sticky;top:0;z-index:10;margin:-12px -12px 10px;padding:12px;background:rgba(246,247,242,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}.brand{display:flex;justify-content:space-between;align-items:center;gap:10px}.brand h1{margin:0;font-size:17px;line-height:1.1}.brand small{display:block;color:var(--muted);font-size:11px;margin-top:2px}.pill{font-size:11px;padding:6px 9px;border-radius:999px;background:#e9f7ef;color:var(--green);font-weight:800;white-space:nowrap}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:12px;margin-bottom:10px}.hero{background:linear-gradient(135deg,var(--green2),var(--green));color:white;border-radius:18px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow)}.hero .label{opacity:.8;font-size:11px;font-weight:700}.hero .value{font-size:25px;margin:4px 0}.hero .mini{display:flex;justify-content:space-between;gap:8px;font-size:11px;opacity:.9}.stat{padding:11px;background:white;border:1px solid var(--line);border-radius:15px;min-width:0}.stat span{font-size:10px;text-transform:uppercase;color:var(--muted);font-weight:800}.stat b{display:block;margin-top:4px;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.green{color:var(--green)}.red{color:var(--red)}.gold{color:var(--gold)}.blue{color:var(--blue)}.section-title{margin:4px 2px 8px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:900}.field{margin-bottom:9px}.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}input,select,textarea{width:100%;border:1px solid var(--line);background:#fbfcf8;border-radius:13px;padding:11px;outline:none;min-height:43px}input:focus,select:focus,textarea:focus{border-color:var(--green)}.amount-wrap{position:relative}.amount-wrap input{font-size:21px;font-weight:900;padding-right:105px}.preview{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--green);font-weight:900;max-width:95px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.btn{width:100%;border-radius:14px;padding:12px 14px;font-weight:900;background:var(--green);color:white;min-height:45px}.btn.secondary{background:#eef2e8;color:var(--ink)}.btn.gold{background:var(--gold)}.btn.red{background:#fff0ee;color:var(--red)}.btn.whatsapp{background:#18a558}.tabs{display:flex;gap:7px;overflow:auto;margin-bottom:10px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}.tab{padding:9px 13px;border-radius:999px;background:white;border:1px solid var(--line);color:var(--muted);font-size:12px;font-weight:900;white-space:nowrap}.tab.active{background:var(--green);color:white;border-color:var(--green)}.list{display:flex;flex-direction:column;gap:7px}.item{display:flex;justify-content:space-between;align-items:center;gap:10px;background:white;border:1px solid var(--line);border-radius:14px;padding:10px}.item .left{display:flex;align-items:center;gap:9px;min-width:0}.icon{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:900;flex:0 0 30px}.icon.in{background:#e8f7ef;color:var(--green)}.icon.out{background:#fff0ee;color:var(--red)}.desc{min-width:0}.desc b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.desc small{display:block;color:var(--muted);font-size:10px;margin-top:1px}.right{text-align:right;white-space:nowrap}.right b{font-size:13px}.x{background:transparent;color:#b9bfb3;font-size:18px;padding:2px 0 2px 10px}.empty{text-align:center;color:var(--muted);font-size:12px;padding:22px}.nav{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(440px,100%);background:rgba(255,255,255,.95);backdrop-filter:blur(12px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(2,1fr);gap:6px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));z-index:40}.nav button{border-radius:14px;background:transparent;color:var(--muted);font-size:11px;font-weight:900;padding:8px 4px}.nav button.active{background:#e8f7ef;color:var(--green)}.page{display:none}.page.active{display:block}.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:flex;align-items:center;justify-content:center;padding:14px}.box{background:white;border-radius:18px;padding:16px;max-width:380px;width:100%;max-height:84vh;overflow:auto}.hidden{display:none!important}.toast{position:fixed;left:50%;bottom:78px;transform:translateX(-50%);background:#182017;color:white;padding:10px 14px;border-radius:999px;z-index:200;font-size:12px;font-weight:800;max-width:90%;text-align:center}.compact-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.small{font-size:11px;color:var(--muted)}.zakat-mini{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.chip{font-size:10px;background:#fff8e5;color:#7c5f13;border:1px solid #f2df9b;border-radius:999px;padding:4px 8px;font-weight:800}.chip-firebase{display:inline-flex;align-items:center;gap:4px;margin-left:4px;font-size:9px;background:#eaf3ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:999px;padding:2px 6px;font-weight:900;vertical-align:middle}.sync-card{background:#eef7ff;border-color:#cfe5ff}.sync-card .section-title{color:#2563eb}.sync-note{font-size:10px;color:#4b6b92;line-height:1.35;margin-top:7px}.btn.blue{background:var(--blue);color:white}.danger-card{background:#fff6f4;border-color:#ffd7d0}.safe-card{background:#f3fbf6;border-color:#ccefd9}.fab{position:fixed;right:calc(50% - 206px);bottom:76px;width:58px;height:58px;border-radius:50%;background:var(--green);color:white;font-size:34px;line-height:1;font-weight:900;box-shadow:0 10px 24px rgba(23,107,67,.32);z-index:60;display:grid;place-items:center}.fab:active{transform:scale(.96)}@media(max-width:440px){.fab{right:16px}}@media(max-width:360px){.app{padding-left:9px;padding-right:9px}.hero .value{font-size:22px}.stat b{font-size:13px}.amount-wrap input{padding-right:80px}.preview{max-width:75px}.row{grid-template-columns:1fr}.grid2{gap:7px}}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:Arial,Helvetica,sans-serif;font-size:14px}button,input,select,textarea{font:inherit}button{border:0;cursor:pointer} .num{font-family:Arial,Helvetica,sans-serif;font-variant-numeric:tabular-nums;font-weight:800;letter-spacing:-.2px}.app{max-width:440px;margin:0 auto;min-height:100vh;padding:12px 12px 76px}.top{position:sticky;top:0;z-index:10;margin:-12px -12px 10px;padding:12px;background:rgba(246,247,242,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}.brand{display:flex;justify-content:space-between;align-items:center;gap:10px}.brand h1{margin:0;font-size:17px;line-height:1.1}.brand small{display:block;color:var(--muted);font-size:11px;margin-top:2px}.pill{font-size:11px;padding:6px 9px;border-radius:999px;background:#e9f7ef;color:var(--green);font-weight:800;white-space:nowrap}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:12px;margin-bottom:10px}.hero{background:linear-gradient(135deg,var(--green2),var(--green));color:white;border-radius:18px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow)}.hero .label{opacity:.8;font-size:11px;font-weight:700}.hero .value{font-size:25px;margin:4px 0}.hero .mini{display:flex;justify-content:space-between;gap:8px;font-size:11px;opacity:.9}.stat{padding:11px;background:white;border:1px solid var(--line);border-radius:15px;min-width:0}.stat span{font-size:10px;text-transform:uppercase;color:var(--muted);font-weight:800}.stat b{display:block;margin-top:4px;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.green{color:var(--green)}.red{color:var(--red)}.gold{color:var(--gold)}.blue{color:var(--blue)}.section-title{margin:4px 2px 8px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:900}.field{margin-bottom:9px}.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}input,select,textarea{width:100%;border:1px solid var(--line);background:#fbfcf8;border-radius:13px;padding:11px;outline:none;min-height:43px}input:focus,select:focus,textarea:focus{border-color:var(--green)}.amount-wrap{position:relative}.amount-wrap input{font-size:21px;font-weight:900;padding-right:105px}.preview{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--green);font-weight:900;max-width:95px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.btn{width:100%;border-radius:14px;padding:12px 14px;font-weight:900;background:var(--green);color:white;min-height:45px}.btn.secondary{background:#eef2e8;color:var(--ink)}.btn.gold{background:var(--gold)}.btn.red{background:#fff0ee;color:var(--red)}.btn.whatsapp{background:#18a558}.tabs{display:flex;gap:7px;overflow:auto;margin-bottom:10px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}.tab{padding:9px 13px;border-radius:999px;background:white;border:1px solid var(--line);color:var(--muted);font-size:12px;font-weight:900;white-space:nowrap}.tab.active{background:var(--green);color:white;border-color:var(--green)}.list{display:flex;flex-direction:column;gap:7px}.item{display:flex;justify-content:space-between;align-items:center;gap:10px;background:white;border:1px solid var(--line);border-radius:14px;padding:10px}.item .left{display:flex;align-items:center;gap:9px;min-width:0}.icon{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:900;flex:0 0 30px}.icon.in{background:#e8f7ef;color:var(--green)}.icon.out{background:#fff0ee;color:var(--red)}.desc{min-width:0}.desc b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.desc small{display:block;color:var(--muted);font-size:10px;margin-top:1px}.right{text-align:right;white-space:nowrap}.right b{font-size:13px}.x{background:transparent;color:#b9bfb3;font-size:18px;padding:2px 0 2px 10px}.empty{text-align:center;color:var(--muted);font-size:12px;padding:22px}.nav{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(440px,100%);background:rgba(255,255,255,.95);backdrop-filter:blur(12px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(2,1fr);gap:6px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));z-index:40}.nav button{border-radius:14px;background:transparent;color:var(--muted);font-size:11px;font-weight:900;padding:8px 4px}.nav button.active{background:#e8f7ef;color:var(--green)}.page{display:none}.page.active{display:block}.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:flex;align-items:center;justify-content:center;padding:14px}.box{background:white;border-radius:18px;padding:16px;max-width:380px;width:100%;max-height:84vh;overflow:auto}.hidden{display:none!important}.toast{position:fixed;left:50%;bottom:78px;transform:translateX(-50%);background:#182017;color:white;padding:10px 14px;border-radius:999px;z-index:200;font-size:12px;font-weight:800;max-width:90%;text-align:center}.compact-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.small{font-size:11px;color:var(--muted)}.zakat-mini{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.chip{font-size:10px;background:#fff8e5;color:#7c5f13;border:1px solid #f2df9b;border-radius:999px;padding:4px 8px;font-weight:800}.danger-card{background:#fff6f4;border-color:#ffd7d0}.safe-card{background:#f3fbf6;border-color:#ccefd9}.fab{position:fixed;right:calc(50% - 206px);bottom:76px;width:58px;height:58px;border-radius:50%;background:var(--green);color:white;font-size:34px;line-height:1;font-weight:900;box-shadow:0 10px 24px rgba(23,107,67,.32);z-index:60;display:grid;place-items:center}.fab:active{transform:scale(.96)}@media(max-width:440px){.fab{right:16px}}@media(max-width:360px){.app{padding-left:9px;padding-right:9px}.hero .value{font-size:22px}.stat b{font-size:13px}.amount-wrap input{padding-right:80px}.preview{max-width:75px}.row{grid-template-columns:1fr}.grid2{gap:7px}}
+  
+    .firebase-upload-card{background:#eef6ff;border-color:#bfdbfe}
+    .firebase-upload-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+    .firebase-status{font-size:10px;border-radius:999px;padding:5px 8px;font-weight:900;white-space:nowrap}
+    .st-uploaded{background:#e8f7ef;color:var(--green)}
+    .st-pending{background:#fff8e5;color:#7c5f13}
+    .st-update{background:#fff0ee;color:var(--red)}
+    .firebase-row{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin:8px 0}
+    .firebase-label{font-size:10px;font-weight:900;color:#2563eb;text-transform:uppercase;letter-spacing:.4px}
+    .lock-badge{font-size:9px;background:#e8f1ff;color:#2563eb;border:1px solid #bfdbfe;border-radius:999px;padding:2px 6px;font-weight:900;margin-left:4px}
+
   </style>
 </head>
 <body>
@@ -25,14 +38,6 @@
 
     <section id="pageHome" class="page active">
       <div class="hero"><div class="label">Saldo Bersih</div><div id="netBalance" class="value num">Rp 0</div><div class="mini"><span>Masuk <b id="totalIncome">Rp 0</b></span><span>Keluar <b id="totalExpense">Rp 0</b></span></div></div>
-      <div class="card sync-card">
-        <div class="section-title" style="margin:0 0 8px">Omset Firebase Realtime</div>
-        <div class="row">
-          <input type="date" id="firebaseSyncDate">
-          <button class="btn blue" onclick="syncFirebaseBySelectedDate()">Cek Tanggal</button>
-        </div>
-        <div id="firebaseSyncStatus" class="sync-note">Data Firebase tampil realtime sebagai pendapatan read-only. Tidak disimpan, tidak bisa diedit, dan tidak bisa dihapus dari Kas Pribadi.</div>
-      </div>
       <div class="grid2">
         <div class="stat"><span>Laba 20%</span><b id="autoProfit" class="blue num">Rp 0</b></div>
         <div class="stat"><span>Total Pengeluaran</span><b id="spendingLimit" class="red num">Rp 0</b></div>
@@ -47,6 +52,27 @@
     <section id="pageHistory" class="page">
       <div class="tabs"><button onclick="changeFilter('today')" id="filter-today" class="tab active">Hari Ini</button><button onclick="changeFilter('month')" id="filter-month" class="tab">Bulan Ini</button><button onclick="changeFilter('range')" id="filter-range" class="tab">Custom</button><button onclick="changeFilter('all')" id="filter-all" class="tab">Semua</button></div>
       <div id="rangeSelector" class="card hidden"><div class="row"><input type="date" id="filterStartDate" onchange="render()"><input type="date" id="filterEndDate" onchange="render()"></div></div>
+      <div id="firebaseUploadCard" class="card firebase-upload-card" style="margin-bottom:10px">
+        <div class="firebase-upload-head">
+          <div>
+            <b>Omset Kasir Firebase</b>
+            <div class="small">Upload manual ke Kas Pribadi</div>
+          </div>
+          <span id="firebaseUploadStatus" class="firebase-status st-pending">Memuat</span>
+        </div>
+        <div class="row">
+          <input type="date" id="firebaseUploadDate" onchange="changeFirebaseUploadDate(this.value)">
+          <button class="btn secondary" onclick="refreshFirebaseUpload()">Refresh</button>
+        </div>
+        <div class="firebase-row">
+          <div>
+            <div class="firebase-label">Total dari Firebase</div>
+            <div id="firebaseUploadTotal" class="num blue" style="font-size:22px">Rp 0</div>
+            <div id="firebaseUploadInfo" class="small">Belum ada data</div>
+          </div>
+          <button id="btnUploadFirebaseIncome" class="btn" style="width:auto;min-width:112px;padding:10px" onclick="uploadFirebaseIncome()">Upload</button>
+        </div>
+      </div>
       <div class="compact-actions" style="margin-bottom:10px"><button class="btn whatsapp" onclick="sendWhatsAppReport()">Kirim WA</button><button class="btn secondary" onclick="openBackupModal()">Backup</button></div>
       <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b id="currentPeriodLabel">Riwayat</b><button class="tab" style="color:var(--red)" onclick="requestClearAll()">Reset</button></div><div id="transactionList" class="list"></div></div>
     </section>
@@ -58,8 +84,16 @@
 const SUPABASE_URL='https://myxrvipyodadnldtomzs.supabase.co';
 const SUPABASE_ANON_KEY='sb_publishable_aG-kyasJNCEk2U9fN5T4qg_GfY0FpPH';
 const OWNER_ID='rocky-hijab'; const APP_PASSWORD='170845';
+const FIREBASE_CONFIG={
+  apiKey:"AIzaSyAqmTEKnLKOXcmOoR9RrXksNe5_Fix42w8",
+  authDomain:"rocky-fd14b.firebaseapp.com",
+  projectId:"rocky-fd14b",
+  storageBucket:"rocky-fd14b.firebasestorage.app",
+  messagingSenderId:"861954349314",
+  appId:"1:861954349314:web:bb8384825daedb8d34ca1b"
+};
 let supabaseClient=null,transactions=[],zakatHistory=[],currentFilter='today',pendingAction=null,currentPage='home';
-let firebaseOmsetByDate={},firebaseTrxCountByDate={},firebaseReady=false;
+let firebaseDb=null,firebaseUnsub=null,firebaseUploadDate='',firebaseIncomeRows=[],firebaseIncomeTotal=0;
 function $(id){return document.getElementById(id)}
 function isSupabaseConfigured(){return SUPABASE_URL&&SUPABASE_ANON_KEY&&!SUPABASE_URL.includes('ISI_')&&!SUPABASE_ANON_KEY.includes('ISI_')}
 function initSupabase(){if(!isSupabaseConfigured()){showToast('Supabase belum disetting');return false}supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);return true}
@@ -69,7 +103,7 @@ function closeTransactionModal(){$('transactionModal').classList.add('hidden')}
 function getZakatHistory(){return zakatHistory||[]}
 async function loadZakatHistory(){if(!supabaseClient)return[];const{data,error}=await supabaseClient.from('zakat_history').select('*').eq('owner_id',OWNER_ID).order('id',{ascending:true});if(error)throw error;zakatHistory=(data||[]).map(r=>({id:Number(r.id),date:r.date,profitAtPayment:Number(r.profit_at_payment||0),zakatPaid:Number(r.zakat_paid||0),cancelled:!!r.cancelled,cancelledAt:r.cancelled_at,note:r.note||''}));return zakatHistory}
 async function saveZakatHistory(history){zakatHistory=history;if(!supabaseClient)return;const del=await supabaseClient.from('zakat_history').delete().eq('owner_id',OWNER_ID);if(del.error)throw del.error;if(!history.length)return;const rows=history.map(r=>({id:r.id,owner_id:OWNER_ID,date:r.date,profit_at_payment:r.profitAtPayment,zakat_paid:r.zakatPaid,cancelled:!!r.cancelled,cancelled_at:r.cancelledAt||null,note:r.note||''}));const ins=await supabaseClient.from('zakat_history').insert(rows);if(ins.error)throw ins.error}
-function getTotalProfit(){let total=0;getAllTransactionsForView().forEach(t=>{if(t.type==='income')total+=t.amount});return total*.2}
+function getTotalProfit(){let total=0;transactions.forEach(t=>{if(t.type==='income')total+=t.amount});return total*.2}
 function getTotalProfitZakatPaid(){return getZakatHistory().reduce((a,r)=>a+(!r.cancelled?r.profitAtPayment:0),0)}
 function getUnpaidProfit(){return Math.max(0,getTotalProfit()-getTotalProfitZakatPaid())}
 function getCurrentZakatDue(){return getUnpaidProfit()*.025}
@@ -77,104 +111,86 @@ function validateAndCancelInvalidZakat(){const totalProfit=getTotalProfit();let 
 async function markZakatPaid(){const due=getCurrentZakatDue();if(due<=0){showToast('Zakat sudah lunas');return}const unpaid=getUnpaidProfit();const now=new Date();const ds=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;if(confirm(`Bayar zakat ${formatRupiah(due)} dari laba ${formatRupiah(unpaid)}?`)){const h=getZakatHistory();h.push({id:Date.now(),date:ds,profitAtPayment:unpaid,zakatPaid:due,cancelled:false,note:`Zakat dari laba ${formatRupiah(unpaid)}`});try{await saveZakatHistory(h);render();showToast('Zakat tersimpan')}catch(e){showToast('Gagal simpan zakat: '+e.message)}}}
 function showZakatHistoryModal(){const h=getZakatHistory(),box=$('zakatHistoryList');box.innerHTML=h.length?h.slice().reverse().map(r=>`<div class="item ${r.cancelled?'danger-card':''}"><div class="desc"><b>${r.date} ${r.cancelled?'(Batal)':''}</b><small>Dari laba ${formatRupiah(r.profitAtPayment)}</small></div><b class="num ${r.cancelled?'red':'gold'}">${formatRupiah(r.zakatPaid)}</b></div>`).join(''):'<div class="empty">Belum ada riwayat zakat</div>';$('zakatHistoryModal').classList.remove('hidden')}
 function closeZakatHistoryModal(){$('zakatHistoryModal').classList.add('hidden')}
-async function loadTransactions(){const{data,error}=await supabaseClient.from('transactions').select('*').eq('owner_id',OWNER_ID).order('date',{ascending:false}).order('id',{ascending:false});if(error)throw error;transactions=(data||[]).map(r=>({id:Number(r.id),date:r.date,description:r.description,amount:Number(r.amount||0),type:r.type})).filter(t=>!isFirebaseSyncedTransaction(t));return transactions}
-async function saveTransaction(t){
-  if(!supabaseClient) throw new Error('Supabase belum siap');
-  const row={
-    id:Number(t.id||Date.now()),
-    owner_id:OWNER_ID,
-    date:t.date,
-    description:String(t.description||'Transaksi'),
-    amount:Number(t.amount||0),
-    type:t.type
-  };
-  let {error}=await supabaseClient.from('transactions').insert(row);
-  if(error && String(error.message||'').toLowerCase().includes('duplicate')){
-    row.id=Date.now()+Math.floor(Math.random()*999);
-    const retry=await supabaseClient.from('transactions').insert(row);
-    error=retry.error;
-  }
-  if(error) throw error;
-}
+async function loadTransactions(){const{data,error}=await supabaseClient.from('transactions').select('*').eq('owner_id',OWNER_ID).order('date',{ascending:false}).order('id',{ascending:false});if(error)throw error;transactions=(data||[]).map(r=>({id:Number(r.id),date:r.date,description:r.description,amount:Number(r.amount||0),type:r.type}));return transactions}
+async function saveTransaction(t){const{error}=await supabaseClient.from('transactions').insert({...t,owner_id:OWNER_ID});if(error)throw error}
 async function deleteTransactionFromDB(id){const{error}=await supabaseClient.from('transactions').delete().eq('owner_id',OWNER_ID).eq('id',id);if(error)throw error}
 async function clearAllTransactions(){const{error}=await supabaseClient.from('transactions').delete().eq('owner_id',OWNER_ID);if(error)throw error}
 async function importTransactions(newTransactions){await clearAllTransactions();if(!newTransactions.length)return;const rows=newTransactions.map(t=>({id:t.id,owner_id:OWNER_ID,date:t.date,description:t.description,amount:t.amount,type:t.type}));const{error}=await supabaseClient.from('transactions').insert(rows);if(error)throw error}
 function getLocalDateString(){const n=new Date();return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`}
-$('inputDate').value=getLocalDateString();$('filterStartDate').value=getLocalDateString();$('filterEndDate').value=getLocalDateString();if($('firebaseSyncDate'))$('firebaseSyncDate').value=getLocalDateString();
+$('inputDate').value=getLocalDateString();$('filterStartDate').value=getLocalDateString();$('filterEndDate').value=getLocalDateString();firebaseUploadDate=getLocalDateString();setTimeout(()=>{if($('firebaseUploadDate'))$('firebaseUploadDate').value=firebaseUploadDate},0);
 function openPasswordModal(cb){pendingAction=cb;$('passwordModal').classList.remove('hidden');$('confirmPasswordInput').value=''}function closePasswordModal(){$('passwordModal').classList.add('hidden');pendingAction=null}$('btnConfirmAction').addEventListener('click',()=>{if($('confirmPasswordInput').value===APP_PASSWORD){const a=pendingAction;closePasswordModal();if(a)a()}else{showToast('Sandi salah');$('confirmPasswordInput').value=''}});
-
-function getFirebaseSyncId(date){return Number(String(date||'').replace(/\D/g,'')+'77')}
-function isFirebaseLiveTransaction(t){return !!t && t.source==='firebase_live'}
-function isFirebaseSyncedTransaction(t){return !!t && (isFirebaseLiveTransaction(t) || String(t.description||'').toLowerCase().includes('firebase') || Number(t.id)===getFirebaseSyncId(t.date))}
-function cleanFirebaseDescription(desc){return String(desc||'').replace(/\s*\[?FIREBASE\]?\s*/ig,' ').replace(/\s+/g,' ').trim()}
-function getFirebaseLiveTransactions(){return Object.keys(firebaseOmsetByDate).sort().reverse().map(date=>({id:`fb_${date}`,date,description:`Omset Kasir Realtime`,amount:Math.round(Number(firebaseOmsetByDate[date]||0)),type:'income',source:'firebase_live',count:firebaseTrxCountByDate[date]||0})).filter(t=>t.amount>0)}
-function getAllTransactionsForView(){return [...getFirebaseLiveTransactions(),...transactions].sort((a,b)=>String(b.date).localeCompare(String(a.date)))}
-function updateFirebaseStatus(date){const st=$('firebaseSyncStatus');if(!st)return;const d=date||(($('firebaseSyncDate')&&$('firebaseSyncDate').value)||getLocalDateString());const total=Number(firebaseOmsetByDate[d]||0),count=Number(firebaseTrxCountByDate[d]||0);st.innerText=firebaseReady?`Realtime ${d}: ${formatRupiah(total)} dari ${count} transaksi Firebase. Data ini read-only dan tidak bisa dihapus/edit di Kas Pribadi.`:'Menghubungkan realtime Firebase...'}
-window.setFirebaseLiveOmsets=function(omsets,counts){firebaseOmsetByDate=omsets||{};firebaseTrxCountByDate=counts||{};firebaseReady=true;updateFirebaseStatus();render()}
-async function syncFirebaseBySelectedDate(){const date=($('firebaseSyncDate')&&$('firebaseSyncDate').value)||getLocalDateString();updateFirebaseStatus(date);showToast('Data Firebase sudah realtime read-only')}
-async function addTransaction(){try{const dateVal=$('inputDate').value,type=$('type').value;let desc=$('description').value.trim();const amount=getActualAmount($('amount').value);if(type==='income'&&!desc)desc='Omset';if(type==='expense'&&!desc){showToast('Deskripsi pengeluaran wajib');return}if(!dateVal||amount<=0){showToast('Nominal tidak valid');return}await saveTransaction({id:Date.now()+Math.floor(Math.random()*999),date:dateVal,description:desc,amount,type});await loadTransactions();render();$('description').value='';$('amount').value='';$('liveAmountPreview').innerText='';$('inputDate').value=getLocalDateString();closeTransactionModal();showToast('Transaksi tersimpan');goPage('home')}catch(e){console.error(e);showToast('Gagal simpan: '+(e.message||e),6000)}}
+async function addTransaction(){try{const dateVal=$('inputDate').value,type=$('type').value;let desc=$('description').value.trim();const amount=getActualAmount($('amount').value);if(type==='income'&&!desc)desc='Omset';if(type==='expense'&&!desc){showToast('Deskripsi pengeluaran wajib');return}if(!dateVal||amount<=0){showToast('Nominal tidak valid');return}await saveTransaction({id:Date.now(),date:dateVal,description:desc,amount,type});await loadTransactions();render();$('description').value='';$('amount').value='';$('liveAmountPreview').innerText='';$('inputDate').value=getLocalDateString();closeTransactionModal();showToast('Transaksi tersimpan');goPage('home')}catch(e){showToast('Gagal simpan: '+e.message)}}
 function changeFilter(f){currentFilter=f;$('rangeSelector').classList.toggle('hidden',f!=='range');updateFilterUI();render()}function updateFilterUI(){['today','month','range','all'].forEach(f=>{const el=$('filter-'+f);if(el)el.classList.toggle('active',f===currentFilter)})}
-async function deleteTransaction(id){const trx=getAllTransactionsForView().find(t=>String(t.id)===String(id));if(isFirebaseLiveTransaction(trx)){showToast('Data Firebase realtime tidak bisa dihapus dari Kas Pribadi');return}openPasswordModal(async()=>{try{await deleteTransactionFromDB(id);await loadTransactions();validateAndCancelInvalidZakat();render();showToast('Transaksi dihapus')}catch(e){showToast('Gagal hapus: '+e.message)}})}
+async function deleteTransaction(id){const t=transactions.find(x=>Number(x.id)===Number(id));if(t&&isFirebaseUploaded(t)){showToast('Data Firebase LOCK. Update dari tombol Upload, bukan dihapus.');return}openPasswordModal(async()=>{try{await deleteTransactionFromDB(id);await loadTransactions();validateAndCancelInvalidZakat();render();showToast('Transaksi dihapus')}catch(e){showToast('Gagal hapus: '+e.message)}})}
 async function requestClearAll(){openPasswordModal(async()=>{if(confirm('Hapus semua data?')){try{await clearAllTransactions();await saveZakatHistory([]);await loadTransactions();render();showToast('Semua data dihapus')}catch(e){showToast('Gagal reset: '+e.message)}}})}
 function formatRupiah(n){return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',minimumFractionDigits:0}).format(n||0)}function getActualAmount(raw){if(!raw||isNaN(raw))return 0;return parseFloat(raw)*1000}function handleSmartAmount(input){$('liveAmountPreview').innerText=input.value?formatRupiah(getActualAmount(input.value)):''}function updatePlaceholder(){$('description').placeholder=$('type').value==='expense'?'Contoh: Makan, listrik':'Omset (boleh kosong)'}
-function getFilteredTransactions(){const now=getLocalDateString(),s=$('filterStartDate').value,e=$('filterEndDate').value;return getAllTransactionsForView().filter(t=>currentFilter==='today'?t.date===now:currentFilter==='month'?t.date.startsWith(now.substring(0,7)):currentFilter==='range'?t.date>=s&&t.date<=e:true)}
+function getFilteredTransactions(){const now=getLocalDateString(),s=$('filterStartDate').value,e=$('filterEndDate').value;return transactions.filter(t=>currentFilter==='today'?t.date===now:currentFilter==='month'?t.date.startsWith(now.substring(0,7)):currentFilter==='range'?t.date>=s&&t.date<=e:true)}
 function getPeriodLabel(){const now=getLocalDateString();if(currentFilter==='today')return `Hari Ini (${now})`;if(currentFilter==='month')return `Bulan Ini`;if(currentFilter==='range')return `${$('filterStartDate').value} s.d ${$('filterEndDate').value}`;return 'Semua Riwayat'}
 function generateWhatsAppReport(){const f=getFilteredTransactions();let ti=0,te=0,inc=[],exp=[];f.forEach(t=>{if(t.type==='income'){ti+=t.amount;inc.push(`📥 ${t.date} | ${t.description} | +${formatRupiah(t.amount)}`)}else{te+=t.amount;exp.push(`📤 ${t.date} | ${t.description} | -${formatRupiah(t.amount)}`)}});let r=`📊 *LAPORAN ROCKY HIJAB*\nPeriode: ${getPeriodLabel()}\n\n💚 Pemasukan: ${formatRupiah(ti)}\n❤️ Pengeluaran: ${formatRupiah(te)}\n💙 Saldo: ${formatRupiah(ti-te)}\n💜 Laba 20%: ${formatRupiah(ti*.2)}\n🕌 Zakat wajib: ${formatRupiah(getCurrentZakatDue())}\n\n`;if(inc.length)r+=`*PEMASUKAN*\n${inc.join('\n')}\n\n`;if(exp.length)r+=`*PENGELUARAN*\n${exp.join('\n')}\n\n`;return r+'_Dikirim dari Rocky Hijab Finance_'}
 function sendWhatsAppReport(){if(!getFilteredTransactions().length){showToast('Tidak ada transaksi');return}const no=prompt('Nomor WhatsApp tujuan. Kosongkan untuk copy laporan.','');const report=generateWhatsAppReport();if(no&&no.trim()){let n=no.replace(/[^0-9]/g,'');if(n.startsWith('0'))n='62'+n.slice(1);if(!n.startsWith('62'))n='62'+n;window.open(`https://wa.me/${n}?text=${encodeURIComponent(report)}`,'_blank');showToast('Membuka WhatsApp')}else{navigator.clipboard.writeText(report).then(()=>showToast('Laporan disalin')).catch(()=>showToast('Gagal salin'))}}
-function render(){const f=getFilteredTransactions();let ti=0,te=0;f.forEach(t=>{if(t.type==='income')ti+=t.amount;else te+=t.amount});const profit=ti*.2,net=ti-te,usage=profit>0?(te/profit)*100:0;$('totalIncome').innerText=formatRupiah(ti);$('totalExpense').innerText=formatRupiah(te);$('autoProfit').innerText=formatRupiah(profit);$('netBalance').innerText=formatRupiah(net);const remainingOps=profit-te;$('spendingLimit').innerText=formatRupiah(te);$('operationalUsed').innerText=formatRupiah(remainingOps);$('operationalTotal').innerText=formatRupiah(profit);const spentEl=$('operationalSpent');if(spentEl)spentEl.innerText=formatRupiah(te);validateAndCancelInvalidZakat();const totalProfit=getTotalProfit(),paid=getTotalProfitZakatPaid(),unpaid=getUnpaidProfit(),due=getCurrentZakatDue();$('zakatAmountLarge').innerText=formatRupiah(due);$('totalProfitDisplay').innerText=formatRupiah(totalProfit);$('totalZakatPaidProfit').innerText=formatRupiah(paid);$('unpaidProfitDisplay').innerText=formatRupiah(unpaid);const pay=$('payZakatBtn'),zs=$('zakatPaymentStatusText');if(totalProfit<=0){zs.innerText='Belum ada laba';pay.disabled=true;pay.style.opacity=.5}else if(due<=0){zs.innerText='Zakat lunas';pay.disabled=true;pay.style.opacity=.5}else{zs.innerText='Wajib dibayar';pay.disabled=false;pay.style.opacity=1}const h=getZakatHistory(),prev=$('zakatHistoryPreview'),mini=$('zakatHistoryMiniList');if(h.length){prev.style.display='flex';const valid=h.filter(x=>!x.cancelled).slice(-2).reverse();mini.innerHTML=valid.length?valid.map(x=>`<span class="chip">${formatRupiah(x.zakatPaid)}</span>`).join(''):'<span class="chip">Zakat batal</span>'}else prev.style.display='none';const over=te>profit&&profit>0;$('operationalCard').className='card '+(over?'danger-card':'safe-card');$('limitWarning').innerText=over?'Over budget: pengeluaran lebih dari 20% omset':'';$('statusText').innerText=over?'Bahaya':'Aman';$('statusBadge').style.background=over?'#fff0ee':'#e9f7ef';$('statusBadge').style.color=over?'#c0392b':'#176b43';$('currentPeriodLabel').innerText=getPeriodLabel();const list=$('transactionList');if(!f.length){list.innerHTML='<div class="empty">Belum ada transaksi</div>';return}list.innerHTML=f.slice(0,80).map(t=>{const fb=isFirebaseSyncedTransaction(t);return `<div class="item ${fb?'sync-card':''}"><div class="left"><div class="icon ${t.type==='income'?'in':'out'}">${t.type==='income'?'+':'-'}</div><div class="desc"><b>${escapeHtml(cleanFirebaseDescription(t.description))}</b><small>${t.date}${fb?' <span class="chip-firebase">DARI FIREBASE</span>':''}</small></div></div><div class="right"><b class="num ${t.type==='income'?'green':'red'}">${t.type==='income'?'+':'-'}${formatRupiah(t.amount).replace('Rp','')}</b>${isFirebaseLiveTransaction(t)?'<span class="chip-firebase" style="margin-left:6px">LOCK</span>':`<button class="x" onclick="deleteTransaction(${t.id})">×</button>`}</div></div>`}).join('')+(f.length>80?`<div class="empty">Ditampilkan 80 dari ${f.length} data biar ringan</div>`:'')}
+
+function isFirebaseUploaded(t){return String(t.description||'').startsWith('[FIREBASE:')}
+function cleanFirebaseDesc(desc){return String(desc||'').replace(/^\[FIREBASE:\d{4}-\d{2}-\d{2}\]\s*/,'')}
+function getFirebaseUploadId(date){return Number(String(date||'').replace(/\D/g,'')+'777')}
+function getUploadedFirebaseTransaction(date){const id=getFirebaseUploadId(date);return transactions.find(t=>Number(t.id)===id || String(t.description||'').startsWith(`[FIREBASE:${date}]`))}
+function initFirebase(){try{if(!window.firebase)return false;if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);firebaseDb=firebase.firestore();return true}catch(e){console.error(e);showToast('Firebase gagal aktif: '+e.message);return false}}
+function changeFirebaseUploadDate(date){firebaseUploadDate=date||getLocalDateString();startFirebaseWatch(firebaseUploadDate)}
+function refreshFirebaseUpload(){startFirebaseWatch(firebaseUploadDate||getLocalDateString());showToast('Data Firebase direfresh')}
+function startFirebaseWatch(date){
+  if(!firebaseDb)return;
+  firebaseUploadDate=date||getLocalDateString();
+  if($('firebaseUploadDate'))$('firebaseUploadDate').value=firebaseUploadDate;
+  if(firebaseUnsub){firebaseUnsub();firebaseUnsub=null}
+  const q=firebaseDb.collection('transactions').where('dateKey','==',firebaseUploadDate);
+  firebaseUnsub=q.onSnapshot(snap=>{
+    firebaseIncomeRows=snap.docs.map(d=>({id:d.id,...d.data()})).filter(t=>!t.deleted);
+    firebaseIncomeTotal=firebaseIncomeRows.reduce((a,b)=>a+Number(b.amount||0),0);
+    renderFirebaseUploadCard();
+  },err=>{console.error(err);showToast('Gagal baca Firebase: '+err.message)})
+}
+function renderFirebaseUploadCard(){
+  const totalEl=$('firebaseUploadTotal'),statusEl=$('firebaseUploadStatus'),infoEl=$('firebaseUploadInfo'),btn=$('btnUploadFirebaseIncome');
+  if(!totalEl||!statusEl||!infoEl||!btn)return;
+  totalEl.innerText=formatRupiah(firebaseIncomeTotal);
+  const uploaded=getUploadedFirebaseTransaction(firebaseUploadDate);
+  const count=firebaseIncomeRows.length;
+  if(firebaseIncomeTotal<=0){
+    statusEl.className='firebase-status st-pending';statusEl.innerText='Belum Ada';
+    infoEl.innerText=`${firebaseUploadDate} · belum ada omset Firebase`;
+    btn.disabled=true;btn.innerText='Upload';
+  }else if(!uploaded){
+    statusEl.className='firebase-status st-pending';statusEl.innerText='Belum Upload';
+    infoEl.innerText=`${count} transaksi Firebase · belum masuk Kas Pribadi`;
+    btn.disabled=false;btn.innerText='Upload';
+  }else if(Number(uploaded.amount||0)!==Number(firebaseIncomeTotal||0)){
+    statusEl.className='firebase-status st-update';statusEl.innerText='Perlu Update';
+    infoEl.innerText=`Sudah upload ${formatRupiah(uploaded.amount)}, Firebase sekarang ${formatRupiah(firebaseIncomeTotal)}`;
+    btn.disabled=false;btn.innerText='Update';
+  }else{
+    statusEl.className='firebase-status st-uploaded';statusEl.innerText='Sudah Upload';
+    infoEl.innerText=`Sinkron · ${count} transaksi Firebase`;
+    btn.disabled=true;btn.innerText='Sudah';
+  }
+}
+async function uploadFirebaseIncome(){
+  if(!supabaseClient)return showToast('Supabase belum aktif');
+  if(!firebaseIncomeTotal||firebaseIncomeTotal<=0)return showToast('Omset Firebase kosong');
+  const date=firebaseUploadDate||getLocalDateString();
+  const row={id:getFirebaseUploadId(date),owner_id:OWNER_ID,date,description:`[FIREBASE:${date}] Omset Kasir Firebase`,amount:Number(firebaseIncomeTotal),type:'income'};
+  try{
+    const {error}=await supabaseClient.from('transactions').upsert(row,{onConflict:'id'});
+    if(error)throw error;
+    await loadTransactions();
+    render();
+    showToast('Omset Firebase berhasil diupload ke Kas Pribadi');
+  }catch(e){showToast('Gagal upload: '+e.message)}
+}
+function render(){const f=getFilteredTransactions();let ti=0,te=0;f.forEach(t=>{if(t.type==='income')ti+=t.amount;else te+=t.amount});const profit=ti*.2,net=ti-te,usage=profit>0?(te/profit)*100:0;$('totalIncome').innerText=formatRupiah(ti);$('totalExpense').innerText=formatRupiah(te);$('autoProfit').innerText=formatRupiah(profit);$('netBalance').innerText=formatRupiah(net);const remainingOps=profit-te;$('spendingLimit').innerText=formatRupiah(te);$('operationalUsed').innerText=formatRupiah(remainingOps);$('operationalTotal').innerText=formatRupiah(profit);const spentEl=$('operationalSpent');if(spentEl)spentEl.innerText=formatRupiah(te);validateAndCancelInvalidZakat();const totalProfit=getTotalProfit(),paid=getTotalProfitZakatPaid(),unpaid=getUnpaidProfit(),due=getCurrentZakatDue();$('zakatAmountLarge').innerText=formatRupiah(due);$('totalProfitDisplay').innerText=formatRupiah(totalProfit);$('totalZakatPaidProfit').innerText=formatRupiah(paid);$('unpaidProfitDisplay').innerText=formatRupiah(unpaid);const pay=$('payZakatBtn'),zs=$('zakatPaymentStatusText');if(totalProfit<=0){zs.innerText='Belum ada laba';pay.disabled=true;pay.style.opacity=.5}else if(due<=0){zs.innerText='Zakat lunas';pay.disabled=true;pay.style.opacity=.5}else{zs.innerText='Wajib dibayar';pay.disabled=false;pay.style.opacity=1}const h=getZakatHistory(),prev=$('zakatHistoryPreview'),mini=$('zakatHistoryMiniList');if(h.length){prev.style.display='flex';const valid=h.filter(x=>!x.cancelled).slice(-2).reverse();mini.innerHTML=valid.length?valid.map(x=>`<span class="chip">${formatRupiah(x.zakatPaid)}</span>`).join(''):'<span class="chip">Zakat batal</span>'}else prev.style.display='none';const over=te>profit&&profit>0;$('operationalCard').className='card '+(over?'danger-card':'safe-card');$('limitWarning').innerText=over?'Over budget: pengeluaran lebih dari 20% omset':'';$('statusText').innerText=over?'Bahaya':'Aman';$('statusBadge').style.background=over?'#fff0ee':'#e9f7ef';$('statusBadge').style.color=over?'#c0392b':'#176b43';$('currentPeriodLabel').innerText=getPeriodLabel();const list=$('transactionList');if(!f.length){list.innerHTML='<div class="empty">Belum ada transaksi</div>';renderFirebaseUploadCard();return}list.innerHTML=f.slice(0,80).map(t=>`<div class="item"><div class="left"><div class="icon ${t.type==='income'?'in':'out'}">${t.type==='income'?'+':'-'}</div><div class="desc"><b>${escapeHtml(cleanFirebaseDesc(t.description))}${isFirebaseUploaded(t)?'<span class="lock-badge">FIREBASE LOCK</span>':''}</b><small>${t.date}</small></div></div><div class="right"><b class="num ${t.type==='income'?'green':'red'}">${t.type==='income'?'+':'-'}${formatRupiah(t.amount).replace('Rp','')}</b>${isFirebaseUploaded(t)?'<div class="small blue" style="font-weight:900">Uploaded</div>':`<button class="x" onclick="deleteTransaction(${t.id})">×</button>`}</div></div>`).join('')+(f.length>80?`<div class="empty">Ditampilkan 80 dari ${f.length} data biar ringan</div>`:'');renderFirebaseUploadCard()}
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
 function openBackupModal(){if(!transactions.length){showToast('Data kosong');return}$('backupOptionModal').classList.remove('hidden')}function closeBackupModal(){$('backupOptionModal').classList.add('hidden')}function showImportModal(){closeBackupModal();$('importModal').classList.remove('hidden')}function closeImportModal(){$('importModal').classList.add('hidden');$('importDataText').value=''}function exportToFile(){const blob=new Blob([JSON.stringify(transactions,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`rocky_backup_${getLocalDateString()}.json`;a.click();URL.revokeObjectURL(url);closeBackupModal();showToast('Backup tersimpan')}function copyToClipboard(){navigator.clipboard.writeText(JSON.stringify(transactions)).then(()=>{closeBackupModal();showToast('Data disalin')}).catch(()=>showToast('Gagal salin'))}
 async function importFromText(){try{const raw=$('importDataText').value.trim();if(!raw){showToast('Data kosong');return}const imported=JSON.parse(raw);if(!Array.isArray(imported))throw new Error('format');const ok=imported.every(i=>i.id&&i.date&&i.description&&typeof i.amount==='number'&&(i.type==='income'||i.type==='expense'));if(!ok)throw new Error('format');await importTransactions(imported);await loadTransactions();render();closeImportModal();showToast('Import berhasil')}catch(e){showToast('Format JSON salah')}}
 function showToast(message,duration=2600){const old=document.querySelector('.toast');if(old)old.remove();const t=document.createElement('div');t.className='toast';t.textContent=message;document.body.appendChild(t);setTimeout(()=>t.remove(),duration)}
-async function initApp(){try{if(!initSupabase())return;await loadTransactions();await loadZakatHistory();render();showToast('Supabase tersambung')}catch(e){console.error(e);showToast('Gagal konek: '+e.message,6000)}}initApp();
-</script>
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-  import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyAqmTEKnLKOXcmOoR9RrXksNe5_Fix42w8",
-    authDomain: "rocky-fd14b.firebaseapp.com",
-    projectId: "rocky-fd14b",
-    storageBucket: "rocky-fd14b.firebasestorage.app",
-    messagingSenderId: "861954349314",
-    appId: "1:861954349314:web:bb8384825daedb8d34ca1b"
-  };
-
-  const fbApp = initializeApp(firebaseConfig, 'rocky-finance-readonly');
-  const fbDb = getFirestore(fbApp);
-
-  function getDateKey(t){
-    if (t.dateKey) return String(t.dateKey).slice(0,10);
-    if (t.createdAt?.toDate) return t.createdAt.toDate().toLocaleDateString('en-CA', { timeZone:'Asia/Jakarta' });
-    if (t.createdAtMs) return new Date(Number(t.createdAtMs)).toLocaleDateString('en-CA', { timeZone:'Asia/Jakarta' });
-    if (typeof t.time === 'string' && t.time.length >= 10) return t.time.slice(0,10);
-    return '';
-  }
-
-  onSnapshot(collection(fbDb, 'transactions'), (snap) => {
-    const omsets = {};
-    const counts = {};
-    snap.forEach(docSnap => {
-      const t = docSnap.data() || {};
-      if (t.deleted === true || t.deleted === 'true') return;
-      const dateKey = getDateKey(t);
-      if (!dateKey) return;
-      omsets[dateKey] = (omsets[dateKey] || 0) + Number(t.amount || 0);
-      counts[dateKey] = (counts[dateKey] || 0) + 1;
-    });
-    if (window.setFirebaseLiveOmsets) window.setFirebaseLiveOmsets(omsets, counts);
-  }, (err) => {
-    console.error('Firebase realtime error:', err);
-    const st = document.getElementById('firebaseSyncStatus');
-    if (st) st.innerText = 'Gagal realtime Firebase: ' + (err.message || err);
-  });
-
-  setTimeout(() => {
-    const st = document.getElementById('firebaseSyncStatus');
-    if (st) st.innerText = 'Menghubungkan realtime Firebase read-only...';
-  }, 500);
+async function initApp(){try{if(!initSupabase())return;initFirebase();await loadTransactions();await loadZakatHistory();render();if(firebaseDb)startFirebaseWatch(firebaseUploadDate||getLocalDateString());showToast('Supabase tersambung')}catch(e){console.error(e);showToast('Gagal konek: '+e.message,6000)}}initApp();
 </script>
 </body>
 </html>
