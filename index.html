@@ -230,9 +230,16 @@ async function requestClearAll(){openPasswordModal(async()=>{if(confirm('Hapus s
 function formatRupiah(n){return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',minimumFractionDigits:0}).format(n||0)}function getActualAmount(raw){if(!raw||isNaN(raw))return 0;return parseFloat(raw)*1000}function handleSmartAmount(input){$('liveAmountPreview').innerText=input.value?formatRupiah(getActualAmount(input.value)):''}function updatePlaceholder(){$('description').placeholder=$('type').value==='expense'?'Contoh: Makan, listrik':'Omset (boleh kosong)'}
 function getGrossIncomeForRange(mode){
   const today=getLocalDateString(), month=today.slice(0,7);
+  if(mode==='today'){
+    // Logika Hari Ini sama dengan Riwayat Hari Ini:
+    // Firebase hari ini realtime + pemasukan manual Kas Pribadi hari ini.
+    const manualToday=(transactions||[])
+      .filter(t=>t.type==='income' && t.date===today && !isFirebaseUploaded(t))
+      .reduce((sum,t)=>sum+Number(t.amount||0),0);
+    return manualToday + Number(todayFirebaseIncomeTotal||0);
+  }
   const rows=transactions.filter(t=>{
     if(t.type!=='income')return false;
-    if(mode==='today')return t.date===today;
     if(mode==='month')return String(t.date||'').startsWith(month);
     return true;
   });
@@ -601,7 +608,8 @@ function render(){
 
   // List Riwayat tetap mengikuti filter yang sedang dipilih.
   const f=getFilteredTransactions();
-  $('currentPeriodLabel').innerText=getPeriodLabel();
+  const periodTotal=f.reduce((sum,t)=>t.type==='income'?sum+Number(t.amount||0):sum,0);
+  $('currentPeriodLabel').innerText=currentFilter==='today' ? `${getPeriodLabel()} · ${formatRupiah(periodTotal)}` : getPeriodLabel();
   const list=$('transactionList');
   if(!list){renderFirebaseUploadCard();return}
   if(!f.length){list.innerHTML='<div class="empty">Belum ada transaksi</div>';renderFirebaseUploadCard();return}
