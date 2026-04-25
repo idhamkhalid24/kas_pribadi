@@ -62,10 +62,10 @@
 
     <section id="pageHome" class="page active">
       <div class="hero"><div class="label">Saldo Bersih · Semua Data Supabase</div><div id="netBalance" class="value num">Rp 0</div><div class="mini"><span>Masuk <b id="totalIncome">Rp 0</b></span><span>Keluar <b id="totalExpense" onclick="showExpenseListModal()" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px">Rp 0</b></span></div></div>
-      <div class="card" style="margin-bottom:10px;background:#f3fbf6;border-color:#ccefd9">
+      <div id="todayIncomeCard" class="card" style="margin-bottom:10px;background:#f3fbf6;border-color:#ccefd9">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
           <div>
-            <div class="section-title" style="margin:0 0 4px;color:var(--green)">Pendapatan Hari Ini</div>
+            <div id="todayIncomeSectionTitle" class="section-title" style="margin:0 0 4px;color:var(--green)">Pendapatan Hari Ini</div>
             <div id="todayFirebaseIncomeHome" class="num green" style="font-size:24px">Rp 0</div>
             <div id="todayFirebaseIncomeInfo" class="small">Firebase + Manual - Pengeluaran hari ini</div>
           </div>
@@ -86,12 +86,13 @@
     <section id="pageHistory" class="page">
       <div id="netSummaryCard" class="summary-net-card">
         <div class="summary-net-head"><div><b>Ringkasan Pendapatan Bersih</b><small style="display:block">Pendapatan Firebase + Manual dikurangi Pengeluaran</small></div><span class="pill">Supabase</span></div>
-        <div class="summary-net-grid">
+        <div class="summary-net-grid" style="grid-template-columns:1fr 1fr">
           <div class="summary-net-box"><span>Hari Ini</span><b id="netTodaySummary" class="num green">Rp 0</b></div>
           <div class="summary-net-box"><span>Bulan Ini</span><b id="netMonthSummary" class="num blue">Rp 0</b></div>
           <div class="summary-net-box"><span>Semua</span><b id="netAllSummary" class="num gold">Rp 0</b></div>
+          <div class="summary-net-box" id="netRangeBox" style="display:none"><span id="netRangeLabel">Custom</span><b id="netRangeSummary" class="num" style="color:var(--ink)">Rp 0</b></div>
         </div>
-        <div id="netSummaryNote" class="small" style="margin-top:8px;color:#2563eb;font-weight:800">Pendapatan ini menghitung Firebase + pemasukan manual dikurangi pengeluaran pada masing-masing periode.</div>
+        <div id="netSummaryNote" class="small" style="margin-top:8px;color:#2563eb;font-weight:800">Semua angka = pemasukan (Firebase + manual) <b>dikurangi pengeluaran</b> per periode.</div>
       </div>
       <div class="tabs"><button onclick="changeFilter('today')" id="filter-today" class="tab active">Hari Ini</button><button onclick="changeFilter('month')" id="filter-month" class="tab">Bulan Ini</button><button onclick="changeFilter('range')" id="filter-range" class="tab">Custom</button><button onclick="changeFilter('all')" id="filter-all" class="tab">Semua</button></div>
       <div id="rangeSelectorHistory" class="card hidden" style="margin-bottom:10px"><div class="row"><input type="date" id="filterStartDateHistory" onchange="onHistoryRangeChange()"><input type="date" id="filterEndDateHistory" onchange="onHistoryRangeChange()"></div></div>
@@ -262,9 +263,21 @@ function getGrossIncomeForRange(mode,startDate,endDate){
 function updateNetSummary(){
   const s=$('filterStartDate')?$('filterStartDate').value:'', e=$('filterEndDate')?$('filterEndDate').value:'';
   const todayGross=getGrossIncomeForRange('today'), monthGross=getGrossIncomeForRange('month'), allGross=getGrossIncomeForRange('all');
+  const rangeGross=getGrossIncomeForRange('range',s,e);
   if($('netTodaySummary')){$('netTodaySummary').innerText=formatRupiah(todayGross);$('netTodaySummary').className='num '+(todayGross>=0?'green':'red')}
   if($('netMonthSummary')){$('netMonthSummary').innerText=formatRupiah(monthGross);$('netMonthSummary').className='num '+(monthGross>=0?'blue':'red')}
   if($('netAllSummary')){$('netAllSummary').innerText=formatRupiah(allGross);$('netAllSummary').className='num '+(allGross>=0?'gold':'red')}
+  // Kotak Custom: muncul hanya kalau filter range aktif
+  const rangeBox=$('netRangeBox');
+  if(rangeBox){
+    if(currentFilter==='range'&&s&&e){
+      rangeBox.style.display='';
+      const lbl=$('netRangeLabel');if(lbl)lbl.innerText=`${s.slice(5)} s.d ${e.slice(5)}`;
+      const val=$('netRangeSummary');if(val){val.innerText=formatRupiah(rangeGross);val.className='num '+(rangeGross>=0?'green':'red');}
+    } else {
+      rangeBox.style.display='none';
+    }
+  }
 }
 function getTodayManualTransactions(){
   const today=getLocalDateString();
@@ -312,7 +325,11 @@ function renderTodayFirebaseIncomeHome(){
   const expenseTotal=expenseRows.reduce((sum,t)=>sum+Number(t.amount||0),0);
   const total=manualTotal+fbTotal-expenseTotal;
   const fbCount=(todayFirebaseIncomeRows||[]).length;
-  if(totalEl)totalEl.innerText=formatRupiah(total);
+  if(totalEl){totalEl.innerText=formatRupiah(total);totalEl.className='num '+(total>=0?'green':'red');totalEl.style.fontSize='24px';}
+  // Fix 7: warna card berubah merah kalau pendapatan negatif
+  const card=$('todayIncomeCard'),titleEl=$('todayIncomeSectionTitle');
+  if(card){card.style.background=total<0?'#fff6f4':'#f3fbf6';card.style.borderColor=total<0?'#ffd7d0':'#ccefd9';}
+  if(titleEl){titleEl.style.color=total<0?'var(--red)':'var(--green)';}
   if(infoEl){
     const parts=[];
     if(fbTotal>0)parts.push(`Firebase ${formatRupiah(fbTotal)} (${fbCount} trx)`);
@@ -625,8 +642,10 @@ function render(){
 
   // List Riwayat tetap mengikuti filter yang sedang dipilih.
   const f=getFilteredTransactions();
-  const periodTotal=f.reduce((sum,t)=>t.type==='income'?sum+Number(t.amount||0):sum,0);
-  $('currentPeriodLabel').innerText=currentFilter==='today' ? `${getPeriodLabel()} · ${formatRupiah(periodTotal)}` : getPeriodLabel();
+  const periodIncome=f.reduce((sum,t)=>t.type==='income'?sum+Number(t.amount||0):sum,0);
+  const periodExpense=f.reduce((sum,t)=>t.type==='expense'?sum+Number(t.amount||0):sum,0);
+  const periodNet=periodIncome-periodExpense;
+  $('currentPeriodLabel').innerText=`${getPeriodLabel()} · ${formatRupiah(periodNet)}`;
   const list=$('transactionList');
   if(!list){renderFirebaseUploadCard();return}
   if(!f.length){list.innerHTML='<div class="empty">Belum ada transaksi</div>';renderFirebaseUploadCard();return}
@@ -634,8 +653,21 @@ function render(){
   renderFirebaseUploadCard();
 }
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
-function openBackupModal(){if(!transactions.length){showToast('Data kosong');return}$('backupOptionModal').classList.remove('hidden')}function closeBackupModal(){$('backupOptionModal').classList.add('hidden')}function showImportModal(){closeBackupModal();$('importModal').classList.remove('hidden')}function closeImportModal(){$('importModal').classList.add('hidden');$('importDataText').value=''}function exportToFile(){const blob=new Blob([JSON.stringify(transactions,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`rocky_backup_${getLocalDateString()}.json`;a.click();URL.revokeObjectURL(url);closeBackupModal();showToast('Backup tersimpan')}function copyToClipboard(){navigator.clipboard.writeText(JSON.stringify(transactions)).then(()=>{closeBackupModal();showToast('Data disalin')}).catch(()=>showToast('Gagal salin'))}
-async function importFromText(){try{const raw=$('importDataText').value.trim();if(!raw){showToast('Data kosong');return}const imported=JSON.parse(raw);if(!Array.isArray(imported))throw new Error('format');const ok=imported.every(i=>i.id&&i.date&&i.description&&typeof i.amount==='number'&&(i.type==='income'||i.type==='expense'));if(!ok)throw new Error('format');await importTransactions(imported);await loadTransactions();render();closeImportModal();showToast('Import berhasil')}catch(e){showToast('Format JSON salah')}}
+function openBackupModal(){if(!transactions.length&&!zakatHistory.length){showToast('Data kosong');return}$('backupOptionModal').classList.remove('hidden')}function closeBackupModal(){$('backupOptionModal').classList.add('hidden')}function showImportModal(){closeBackupModal();$('importModal').classList.remove('hidden')}function closeImportModal(){$('importModal').classList.add('hidden');$('importDataText').value=''}function exportToFile(){const payload={transactions,zakatHistory};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`rocky_backup_${getLocalDateString()}.json`;a.click();URL.revokeObjectURL(url);closeBackupModal();showToast('Backup tersimpan (transaksi + zakat)')}function copyToClipboard(){const payload={transactions,zakatHistory};navigator.clipboard.writeText(JSON.stringify(payload)).then(()=>{closeBackupModal();showToast('Data disalin (transaksi + zakat)')}).catch(()=>showToast('Gagal salin'))}
+async function importFromText(){try{const raw=$('importDataText').value.trim();if(!raw){showToast('Data kosong');return}const parsed=JSON.parse(raw);
+  // Support format baru {transactions, zakatHistory} dan format lama (array langsung)
+  let importedTx=[], importedZakat=[];
+  if(Array.isArray(parsed)){
+    importedTx=parsed; // format lama
+  } else if(parsed&&Array.isArray(parsed.transactions)){
+    importedTx=parsed.transactions;
+    importedZakat=Array.isArray(parsed.zakatHistory)?parsed.zakatHistory:[];
+  } else throw new Error('format');
+  const ok=importedTx.every(i=>i.id&&i.date&&i.description&&typeof i.amount==='number'&&(i.type==='income'||i.type==='expense'));
+  if(!ok)throw new Error('format');
+  await importTransactions(importedTx);
+  if(importedZakat.length){await saveZakatHistory(importedZakat);}
+  await loadTransactions();await loadZakatHistory();render();closeImportModal();showToast('Import berhasil'+(importedZakat.length?` (${importedZakat.length} zakat restore)`:''))}catch(e){showToast('Format JSON salah')}}
 function showToast(message,duration=2600){const old=document.querySelector('.toast');if(old)old.remove();const t=document.createElement('div');t.className='toast';t.textContent=message;document.body.appendChild(t);setTimeout(()=>t.remove(),duration)}
 function showExpenseListModal(){
   const expenses=getDashboardTransactions().filter(t=>t.type==='expense');
