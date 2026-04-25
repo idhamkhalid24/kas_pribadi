@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Rocky Hijab Finance v23 Sync Firebase</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
   <style>
@@ -175,7 +176,11 @@
         <div class="stat" onclick="showExpenseListModalFiltered()" style="cursor:pointer;border-color:#ffd7d0;background:#fff8f6"><span id="expenseFilteredLabel">Pengeluaran Hari Ini</span><b id="expenseFilteredSummary" class="red num">Rp 0</b><div style="font-size:9px;color:var(--red);font-weight:900;margin-top:3px">Tap untuk lihat detail</div></div>
         <div class="stat" onclick="showExpenseListModal()" style="cursor:pointer;border-color:#ffd7d0;background:#fff8f6"><span>Total Semua Pengeluaran</span><b id="expenseAllSummary" class="red num">Rp 0</b><div style="font-size:9px;color:var(--red);font-weight:900;margin-top:3px">Tap untuk lihat semua</div></div>
       </div>
-      <div class="compact-actions" style="margin-bottom:10px"><button class="btn whatsapp" onclick="sendWhatsAppReport()">Kirim WA</button><button class="btn secondary" onclick="openBackupModal()">Backup</button></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+        <button class="btn whatsapp" onclick="sendWhatsAppReport()">Kirim WA</button>
+        <button class="btn secondary" onclick="openBackupModal()">Backup</button>
+        <button class="btn" style="background:#1a7f4b" onclick="downloadXlsMonth()">⬇ XLS</button>
+      </div>
       <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b id="currentPeriodLabel">Riwayat</b><button class="tab" style="color:var(--red)" onclick="requestClearAll()">Reset</button></div><div id="transactionList" class="list"></div></div>
     </section>
 
@@ -958,6 +963,144 @@ function showExpenseListModal(){
   $('expenseListModal').classList.remove('hidden');
 }
 function closeExpenseListModal(){$('expenseListModal').classList.add('hidden');}
+
+// =====================================================
+// DOWNLOAD REKAP BULANAN XLS
+// =====================================================
+function downloadXlsMonth(){
+  if(typeof XLSX==='undefined'){showToast('Library XLS belum siap, coba lagi');return;}
+
+  // Tentukan bulan yang akan direkap berdasarkan filter aktif
+  const today=getLocalDateString();
+  const thisMonth=today.slice(0,7);
+  let targetMonth=thisMonth;
+  let monthLabel='';
+
+  if(currentFilter==='month'||currentFilter==='today'){
+    targetMonth=thisMonth;
+  } else if(currentFilter==='range'){
+    const s=$('filterStartDate')?$('filterStartDate').value:'';
+    targetMonth=s?s.slice(0,7):thisMonth;
+  }
+  // Format label bulan: "April 2026"
+  const [yr,mo]=targetMonth.split('-');
+  const bulanNames=['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  monthLabel=`${bulanNames[parseInt(mo)]} ${yr}`;
+
+  // Ambil semua transaksi bulan tersebut
+  const allTx=getDashboardTransactions();
+  const monthTx=allTx.filter(t=>String(t.date||'').startsWith(targetMonth));
+  monthTx.sort((a,b)=>a.date.localeCompare(b.date)||(a.id-b.id));
+
+  // Hitung ringkasan
+  const totalIncome=monthTx.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount||0),0);
+  const totalExpense=monthTx.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount||0),0);
+  const laba20=totalIncome*0.2;
+  const zakatDue=laba20*0.025;
+  const saldoBersih=totalIncome-totalExpense;
+
+  // Format currency tanpa simbol
+  const rp=n=>new Intl.NumberFormat('id-ID').format(Math.round(n||0));
+
+  const wb=XLSX.utils.book_new();
+
+  // ── SHEET 1: RINGKASAN ──
+  const summaryData=[
+    ['REKAP KEUANGAN ROCKY HIJAB'],
+    [`Bulan: ${monthLabel}`],
+    [`Dicetak: ${today}`],
+    [],
+    ['RINGKASAN'],
+    ['Keterangan','Nominal (Rp)'],
+    ['Total Pendapatan',totalIncome],
+    ['Total Pengeluaran',totalExpense],
+    ['Saldo Bersih',saldoBersih],
+    ['Laba Bersih (20% Pendapatan)',laba20],
+    ['Zakat Wajib (2.5% Laba)',zakatDue],
+    [],
+    ['RIWAYAT ZAKAT BULAN INI'],
+    ['Tanggal','Dari Laba (Rp)','Zakat Dibayar (Rp)','Status'],
+  ];
+  // Tambah riwayat zakat
+  const zakatRows=getZakatHistory().filter(z=>{
+    const d=String(z.date||'').slice(0,7);
+    return d===targetMonth;
+  });
+  if(zakatRows.length){
+    zakatRows.forEach(z=>{
+      summaryData.push([z.date,z.profitAtPayment,z.zakatPaid,z.cancelled?'Batal':'Lunas']);
+    });
+  } else {
+    summaryData.push(['(Belum ada pembayaran zakat bulan ini)','','','']);
+  }
+
+  const wsSum=XLSX.utils.aoa_to_sheet(summaryData);
+  // Lebar kolom ringkasan
+  wsSum['!cols']=[{wch:38},{wch:22}];
+  XLSX.utils.book_append_sheet(wb,wsSum,'Ringkasan');
+
+  // ── SHEET 2: DETAIL TRANSAKSI ──
+  const detailHeader=[['No','Tanggal','Deskripsi','Jenis','Nominal (Rp)','Sumber']];
+  const detailRows=monthTx.map((t,i)=>[
+    i+1,
+    t.date,
+    cleanFirebaseDesc(t.description),
+    t.type==='income'?'Pemasukan':'Pengeluaran',
+    Number(t.amount||0),
+    isFirebaseUploaded(t)?'Firebase':'Manual'
+  ]);
+  // Baris total
+  const detailAll=[...detailHeader,...detailRows,
+    [],
+    ['','','','TOTAL PEMASUKAN',totalIncome,''],
+    ['','','','TOTAL PENGELUARAN',totalExpense,''],
+    ['','','','SALDO BERSIH',saldoBersih,''],
+    ['','','','LABA 20%',laba20,''],
+    ['','','','ZAKAT 2.5%',zakatDue,''],
+  ];
+  const wsDet=XLSX.utils.aoa_to_sheet(detailAll);
+  wsDet['!cols']=[{wch:5},{wch:13},{wch:38},{wch:14},{wch:20},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,wsDet,'Detail Transaksi');
+
+  // ── SHEET 3: REKAP HARIAN ──
+  // Group per hari
+  const byDay={};
+  monthTx.forEach(t=>{
+    if(!byDay[t.date])byDay[t.date]={income:0,expense:0,fbIncome:0,manualIncome:0};
+    if(t.type==='income'){
+      byDay[t.date].income+=Number(t.amount||0);
+      if(isFirebaseUploaded(t))byDay[t.date].fbIncome+=Number(t.amount||0);
+      else byDay[t.date].manualIncome+=Number(t.amount||0);
+    } else {
+      byDay[t.date].expense+=Number(t.amount||0);
+    }
+  });
+  const dailyHeader=[['Tanggal','Pendapatan Firebase (Rp)','Pendapatan Manual (Rp)','Total Pendapatan (Rp)','Pengeluaran (Rp)','Laba Bersih Hari (Rp)']];
+  const dailyRows=Object.keys(byDay).sort().map(d=>{
+    const row=byDay[d];
+    const net=row.income-row.expense;
+    return [d,row.fbIncome,row.manualIncome,row.income,row.expense,net];
+  });
+  const dailyAll=[...dailyHeader,...dailyRows,
+    [],
+    ['TOTAL',
+      dailyRows.reduce((s,r)=>s+r[1],0),
+      dailyRows.reduce((s,r)=>s+r[2],0),
+      totalIncome,
+      totalExpense,
+      saldoBersih
+    ]
+  ];
+  const wsDay=XLSX.utils.aoa_to_sheet(dailyAll);
+  wsDay['!cols']=[{wch:13},{wch:24},{wch:24},{wch:22},{wch:20},{wch:22}];
+  XLSX.utils.book_append_sheet(wb,wsDay,'Rekap Harian');
+
+  // Download
+  const filename=`RockyHijab_${targetMonth}.xlsx`;
+  XLSX.writeFile(wb,filename);
+  showToast(`File ${filename} didownload`);
+}
+
 async function initApp(){try{if(!initSupabase())return;initFirebase();await loadTransactions();await loadZakatHistory();render();if(firebaseDb){startFirebaseWatch(firebaseUploadDate||getLocalDateString());startTodayFirebaseWatch();}showToast('Supabase tersambung')}catch(e){console.error(e);showToast('Gagal konek: '+e.message,6000)}}initApp();
 </script>
 </body>
