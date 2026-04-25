@@ -48,6 +48,27 @@
     .summary-net-box b{display:block;margin-top:4px;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     @media(max-width:360px){.summary-net-grid{grid-template-columns:1fr}.summary-net-box b{font-size:14px}}
 
+    /* === RINGKASAN LABA === */
+    .profit-summary-card{background:linear-gradient(135deg,#1a1a2e,#16213e);color:white;border-radius:18px;padding:14px;margin-bottom:10px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+    .profit-summary-card .ps-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+    .profit-summary-card .ps-title{font-size:12px;font-weight:900;opacity:.75;text-transform:uppercase;letter-spacing:.5px}
+    .profit-summary-card .ps-filters{display:flex;gap:5px;flex-wrap:wrap}
+    .profit-summary-card .ps-tab{font-size:10px;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.12);color:rgba(255,255,255,.7);font-weight:900;border:none;cursor:pointer;white-space:nowrap}
+    .profit-summary-card .ps-tab.active{background:rgba(255,255,255,.9);color:#1a1a2e}
+    .profit-summary-card .ps-value{font-size:26px;font-weight:900;letter-spacing:-.5px;margin:2px 0 4px}
+    .profit-summary-card .ps-desc{font-size:10.5px;opacity:.7;font-weight:700}
+    .profit-summary-card .ps-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:10px}
+    .profit-summary-card .ps-box{background:rgba(255,255,255,.1);border-radius:12px;padding:8px 7px;min-width:0}
+    .profit-summary-card .ps-box span{display:block;font-size:9px;opacity:.7;font-weight:900;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .profit-summary-card .ps-box b{display:block;margin-top:3px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .profit-summary-card .ps-range-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+    .profit-summary-card .ps-range-row input{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:white;border-radius:10px;padding:7px 9px;font-size:12px;min-height:36px;width:100%}
+    /* === OPERASIONAL TOKO === */
+    .ops-modal-card{background:#fff8f0;border:1px solid #ffd7a0;border-radius:18px;padding:14px;margin-bottom:10px}
+    .ops-modal-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+    .ops-today-badge{font-size:10px;background:#fff0d0;color:#b06000;border-radius:999px;padding:4px 9px;font-weight:900}
+    .ops-list-item{display:flex;justify-content:space-between;align-items:center;gap:8px;background:white;border:1px solid #ffe0b2;border-radius:12px;padding:9px 11px;margin-bottom:6px}
+
   </style>
 </head>
 <body>
@@ -55,6 +76,26 @@
   <div id="zakatHistoryModal" class="modal hidden"><div class="box"><h3 style="margin:0 0 12px;text-align:center">Riwayat Zakat</h3><div id="zakatHistoryList"></div><button class="btn gold" onclick="closeZakatHistoryModal()" style="margin-top:12px">Tutup</button></div></div>
   <div id="backupOptionModal" class="modal hidden"><div class="box"><h3 style="margin:0 0 12px;text-align:center">Backup</h3><div class="compact-actions"><button class="btn secondary" onclick="exportToFile()">File JSON</button><button class="btn secondary" onclick="copyToClipboard()">Salin</button><button class="btn secondary" onclick="showImportModal()">Import</button><button class="btn secondary" onclick="closeBackupModal()">Tutup</button></div></div></div>
   <div id="importModal" class="modal hidden"><div class="box"><h3 style="margin:0 0 12px;text-align:center">Import JSON</h3><textarea id="importDataText" rows="7" placeholder="Tempel data JSON di sini..."></textarea><div class="row" style="margin-top:10px"><button class="btn secondary" onclick="closeImportModal()">Batal</button><button class="btn" onclick="importFromText()">Import</button></div></div></div>
+
+  <!-- Modal Pengeluaran Operasional Toko -->
+  <div id="opsModal" class="modal hidden"><div class="box" style="max-width:400px;width:100%">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px">
+      <div><h3 style="margin:0;font-size:16px">Pengeluaran Operasional Toko</h3><small style="color:var(--muted);font-size:11px;font-weight:800">Mengurangi pendapatan hari ini · Masuk total pengeluaran</small></div>
+      <button class="x" style="font-size:22px;padding:4px 6px" onclick="closeOpsModal()">×</button>
+    </div>
+    <div class="field"><input type="text" id="opsDesc" placeholder="Misal: plastik, bensin, dll"></div>
+    <div class="field amount-wrap"><input type="number" id="opsAmount" placeholder="Nominal" oninput="handleOpsAmountPreview(this)"><span id="opsAmountPreview" class="preview"></span></div>
+    <div class="row" style="margin-bottom:10px">
+      <button class="btn secondary" onclick="closeOpsModal()">Batal</button>
+      <button class="btn" style="background:#e8820c" onclick="addOpsExpense()">Simpan</button>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px">
+      <b style="font-size:13px">Operasional Hari Ini</b>
+      <span id="opsTodayTotal" class="num" style="font-size:13px;color:#e8820c">Rp 0</span>
+    </div>
+    <div id="opsTodayList" class="list" style="max-height:35vh;overflow-y:auto"></div>
+    <button class="btn secondary" onclick="closeOpsModal()" style="margin-top:10px">Tutup</button>
+  </div></div>
   <div id="expenseListModal" class="modal hidden"><div class="box" style="max-width:420px;width:100%"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px"><div><h3 style="margin:0;font-size:16px">Semua Pengeluaran</h3><small id="expenseListSubtitle" style="color:var(--muted);font-size:11px;font-weight:800"></small></div><button class="x" style="font-size:22px;padding:4px 6px" onclick="closeExpenseListModal()">×</button></div><div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#fff0ee;border-radius:13px;margin-bottom:12px"><span style="font-size:12px;font-weight:900;color:var(--red)">Total Pengeluaran</span><b id="expenseListTotal" class="num red" style="font-size:16px">Rp 0</b></div><div id="expenseListContent" class="list" style="max-height:55vh;overflow-y:auto"></div><button class="btn secondary" onclick="closeExpenseListModal()" style="margin-top:12px">Tutup</button></div></div>
 
   <main class="app">
@@ -62,18 +103,52 @@
 
     <section id="pageHome" class="page active">
       <div class="hero"><div class="label">Saldo Bersih · Semua Data Supabase</div><div id="netBalance" class="value num">Rp 0</div><div class="mini"><span>Masuk <b id="totalIncome">Rp 0</b></span><span>Keluar Hari Ini <b id="totalExpense" onclick="showExpenseListTodayModal()" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px">Rp 0</b></span></div></div>
+
+      <!-- Pendapatan Hari Ini -->
       <div id="todayIncomeCard" class="card" style="margin-bottom:10px;background:#f3fbf6;border-color:#ccefd9">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
-          <div>
+          <div style="min-width:0;flex:1">
             <div id="todayIncomeSectionTitle" class="section-title" style="margin:0 0 4px;color:var(--green)">Pendapatan Hari Ini</div>
             <div id="todayFirebaseIncomeHome" class="num green" style="font-size:24px">Rp 0</div>
-            <div id="todayFirebaseIncomeInfo" class="small">Firebase + Manual - Pengeluaran hari ini</div>
+            <div id="todayFirebaseIncomeInfo" class="small">Firebase + Manual - Operasional Toko</div>
           </div>
-          <span class="lock-badge" style="margin-left:0;background:#eef2e8;color:var(--green)">PREVIEW</span>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+            <span class="lock-badge" style="margin-left:0;background:#eef2e8;color:var(--green)">HARI INI</span>
+            <button onclick="openOpsModal()" style="font-size:10px;padding:5px 9px;border-radius:999px;background:#fff3e0;color:#e8820c;font-weight:900;border:1px solid #ffd7a0;cursor:pointer;white-space:nowrap">+ Ops Toko</button>
+          </div>
+        </div>
+        <div style="margin-top:8px;padding-top:8px;border-top:1px solid #ccefd9;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:10px;color:var(--muted);font-weight:800">Operasional Toko Hari Ini</span>
+          <b id="opsTodayHomeTotal" class="num" style="font-size:13px;color:#e8820c;cursor:pointer" onclick="openOpsModal()">Rp 0</b>
         </div>
       </div>
+
+      <!-- Ringkasan Laba dengan Filter -->
+      <div class="profit-summary-card">
+        <div class="ps-head">
+          <div class="ps-title">Ringkasan Laba</div>
+          <div class="ps-filters">
+            <button class="ps-tab active" id="ps-tab-today" onclick="setProfitFilter('today')">Hari Ini</button>
+            <button class="ps-tab" id="ps-tab-month" onclick="setProfitFilter('month')">Bulan</button>
+            <button class="ps-tab" id="ps-tab-year" onclick="setProfitFilter('year')">Tahun</button>
+            <button class="ps-tab" id="ps-tab-custom" onclick="setProfitFilter('custom')">Custom</button>
+          </div>
+        </div>
+        <div id="psCustomRange" class="ps-range-row" style="display:none;margin-bottom:10px">
+          <input type="date" id="psStartDate" onchange="renderProfitSummary()">
+          <input type="date" id="psEndDate" onchange="renderProfitSummary()">
+        </div>
+        <div class="ps-value num" id="psLaba">Rp 0</div>
+        <div class="ps-desc" id="psDesc">Laba 20% dari pendapatan dikurangi pengeluaran</div>
+        <div class="ps-grid">
+          <div class="ps-box"><span>Pendapatan</span><b id="psPendapatan" class="num">Rp 0</b></div>
+          <div class="ps-box"><span>Pengeluaran</span><b id="psPengeluaran" class="num" style="color:#ff8a80">Rp 0</b></div>
+          <div class="ps-box"><span>Laba Bersih 20%</span><b id="psLabaBersih" class="num" style="color:#69f0ae">Rp 0</b></div>
+        </div>
+      </div>
+
       <div class="grid2">
-        <div class="stat"><span>Laba 20%</span><b id="autoProfit" class="blue num">Rp 0</b></div>
+        <div class="stat"><span>Laba 20% (Semua)</span><b id="autoProfit" class="blue num">Rp 0</b></div>
         <div class="stat" onclick="showExpenseListTodayModal()" style="cursor:pointer;border-color:#ffd7d0;background:#fff8f6"><span>Pengeluaran Hari Ini</span><b id="spendingLimit" class="red num">Rp 0</b><div style="font-size:9px;color:var(--red);font-weight:900;margin-top:3px">Tap untuk lihat detail</div></div>
       </div>
       <div id="operationalCard" class="card safe-card" style="margin-top:10px"><div style="display:flex;justify-content:space-between;gap:8px"><b>Sisa Operasional</b><b id="operationalUsed" class="num">Rp 0</b></div><div class="small">Limit 20%: <span id="operationalTotal">Rp 0</span> · Terpakai: <span id="operationalSpent">Rp 0</span></div><div id="limitWarning" class="small red" style="font-weight:900;margin-top:5px"></div></div>
@@ -319,18 +394,22 @@ function getFirebaseUploadId(date){return Number(String(date||'').replace(/\D/g,
 function getUploadedFirebaseTransaction(date){const id=getFirebaseUploadId(date);return transactions.find(t=>Number(t.id)===id || String(t.description||'').startsWith(`[FIREBASE:${date}]`))}
 function initFirebase(){try{if(!window.firebase)return false;if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);firebaseDb=firebase.firestore();return true}catch(e){console.error(e);showToast('Firebase gagal aktif: '+e.message);return false}}
 function renderTodayFirebaseIncomeHome(){
-  // Pendapatan Hari Ini = omset Firebase hari ini + pemasukan manual - pengeluaran hari ini.
+  // Pendapatan Hari Ini = omset Firebase hari ini + pemasukan manual - pengeluaran operasional toko hari ini.
   const totalEl=$('todayFirebaseIncomeHome'),infoEl=$('todayFirebaseIncomeInfo');
   const today=getLocalDateString();
   const manualRows=(transactions||[]).filter(t=>t.type==='income' && t.date===today && !isFirebaseUploaded(t));
   const manualTotal=manualRows.reduce((sum,t)=>sum+Number(t.amount||0),0);
   const fbTotal=Number(todayFirebaseIncomeTotal||0);
-  const expenseRows=(transactions||[]).filter(t=>t.type==='expense' && t.date===today);
-  const expenseTotal=expenseRows.reduce((sum,t)=>sum+Number(t.amount||0),0);
-  const total=manualTotal+fbTotal-expenseTotal;
+  // Hanya pengeluaran operasional toko yang mengurangi pendapatan hari ini di Home
+  const opsRows=(transactions||[]).filter(t=>t.type==='expense' && t.date===today && isOpsExpense(t));
+  const opsTotal=opsRows.reduce((sum,t)=>sum+Number(t.amount||0),0);
+  const total=manualTotal+fbTotal-opsTotal;
   const fbCount=(todayFirebaseIncomeRows||[]).length;
+  // Update total ops di home card
+  const opsTodayHomeEl=$('opsTodayHomeTotal');
+  if(opsTodayHomeEl)opsTodayHomeEl.innerText=formatRupiah(opsTotal);
   if(totalEl){totalEl.innerText=formatRupiah(total);totalEl.className='num '+(total>=0?'green':'red');totalEl.style.fontSize='24px';}
-  // Fix 7: warna card berubah merah kalau pendapatan negatif
+  // warna card berubah merah kalau pendapatan negatif
   const card=$('todayIncomeCard'),titleEl=$('todayIncomeSectionTitle');
   if(card){card.style.background=total<0?'#fff6f4':'#f3fbf6';card.style.borderColor=total<0?'#ffd7d0':'#ccefd9';}
   if(titleEl){titleEl.style.color=total<0?'var(--red)':'var(--green)';}
@@ -338,7 +417,7 @@ function renderTodayFirebaseIncomeHome(){
     const parts=[];
     if(fbTotal>0)parts.push(`Firebase ${formatRupiah(fbTotal)} (${fbCount} trx)`);
     if(manualTotal>0)parts.push(`Manual ${formatRupiah(manualTotal)} (${manualRows.length} trx)`);
-    if(expenseTotal>0)parts.push(`Keluar ${formatRupiah(expenseTotal)}`);
+    if(opsTotal>0)parts.push(`Ops Toko -${formatRupiah(opsTotal)}`);
     infoEl.innerText=parts.length?parts.join(' · '):'Belum ada pendapatan hari ini';
   }
 }
@@ -601,6 +680,7 @@ function getDashboardTransactions(){
 function render(){
   updateNetSummary();
   renderTodayFirebaseIncomeHome();
+  renderProfitSummary();
 
   // Ringkasan dashboard utama: semua data yang sudah masuk Supabase.
   // Ini yang membuat Saldo Bersih langsung berubah setelah upload omset Firebase.
@@ -695,6 +775,118 @@ async function importFromText(){try{const raw=$('importDataText').value.trim();i
   if(importedZakat.length){await saveZakatHistory(importedZakat);}
   await loadTransactions();await loadZakatHistory();render();closeImportModal();showToast('Import berhasil'+(importedZakat.length?` (${importedZakat.length} zakat restore)`:''))}catch(e){showToast('Format JSON salah')}}
 function showToast(message,duration=2600){const old=document.querySelector('.toast');if(old)old.remove();const t=document.createElement('div');t.className='toast';t.textContent=message;document.body.appendChild(t);setTimeout(()=>t.remove(),duration)}
+
+// =====================================================
+// PENGELUARAN OPERASIONAL TOKO
+// Ditandai dengan prefix [OPS] di deskripsi.
+// Mengurangi "Pendapatan Hari Ini" di Home, tapi
+// tetap dihitung sebagai pengeluaran biasa di Riwayat.
+// =====================================================
+const OPS_PREFIX='[OPS] ';
+function isOpsExpense(t){return t&&t.type==='expense'&&String(t.description||'').startsWith(OPS_PREFIX)}
+function handleOpsAmountPreview(input){$('opsAmountPreview').innerText=input.value?formatRupiah(getActualAmount(input.value)):''}
+function openOpsModal(){
+  $('opsDesc').value='';$('opsAmount').value='';$('opsAmountPreview').innerText='';
+  renderOpsTodayList();
+  $('opsModal').classList.remove('hidden');
+  setTimeout(()=>$('opsDesc').focus(),80);
+}
+function closeOpsModal(){$('opsModal').classList.add('hidden')}
+function renderOpsTodayList(){
+  const today=getLocalDateString();
+  const rows=(transactions||[]).filter(t=>isOpsExpense(t)&&t.date===today);
+  rows.sort((a,b)=>b.id-a.id);
+  const total=rows.reduce((s,t)=>s+Number(t.amount||0),0);
+  const te=$('opsTodayTotal');if(te)te.innerText=formatRupiah(total);
+  const list=$('opsTodayList');if(!list)return;
+  if(!rows.length){list.innerHTML='<div class="empty">Belum ada operasional hari ini</div>';return;}
+  list.innerHTML=rows.map(t=>`<div class="ops-list-item"><div style="min-width:0;flex:1"><b style="font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(String(t.description||'').replace(OPS_PREFIX,''))}</b><small style="color:var(--muted)">${t.date}</small></div><b class="num red" style="font-size:13px;white-space:nowrap">-${formatRupiah(t.amount).replace('Rp','')}</b><button class="x" onclick="deleteTransaction(${t.id});setTimeout(renderOpsTodayList,400)">×</button></div>`).join('');
+}
+async function addOpsExpense(){
+  const desc=$('opsDesc').value.trim();
+  const amount=getActualAmount($('opsAmount').value);
+  if(!desc){showToast('Isi deskripsi operasional');return}
+  if(!amount||amount<=0){showToast('Nominal tidak valid');return}
+  const today=getLocalDateString();
+  try{
+    await saveTransaction({id:Date.now(),date:today,description:OPS_PREFIX+desc,amount,type:'expense'});
+    await loadTransactions();
+    render();
+    renderOpsTodayList();
+    $('opsDesc').value='';$('opsAmount').value='';$('opsAmountPreview').innerText='';
+    showToast('Operasional toko tersimpan');
+  }catch(e){showToast('Gagal simpan: '+e.message)}
+}
+
+// =====================================================
+// RINGKASAN LABA BARU — filter harian/bulanan/tahunan/custom
+// Laba = 20% dari (pendapatan manual + Firebase) - total pengeluaran periode
+// =====================================================
+let currentProfitFilter='today';
+function setProfitFilter(f){
+  currentProfitFilter=f;
+  ['today','month','year','custom'].forEach(x=>{
+    const el=$('ps-tab-'+x);if(el)el.classList.toggle('active',x===f);
+  });
+  const rangeRow=$('psCustomRange');
+  if(rangeRow)rangeRow.style.display=f==='custom'?'grid':'none';
+  if(f==='custom'){
+    const today=getLocalDateString();
+    if($('psStartDate')&&!$('psStartDate').value)$('psStartDate').value=today;
+    if($('psEndDate')&&!$('psEndDate').value)$('psEndDate').value=today;
+  }
+  renderProfitSummary();
+}
+function getProfitSummaryData(filter){
+  const today=getLocalDateString();
+  const thisMonth=today.slice(0,7);
+  const thisYear=today.slice(0,4);
+  const s=$('psStartDate')?$('psStartDate').value:'';
+  const e=$('psEndDate')?$('psEndDate').value:'';
+  // Pendapatan: dari Supabase (manual + Firebase lock) + todayFirebase kalau filter today/month/year/custom mencakup hari ini
+  let incomeRows=[], expenseRows=[];
+  const allTx=getDashboardTransactions();
+  if(filter==='today'){
+    incomeRows=allTx.filter(t=>t.type==='income'&&t.date===today&&!isFirebaseUploaded(t));
+    expenseRows=allTx.filter(t=>t.type==='expense'&&t.date===today);
+  } else if(filter==='month'){
+    incomeRows=allTx.filter(t=>t.type==='income'&&String(t.date||'').startsWith(thisMonth));
+    expenseRows=allTx.filter(t=>t.type==='expense'&&String(t.date||'').startsWith(thisMonth));
+  } else if(filter==='year'){
+    incomeRows=allTx.filter(t=>t.type==='income'&&String(t.date||'').startsWith(thisYear));
+    expenseRows=allTx.filter(t=>t.type==='expense'&&String(t.date||'').startsWith(thisYear));
+  } else { // custom
+    if(!s||!e)return null;
+    incomeRows=allTx.filter(t=>t.type==='income'&&t.date>=s&&t.date<=e);
+    expenseRows=allTx.filter(t=>t.type==='expense'&&t.date>=s&&t.date<=e);
+  }
+  // Tambahkan Firebase hari ini jika mencakup hari ini dan belum ada di Supabase
+  const fbToday=Number(todayFirebaseIncomeTotal||0);
+  const uploadedTodayTx=getUploadedFirebaseTransaction(today);
+  const todayCovered=(filter==='today')||(filter==='month'&&today.startsWith(thisMonth))||(filter==='year'&&today.startsWith(thisYear))||(filter==='custom'&&s&&e&&today>=s&&today<=e);
+  let fbExtra=0;
+  if(todayCovered&&fbToday>0&&!uploadedTodayTx)fbExtra=fbToday;
+  const totalIncome=incomeRows.reduce((sum,t)=>sum+Number(t.amount||0),0)+fbExtra;
+  const totalExpense=expenseRows.reduce((sum,t)=>sum+Number(t.amount||0),0);
+  const laba=(totalIncome*.2)-totalExpense;
+  return {totalIncome,totalExpense,laba,labaBersih:Math.max(0,laba)};
+}
+function renderProfitSummary(){
+  const data=getProfitSummaryData(currentProfitFilter);
+  const labaEl=$('psLaba'),descEl=$('psDesc'),pendEl=$('psPendapatan'),pengeEl=$('psPengeluaran'),bersihEl=$('psLabaBersih');
+  if(!data){
+    if(labaEl)labaEl.innerText='Pilih tanggal dulu';
+    if(descEl)descEl.innerText='Pilih rentang tanggal custom';
+    return;
+  }
+  const {totalIncome,totalExpense,laba}=data;
+  const filterLabel={today:'Hari Ini',month:'Bulan Ini',year:'Tahun Ini',custom:'Custom'}[currentProfitFilter]||'';
+  if(labaEl){labaEl.innerText=formatRupiah(Math.abs(laba));labaEl.style.color=laba>=0?'#69f0ae':'#ff5252';}
+  if(descEl)descEl.innerText=`Laba ${filterLabel}: 20% dari ${formatRupiah(totalIncome)} dikurangi pengeluaran ${formatRupiah(totalExpense)}`;
+  if(pendEl)pendEl.innerText=formatRupiah(totalIncome);
+  if(pengeEl)pengeEl.innerText=formatRupiah(totalExpense);
+  if(bersihEl){bersihEl.innerText=formatRupiah(Math.abs(laba));bersihEl.style.color=laba>=0?'#69f0ae':'#ff5252';}
+}
 function showExpenseListTodayModal(){
   const today=getLocalDateString();
   const expenses=getDashboardTransactions().filter(t=>t.type==='expense'&&t.date===today);
