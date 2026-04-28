@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>alfajri Finance v23 Sync Firebase</title>
+  <title>alfajri Finance v24 Full Sync Data Firebase</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
@@ -398,7 +398,38 @@ async function importTransactions(newTransactions){
   const{error}=await supabaseClient.from('transactions').insert(rows);
   if(error)throw error;
 }
-function getLocalDateString(){const n=new Date();return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`}
+function getLocalDateString(date=new Date()){
+  // Pakai tanggal WIB agar sama dengan aplikasi kasir Firebase utama.
+  return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).format(date);
+}
+function getFirebaseRecordDateKey(t){
+  if(!t)return '';
+  if(t.dateKey)return String(t.dateKey).slice(0,10);
+  if(t.date)return String(t.date).slice(0,10);
+  if(typeof t.time==='string'&&t.time.length>=10)return t.time.slice(0,10);
+  if(typeof t.createdAt==='string'&&t.createdAt.length>=10)return t.createdAt.slice(0,10);
+  if(t.createdAt&&typeof t.createdAt.toDate==='function')return getLocalDateString(t.createdAt.toDate());
+  if(Number(t.createdAtMs||0))return getLocalDateString(new Date(Number(t.createdAtMs)));
+  return '';
+}
+function isFirebaseRecordDeleted(t){return t&&(t.deleted===true||t.deleted==='true'||t.isDeleted===true||t.isDeleted==='true')}
+function normalizeFirebaseRows(rows){
+  return (rows||[])
+    .map(t=>({...t,dateKey:getFirebaseRecordDateKey(t),amount:Number(t.amount||0)}))
+    .filter(t=>t.dateKey&&!isFirebaseRecordDeleted(t));
+}
+function wibDayStartMs(date){return new Date(`${date}T00:00:00+07:00`).getTime()}
+function wibDayEndMs(date){return new Date(`${date}T23:59:59+07:00`).getTime()}
+async function fetchFirebaseRowsByRange(start,end){
+  if(!firebaseDb)return [];
+  const merged={};
+  const addSnap=(snap)=>snap.docs.forEach(d=>{merged[d.id]={id:d.id,...d.data()}});
+  try{addSnap(await firebaseDb.collection('transactions').where('dateKey','>=',start).where('dateKey','<=',end).get());}catch(e){console.warn('Query dateKey Firebase gagal:',e.message||e)}
+  // Fallback untuk data lama/baru yang mungkin belum punya dateKey tapi punya createdAtMs.
+  try{addSnap(await firebaseDb.collection('transactions').where('createdAtMs','>=',wibDayStartMs(start)).where('createdAtMs','<=',wibDayEndMs(end)).get());}catch(e){console.warn('Query createdAtMs Firebase fallback dilewati:',e.message||e)}
+  return normalizeFirebaseRows(Object.values(merged)).filter(t=>t.dateKey>=start&&t.dateKey<=end);
+}
+function sumFirebaseRows(rows){return (rows||[]).reduce((a,b)=>a+Number(b.amount||0),0)}
 $('inputDate').value=getLocalDateString();$('filterStartDate').value=getLocalDateString();$('filterEndDate').value=getLocalDateString();if($('filterStartDateHistory'))$('filterStartDateHistory').value=getLocalDateString();if($('filterEndDateHistory'))$('filterEndDateHistory').value=getLocalDateString();firebaseUploadDate=getLocalDateString();setTimeout(()=>{if($('firebaseUploadDate'))$('firebaseUploadDate').value=firebaseUploadDate;setPendingThisMonth(false);updateMonthValidityIdle()},0);
 function openPasswordModal(cb){pendingAction=cb;$('passwordModal').classList.remove('hidden');$('confirmPasswordInput').value='';setTimeout(()=>$('confirmPasswordInput').focus(),80)}function closePasswordModal(){$('passwordModal').classList.add('hidden');pendingAction=null}$('confirmPasswordInput').addEventListener('input',()=>{$('confirmPasswordInput').value=$('confirmPasswordInput').value.replace(/\D/g,'')});$('confirmPasswordInput').addEventListener('keydown',(e)=>{if(e.key==='Enter')$('btnConfirmAction').click()});$('btnConfirmAction').addEventListener('click',()=>{if($('confirmPasswordInput').value===APP_PIN){const a=pendingAction;closePasswordModal();if(a)a()}else{showToast('PIN salah');$('confirmPasswordInput').value='';setTimeout(()=>$('confirmPasswordInput').focus(),80)}});
 async function addTransaction(){try{const dateVal=$('inputDate').value,type=$('type').value;let desc=$('description').value.trim();const amount=getActualAmount($('amount').value);if(type==='income'&&!desc)desc='Omset';if(type==='expense'&&!desc){showToast('Deskripsi pengeluaran wajib');return}if(!dateVal||amount<=0){showToast('Nominal tidak valid');return}await saveTransaction({id:Date.now(),date:dateVal,description:desc,amount,type});await loadTransactions();render();$('description').value='';$('amount').value='';$('liveAmountPreview').innerText='';$('inputDate').value=getLocalDateString();closeTransactionModal();showToast('Transaksi tersimpan');goPage('home')}catch(e){showToast('Gagal simpan: '+e.message)}}
@@ -528,8 +559,8 @@ function startTodayFirebaseWatch(){
   return new Promise((resolve)=>{
     let resolved=false;
     todayFirebaseUnsub=q.onSnapshot(snap=>{
-      todayFirebaseIncomeRows=snap.docs.map(d=>({id:d.id,...d.data()})).filter(t=>!t.deleted);
-      todayFirebaseIncomeTotal=todayFirebaseIncomeRows.reduce((a,b)=>a+Number(b.amount||0),0);
+      todayFirebaseIncomeRows=normalizeFirebaseRows(snap.docs.map(d=>({id:d.id,...d.data()}))).filter(t=>t.dateKey===today);
+      todayFirebaseIncomeTotal=sumFirebaseRows(todayFirebaseIncomeRows);
       if(!resolved){resolved=true;resolve();} // resolve di snapshot pertama
       else{
         // Update berikutnya (realtime) — render semua
@@ -555,8 +586,8 @@ function startFirebaseWatch(date){
   if(firebaseUnsub){firebaseUnsub();firebaseUnsub=null}
   const q=firebaseDb.collection('transactions').where('dateKey','==',firebaseUploadDate);
   firebaseUnsub=q.onSnapshot(snap=>{
-    firebaseIncomeRows=snap.docs.map(d=>({id:d.id,...d.data()})).filter(t=>!t.deleted);
-    firebaseIncomeTotal=firebaseIncomeRows.reduce((a,b)=>a+Number(b.amount||0),0);
+    firebaseIncomeRows=normalizeFirebaseRows(snap.docs.map(d=>({id:d.id,...d.data()}))).filter(t=>t.dateKey===firebaseUploadDate);
+    firebaseIncomeTotal=sumFirebaseRows(firebaseIncomeRows);
     renderFirebaseUploadCard();
   },err=>{console.error(err);showToast('Gagal baca Firebase: '+err.message)})
 }
@@ -584,11 +615,10 @@ async function checkMonthValidity(){
   monthValidityBusy=true;
   setMonthValidityUI('idle','Mengecek Bulan...',`Sedang cek ${r.start} s.d ${r.end}`);
   try{
-    const snap=await firebaseDb.collection('transactions').where('dateKey','>=',r.start).where('dateKey','<=',r.end).get();
+    const firebaseRows=await fetchFirebaseRowsByRange(r.start,r.end);
     const grouped={};
-    snap.docs.map(d=>({id:d.id,...d.data()})).forEach(t=>{
-      if(t.deleted)return;
-      const date=String(t.dateKey||'').slice(0,10);
+    firebaseRows.forEach(t=>{
+      const date=getFirebaseRecordDateKey(t);
       if(!date)return;
       if(!grouped[date])grouped[date]={firebaseTotal:0,count:0};
       grouped[date].firebaseTotal+=Number(t.amount||0);
@@ -685,12 +715,10 @@ async function scanPendingFirebaseUploads(){
   if(sum){sum.className='audit-box audit-warn';sum.innerText='Sedang scan Firebase dan membandingkan dengan Supabase...'}
   if(box)box.innerHTML='';
   try{
-    const snap=await firebaseDb.collection('transactions').where('dateKey','>=',start).where('dateKey','<=',end).get();
+    const firebaseRows=await fetchFirebaseRowsByRange(start,end);
     const grouped={};
-    snap.docs.forEach(d=>{
-      const t={id:d.id,...d.data()};
-      if(t.deleted)return;
-      const date=String(t.dateKey||'').slice(0,10);
+    firebaseRows.forEach(t=>{
+      const date=getFirebaseRecordDateKey(t);
       if(!date)return;
       if(!grouped[date])grouped[date]={date,firebaseTotal:0,count:0};
       grouped[date].firebaseTotal+=Number(t.amount||0);
