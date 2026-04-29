@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>alfajri Finance v24 Full Sync Data Firebase</title>
+  <title>alfajri Finance v25 Sync Index Update</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
@@ -410,9 +410,11 @@ function getFirebaseRecordDateKey(t){
   if(typeof t.createdAt==='string'&&t.createdAt.length>=10)return t.createdAt.slice(0,10);
   if(t.createdAt&&typeof t.createdAt.toDate==='function')return getLocalDateString(t.createdAt.toDate());
   if(Number(t.createdAtMs||0))return getLocalDateString(new Date(Number(t.createdAtMs)));
+  // Index versi baru tetap pakai createdAtMs, tapi beberapa backup/data lama masih menyimpan timestamp angka.
+  if(Number(t.timestamp||0))return getLocalDateString(new Date(Number(t.timestamp)));
   return '';
 }
-function isFirebaseRecordDeleted(t){return t&&(t.deleted===true||t.deleted==='true'||t.isDeleted===true||t.isDeleted==='true')}
+function isFirebaseRecordDeleted(t){return t&&(t.deleted===true||t.deleted==='true'||t.isDeleted===true||t.isDeleted==='true'||t.status==='deleted')}
 function normalizeFirebaseRows(rows){
   return (rows||[])
     .map(t=>({...t,dateKey:getFirebaseRecordDateKey(t),amount:Number(t.amount||0)}))
@@ -423,13 +425,35 @@ function wibDayEndMs(date){return new Date(`${date}T23:59:59+07:00`).getTime()}
 async function fetchFirebaseRowsByRange(start,end){
   if(!firebaseDb)return [];
   const merged={};
-  const addSnap=(snap)=>snap.docs.forEach(d=>{merged[d.id]={id:d.id,...d.data()}});
+  const addSnap=(snap)=>snap.docs.forEach(d=>{merged[d.id]={id:d.id,_docId:d.id,...d.data()}});
   try{addSnap(await firebaseDb.collection('transactions').where('dateKey','>=',start).where('dateKey','<=',end).get());}catch(e){console.warn('Query dateKey Firebase gagal:',e.message||e)}
   // Fallback untuk data lama/baru yang mungkin belum punya dateKey tapi punya createdAtMs.
   try{addSnap(await firebaseDb.collection('transactions').where('createdAtMs','>=',wibDayStartMs(start)).where('createdAtMs','<=',wibDayEndMs(end)).get());}catch(e){console.warn('Query createdAtMs Firebase fallback dilewati:',e.message||e)}
+  // Fallback ekstra untuk index/backup lama yang memakai field timestamp angka.
+  try{addSnap(await firebaseDb.collection('transactions').where('timestamp','>=',wibDayStartMs(start)).where('timestamp','<=',wibDayEndMs(end)).get());}catch(e){console.warn('Query timestamp Firebase fallback dilewati:',e.message||e)}
   return normalizeFirebaseRows(Object.values(merged)).filter(t=>t.dateKey>=start&&t.dateKey<=end);
 }
 function sumFirebaseRows(rows){return (rows||[]).reduce((a,b)=>a+Number(b.amount||0),0)}
+async function refreshFirebaseRowsOnce(date,mode='selected'){
+  // Baca ulang pakai range supaya data index lama/baru tetap kebaca walau field tanggal berbeda.
+  if(!firebaseDb||!date)return;
+  try{
+    const rows=await fetchFirebaseRowsByRange(date,date);
+    if(mode==='today'){
+      todayFirebaseIncomeRows=rows.filter(t=>t.dateKey===date);
+      todayFirebaseIncomeTotal=sumFirebaseRows(todayFirebaseIncomeRows);
+      renderTodayFirebaseIncomeHome();
+      renderZakatSection();
+      renderProfitSummary();
+      renderCashFisik();
+      render();
+    }else{
+      firebaseIncomeRows=rows.filter(t=>t.dateKey===date);
+      firebaseIncomeTotal=sumFirebaseRows(firebaseIncomeRows);
+      renderFirebaseUploadCard();
+    }
+  }catch(e){console.warn('Refresh Firebase range gagal:',e.message||e)}
+}
 $('inputDate').value=getLocalDateString();$('filterStartDate').value=getLocalDateString();$('filterEndDate').value=getLocalDateString();if($('filterStartDateHistory'))$('filterStartDateHistory').value=getLocalDateString();if($('filterEndDateHistory'))$('filterEndDateHistory').value=getLocalDateString();firebaseUploadDate=getLocalDateString();setTimeout(()=>{if($('firebaseUploadDate'))$('firebaseUploadDate').value=firebaseUploadDate;setPendingThisMonth(false);updateMonthValidityIdle()},0);
 function openPasswordModal(cb){pendingAction=cb;$('passwordModal').classList.remove('hidden');$('confirmPasswordInput').value='';setTimeout(()=>$('confirmPasswordInput').focus(),80)}function closePasswordModal(){$('passwordModal').classList.add('hidden');pendingAction=null}$('confirmPasswordInput').addEventListener('input',()=>{$('confirmPasswordInput').value=$('confirmPasswordInput').value.replace(/\D/g,'')});$('confirmPasswordInput').addEventListener('keydown',(e)=>{if(e.key==='Enter')$('btnConfirmAction').click()});$('btnConfirmAction').addEventListener('click',()=>{if($('confirmPasswordInput').value===APP_PIN){const a=pendingAction;closePasswordModal();if(a)a()}else{showToast('PIN salah');$('confirmPasswordInput').value='';setTimeout(()=>$('confirmPasswordInput').focus(),80)}});
 async function addTransaction(){try{const dateVal=$('inputDate').value,type=$('type').value;let desc=$('description').value.trim();const amount=getActualAmount($('amount').value);if(type==='income'&&!desc)desc='Omset';if(type==='expense'&&!desc){showToast('Deskripsi pengeluaran wajib');return}if(!dateVal||amount<=0){showToast('Nominal tidak valid');return}await saveTransaction({id:Date.now(),date:dateVal,description:desc,amount,type});await loadTransactions();render();$('description').value='';$('amount').value='';$('liveAmountPreview').innerText='';$('inputDate').value=getLocalDateString();closeTransactionModal();showToast('Transaksi tersimpan');goPage('home')}catch(e){showToast('Gagal simpan: '+e.message)}}
@@ -559,8 +583,10 @@ function startTodayFirebaseWatch(){
   return new Promise((resolve)=>{
     let resolved=false;
     todayFirebaseUnsub=q.onSnapshot(snap=>{
-      todayFirebaseIncomeRows=normalizeFirebaseRows(snap.docs.map(d=>({id:d.id,...d.data()}))).filter(t=>t.dateKey===today);
+      todayFirebaseIncomeRows=normalizeFirebaseRows(snap.docs.map(d=>({id:d.id,_docId:d.id,...d.data()}))).filter(t=>t.dateKey===today);
       todayFirebaseIncomeTotal=sumFirebaseRows(todayFirebaseIncomeRows);
+      // Setelah snapshot dateKey, tetap refresh sekali via range fallback untuk data lama/timestamp.
+      refreshFirebaseRowsOnce(today,'today');
       if(!resolved){resolved=true;resolve();} // resolve di snapshot pertama
       else{
         // Update berikutnya (realtime) — render semua
@@ -572,8 +598,10 @@ function startTodayFirebaseWatch(){
       }
     },err=>{
       console.error(err);
-      if($('todayFirebaseIncomeInfo'))$('todayFirebaseIncomeInfo').innerText='Gagal baca Firebase hari ini';
-      if(!resolved){resolved=true;resolve();} // tetap resolve agar tidak hang
+      refreshFirebaseRowsOnce(today,'today').finally(()=>{
+        if($('todayFirebaseIncomeInfo'))$('todayFirebaseIncomeInfo').innerText='Gagal baca Firebase hari ini';
+        if(!resolved){resolved=true;resolve();} // tetap resolve agar tidak hang
+      });
     });
   });
 }
@@ -586,10 +614,12 @@ function startFirebaseWatch(date){
   if(firebaseUnsub){firebaseUnsub();firebaseUnsub=null}
   const q=firebaseDb.collection('transactions').where('dateKey','==',firebaseUploadDate);
   firebaseUnsub=q.onSnapshot(snap=>{
-    firebaseIncomeRows=normalizeFirebaseRows(snap.docs.map(d=>({id:d.id,...d.data()}))).filter(t=>t.dateKey===firebaseUploadDate);
+    firebaseIncomeRows=normalizeFirebaseRows(snap.docs.map(d=>({id:d.id,_docId:d.id,...d.data()}))).filter(t=>t.dateKey===firebaseUploadDate);
     firebaseIncomeTotal=sumFirebaseRows(firebaseIncomeRows);
     renderFirebaseUploadCard();
-  },err=>{console.error(err);showToast('Gagal baca Firebase: '+err.message)})
+    // Range fallback menjaga Kas Pribadi tetap selaras dengan index lama/baru.
+    refreshFirebaseRowsOnce(firebaseUploadDate,'selected');
+  },err=>{console.error(err);refreshFirebaseRowsOnce(firebaseUploadDate,'selected');showToast('Gagal baca Firebase: '+err.message)})
 }
 
 
