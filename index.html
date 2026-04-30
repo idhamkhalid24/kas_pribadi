@@ -222,7 +222,6 @@
       </div>
       <div id="operationalCard" class="card safe-card" style="margin-top:10px"><div style="display:flex;justify-content:space-between;gap:8px"><b>Sisa Operasional</b><b id="operationalUsed" class="num">Rp 0</b></div><div class="small">Limit 20%: <span id="operationalTotal">Rp 0</span> · Terpakai: <span id="operationalSpent">Rp 0</span></div><div id="limitWarning" class="small red" style="font-weight:900;margin-top:5px"></div></div>
       <div class="card"><div style="display:flex;justify-content:space-between;align-items:start;gap:8px"><div><div class="section-title" style="margin:0 0 3px">Zakat Mal</div><div id="zakatAmountLarge" class="num gold" style="font-size:23px">Rp 0</div><div id="zakatPaymentStatusText" class="small">Menunggu</div></div><button id="payZakatBtn" class="btn gold" style="width:auto;min-width:92px;padding:10px" onclick="markZakatPaid()">Bayar</button></div><div class="grid2" style="margin-top:10px"><div class="stat"><span>Laba 20% (Manual+Firebase)</span><b id="totalProfitDisplay" class="num">Rp 0</b></div><div class="stat"><span>Belum Dizakatkan</span><b id="unpaidProfitDisplay" class="num">Rp 0</b></div></div><div style="font-size:10px;color:var(--muted);font-weight:800;margin-top:7px;padding-top:7px;border-top:1px solid var(--line)">Zakat = 2.5% × laba bersih (20% dari total pendapatan manual + Firebase)</div><div style="display:none"><span id="totalZakatPaidProfit">Rp 0</span></div><div id="zakatHistoryPreview" class="zakat-mini" style="display:none"><div id="zakatHistoryMiniList" class="zakat-mini"></div><button class="tab" onclick="showZakatHistoryModal()">Semua</button></div></div>
-      <button class="btn whatsapp" onclick="sendWhatsAppReport()">Laporan WA</button>
     </section>
 
     <div id="transactionModal" class="modal hidden"><div class="box"><h3 style="margin:0 0 12px;text-align:center">Input Transaksi</h3><div class="row"><div class="field"><input type="date" id="inputDate"></div><div class="field"><select id="type" onchange="updatePlaceholder()"><option value="income">Pemasukan</option><option value="expense">Pengeluaran</option></select></div></div><div class="field"><input type="text" id="description" placeholder="Deskripsi"></div><div class="field amount-wrap"><input type="number" id="amount" placeholder="Nominal" oninput="handleSmartAmount(this)"><span id="liveAmountPreview" class="preview"></span></div><div class="row"><button class="btn secondary" onclick="closeTransactionModal()">Batal</button><button class="btn" onclick="addTransaction()">Simpan</button></div><p class="small" style="margin-bottom:0">Catatan: nominal otomatis dikali 1.000 seperti versi sebelumnya.</p></div></div>
@@ -244,12 +243,22 @@
         <div class="stat" onclick="showExpenseListModalFiltered()" style="cursor:pointer;border-color:#ffd7d0;background:#fff8f6"><span id="expenseFilteredLabel">Pengeluaran Hari Ini</span><b id="expenseFilteredSummary" class="red num">Rp 0</b><div style="font-size:9px;color:var(--red);font-weight:900;margin-top:3px">Tap untuk lihat detail</div></div>
         <div class="stat" onclick="showExpenseListModal()" style="cursor:pointer;border-color:#ffd7d0;background:#fff8f6"><span>Total Semua Pengeluaran</span><b id="expenseAllSummary" class="red num">Rp 0</b><div style="font-size:9px;color:var(--red);font-weight:900;margin-top:3px">Tap untuk lihat semua</div></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
-        <button class="btn whatsapp" onclick="sendWhatsAppReport()">Kirim WA</button>
-        <button class="btn secondary" onclick="openBackupModal()">Backup</button>
-        <button class="btn" style="background:#1a7f4b" onclick="downloadXlsMonth()">⬇ XLS</button>
+      <div style="margin-bottom:10px">
+        <button class="btn" style="background:#1a7f4b" onclick="downloadMonthlyFinanceReport()">⬇ Download Laporan Bulanan XLS</button>
+        <div class="small" style="margin-top:6px;color:#2563eb;font-weight:800;text-align:center">Isi laporan XLS: ringkasan total, rekap harian, semua transaksi, pendapatan, pengeluaran, cash out, dan zakat.</div>
       </div>
-      <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b id="currentPeriodLabel">Riwayat</b><button class="tab" style="color:var(--red)" onclick="requestClearAll()">Reset</button></div><div id="transactionList" class="list"></div></div>
+      <div class="card danger-card" style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px">
+          <div>
+            <b style="color:var(--red)">Hapus Semua Data Full</b>
+            <div class="small">Menghapus semua data Supabase aplikasi: transaksi manual, Firebase sync/LOCK, cash out, ops, dan zakat.</div>
+          </div>
+          <span class="lock-badge" style="background:#fff0ee;color:var(--red);border-color:#ffd7d0">PIN</span>
+        </div>
+        <button class="btn red" onclick="requestFullReset()">Hapus Semua Data Full</button>
+        <div class="small" style="margin-top:6px;color:var(--red);font-weight:900">Catatan: data mentah di Firebase kasir tidak dihapus karena halaman Firebase bersifat read only.</div>
+      </div>
+      <div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b id="currentPeriodLabel">Riwayat</b><button class="tab" style="color:var(--red)" onclick="requestClearAll()">Reset Manual</button></div><div id="transactionList" class="list"></div></div>
     </section>
 
 
@@ -385,8 +394,27 @@ async function clearManualTransactions(){
   }
 }
 async function clearAllTransactions(){
-  // Alias lama diarahkan ke clear manual supaya data FIREBASE LOCK tetap aman.
-  return clearManualTransactions();
+  // Reset FULL: hapus semua transaksi Supabase, termasuk data Firebase sync/LOCK, cash out, dan ops.
+  return clearFullSupabaseData();
+}
+async function clearFullSupabaseData(){
+  if(!supabaseClient)throw new Error('Supabase belum aktif');
+  const txDel=await supabaseClient.from('transactions').delete().eq('owner_id',OWNER_ID);
+  if(txDel.error)throw txDel.error;
+  const zkDel=await supabaseClient.from('zakat_history').delete().eq('owner_id',OWNER_ID);
+  if(zkDel.error)throw zkDel.error;
+}
+function resetLocalAfterFullDelete(){
+  transactions=[];
+  zakatHistory=[];
+  pendingFirebaseUploads=[];
+  firebaseIncomeRows=[];
+  firebaseIncomeTotal=0;
+  todayFirebaseIncomeRows=[];
+  todayFirebaseIncomeTotal=0;
+  if($('pendingUploadList'))$('pendingUploadList').innerHTML='';
+  if($('pendingUploadSummary'))$('pendingUploadSummary').innerText='Belum ada scan setelah reset full.';
+  if($('pendingScanStatus'))$('pendingScanStatus').innerText='Idle';
 }
 async function importTransactions(newTransactions){
   // Import hanya mengganti data manual. Data FIREBASE LOCK tetap dipertahankan.
@@ -465,7 +493,37 @@ async function addTransaction(){try{const dateVal=$('inputDate').value,type=$('t
 function onHistoryRangeChange(){$('filterStartDate').value=$('filterStartDateHistory').value;$('filterEndDate').value=$('filterEndDateHistory').value;render();}
 function changeFilter(f){currentFilter=f;$('rangeSelector').classList.toggle('hidden',f!=='range');const rh=$('rangeSelectorHistory');if(rh)rh.classList.toggle('hidden',f!=='range');if(f==='range'){const s=$('filterStartDateHistory'),e=$('filterEndDateHistory');if(s&&!s.value)s.value=getLocalDateString();if(e&&!e.value)e.value=getLocalDateString();$('filterStartDate').value=s?s.value:getLocalDateString();$('filterEndDate').value=e?e.value:getLocalDateString();}updateFilterUI();render();updateMonthValidityIdle()}function updateFilterUI(){['today','month','range','all'].forEach(f=>{const el=$('filter-'+f);if(el)el.classList.toggle('active',f===currentFilter)})}
 async function deleteTransaction(id){const t=transactions.find(x=>Number(x.id)===Number(id));if(t&&isFirebaseUploaded(t)){showToast('Data Firebase LOCK. Gunakan tombol Sync di halaman Firebase, bukan hapus manual.');return}openPasswordModal(async()=>{try{await deleteTransactionFromDB(id);await loadTransactions();validateAndCancelInvalidZakat();render();showToast('Transaksi dihapus')}catch(e){showToast('Gagal hapus: '+e.message)}})}
-async function requestClearAll(){openPasswordModal(async()=>{if(confirm('Hapus semua data manual? Data FIREBASE LOCK tidak akan dihapus.')){try{await clearManualTransactions();await saveZakatHistory([]);await loadTransactions();render();showToast('Data manual dihapus. FIREBASE LOCK tetap aman.')}catch(e){showToast('Gagal reset: '+e.message)}}})}
+async function requestClearAll(){
+  openPasswordModal(async()=>{
+    if(confirm('Hapus semua data manual? Data FIREBASE LOCK tidak akan dihapus.')){
+      try{
+        await clearManualTransactions();
+        await saveZakatHistory([]);
+        await loadTransactions();
+        render();
+        showToast('Data manual dihapus. FIREBASE LOCK tetap aman.');
+      }catch(e){showToast('Gagal reset: '+e.message)}
+    }
+  });
+}
+async function requestFullReset(){
+  openPasswordModal(async()=>{
+    const totalTx=(transactions||[]).length;
+    const ok1=confirm('PERINGATAN!\n\nHapus SEMUA data Supabase aplikasi?\n- Semua transaksi manual\n- Semua data Firebase sync/LOCK\n- Semua cash out QRIS/Tabungan\n- Semua operasional toko\n- Semua riwayat zakat\n\nTotal transaksi yang terbaca: '+totalTx+'.\n\nLanjutkan?');
+    if(!ok1)return;
+    const ok2=confirm('Konfirmasi terakhir: data yang dihapus tidak bisa dikembalikan dari aplikasi. Tetap hapus semua data full?');
+    if(!ok2)return;
+    try{
+      await clearFullSupabaseData();
+      resetLocalAfterFullDelete();
+      await loadTransactions();
+      try{await loadZakatHistory();}catch(e){}
+      render();
+      renderFirebaseUploadCard();
+      showToast('Semua data Supabase aplikasi sudah dihapus full');
+    }catch(e){showToast('Gagal hapus full: '+e.message)}
+  });
+}
 function formatRupiah(n){return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',minimumFractionDigits:0}).format(n||0)}function getActualAmount(raw){if(!raw||isNaN(raw))return 0;return parseFloat(raw)*1000}function handleSmartAmount(input){$('liveAmountPreview').innerText=input.value?formatRupiah(getActualAmount(input.value)):''}function updatePlaceholder(){$('description').placeholder=$('type').value==='expense'?'Contoh: Makan, listrik':'Omset (boleh kosong)'}
 function getGrossIncomeForRange(mode,startDate,endDate){
   const today=getLocalDateString(), month=today.slice(0,7);
@@ -1298,138 +1356,460 @@ function closeExpenseListModal(){$('expenseListModal').classList.add('hidden');}
 // DOWNLOAD REKAP BULANAN XLS
 // =====================================================
 function downloadXlsMonth(){
-  if(typeof XLSX==='undefined'){showToast('Library XLS belum siap, coba lagi');return;}
+  return downloadMonthlyFinanceReport();
+}
 
-  // Tentukan bulan yang akan direkap berdasarkan filter aktif
+// =====================================================
+// DOWNLOAD LAPORAN KEUANGAN LENGKAP CSV
+// =====================================================
+function getCsvReportPeriod(){
   const today=getLocalDateString();
   const thisMonth=today.slice(0,7);
-  let targetMonth=thisMonth;
-  let monthLabel='';
-
-  if(currentFilter==='month'||currentFilter==='today'){
-    targetMonth=thisMonth;
-  } else if(currentFilter==='range'){
+  const allDates=(getDashboardTransactions()||[]).map(t=>String(t.date||'')).filter(Boolean).sort();
+  if(currentFilter==='today')return {mode:'today',label:`Hari Ini (${today})`,start:today,end:today};
+  if(currentFilter==='month')return {mode:'month',label:`Bulan Ini (${thisMonth})`,start:`${thisMonth}-01`,end:getMonthEndDate(thisMonth)};
+  if(currentFilter==='range'){
     const s=$('filterStartDate')?$('filterStartDate').value:'';
-    targetMonth=s?s.slice(0,7):thisMonth;
+    const e=$('filterEndDate')?$('filterEndDate').value:'';
+    return {mode:'range',label:`Custom (${s||'-'} s.d ${e||'-'})`,start:s,end:e};
   }
-  // Format label bulan: "April 2026"
-  const [yr,mo]=targetMonth.split('-');
-  const bulanNames=['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-  monthLabel=`${bulanNames[parseInt(mo)]} ${yr}`;
-
-  // Ambil semua transaksi bulan tersebut
-  const allTx=getDashboardTransactions();
-  const monthTx=allTx.filter(t=>String(t.date||'').startsWith(targetMonth));
-  monthTx.sort((a,b)=>a.date.localeCompare(b.date)||(a.id-b.id));
-
-  // Hitung ringkasan
-  const totalIncome=monthTx.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount||0),0);
-  const totalExpense=monthTx.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount||0),0);
-  const laba20=totalIncome*0.2;
-  const zakatDue=laba20*0.025;
-  const saldoBersih=totalIncome-totalExpense;
-
-  // Format currency tanpa simbol
-  const rp=n=>new Intl.NumberFormat('id-ID').format(Math.round(n||0));
-
-  const wb=XLSX.utils.book_new();
-
-  // ── SHEET 1: RINGKASAN ──
-  const summaryData=[
-    ['REKAP KEUANGAN alfajri'],
-    [`Bulan: ${monthLabel}`],
-    [`Dicetak: ${today}`],
-    [],
-    ['RINGKASAN'],
-    ['Keterangan','Nominal (Rp)'],
-    ['Total Pendapatan',totalIncome],
-    ['Total Pengeluaran',totalExpense],
-    ['Saldo Bersih',saldoBersih],
-    ['Laba Bersih (20% Pendapatan)',laba20],
-    ['Zakat Wajib (2.5% Laba)',zakatDue],
-    [],
-    ['RIWAYAT ZAKAT BULAN INI'],
-    ['Tanggal','Dari Laba (Rp)','Zakat Dibayar (Rp)','Status'],
-  ];
-  // Tambah riwayat zakat
-  const zakatRows=getZakatHistory().filter(z=>{
-    const d=String(z.date||'').slice(0,7);
-    return d===targetMonth;
-  });
-  if(zakatRows.length){
-    zakatRows.forEach(z=>{
-      summaryData.push([z.date,z.profitAtPayment,z.zakatPaid,z.cancelled?'Batal':'Lunas']);
-    });
-  } else {
-    summaryData.push(['(Belum ada pembayaran zakat bulan ini)','','','']);
+  return {mode:'all',label:'Semua Data',start:allDates[0]||today,end:allDates[allDates.length-1]||today};
+}
+function getMonthEndDate(monthKey){
+  const parts=String(monthKey||'').split('-');
+  const y=Number(parts[0]||0),m=Number(parts[1]||0);
+  if(!y||!m)return getLocalDateString();
+  const last=new Date(y,m,0).getDate();
+  return `${monthKey}-${String(last).padStart(2,'0')}`;
+}
+function isDateInCsvPeriod(date,period){
+  const d=String(date||'').slice(0,10);
+  if(!d)return false;
+  if(period.mode==='all')return true;
+  if(!period.start||!period.end)return false;
+  return d>=period.start&&d<=period.end;
+}
+function getCsvReportTransactions(period){
+  let rows=(getDashboardTransactions()||[]).filter(t=>isDateInCsvPeriod(t.date,period));
+  const today=getLocalDateString();
+  const todayCovered=isDateInCsvPeriod(today,period);
+  const liveToday=getTodayFirebasePreviewTransaction();
+  if(todayCovered&&liveToday){
+    // Untuk hari berjalan, pakai nilai live Firebase agar laporan paling baru dan tidak dobel dengan FIREBASE LOCK.
+    rows=rows.filter(t=>!(t.date===today&&isFirebaseUploaded(t)));
+    rows.push({...liveToday,description:'[FIREBASE:'+today+'] Omset Firebase Hari Ini'});
   }
-
-  const wsSum=XLSX.utils.aoa_to_sheet(summaryData);
-  // Lebar kolom ringkasan
-  wsSum['!cols']=[{wch:38},{wch:22}];
-  XLSX.utils.book_append_sheet(wb,wsSum,'Ringkasan');
-
-  // ── SHEET 2: DETAIL TRANSAKSI ──
-  const detailHeader=[['No','Tanggal','Deskripsi','Jenis','Nominal (Rp)','Sumber']];
-  const detailRows=monthTx.map((t,i)=>[
-    i+1,
-    t.date,
-    cleanFirebaseDesc(t.description),
-    t.type==='income'?'Pemasukan':'Pengeluaran',
-    Number(t.amount||0),
-    isFirebaseUploaded(t)?'Firebase':'Manual'
-  ]);
-  // Baris total
-  const detailAll=[...detailHeader,...detailRows,
-    [],
-    ['','','','TOTAL PEMASUKAN',totalIncome,''],
-    ['','','','TOTAL PENGELUARAN',totalExpense,''],
-    ['','','','SALDO BERSIH',saldoBersih,''],
-    ['','','','LABA 20%',laba20,''],
-    ['','','','ZAKAT 2.5%',zakatDue,''],
-  ];
-  const wsDet=XLSX.utils.aoa_to_sheet(detailAll);
-  wsDet['!cols']=[{wch:5},{wch:13},{wch:38},{wch:14},{wch:20},{wch:10}];
-  XLSX.utils.book_append_sheet(wb,wsDet,'Detail Transaksi');
-
-  // ── SHEET 3: REKAP HARIAN ──
-  // Group per hari
+  return rows.slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||(Number(a.id)||0)-(Number(b.id)||0));
+}
+function getCsvTransactionCategory(t){
+  if(t.type==='income')return isFirebaseUploaded(t)?'Pendapatan Firebase':'Pendapatan Manual';
+  if(isCashOut(t)){
+    const type=getCashOutType(t);
+    return type==='qris'?'Cash Out QRIS':type==='tabungan'?'Cash Out Tabungan':'Cash Out Lainnya';
+  }
+  if(isOpsExpense(t))return 'Operasional Toko';
+  return 'Pengeluaran Bisnis';
+}
+function getCsvTransactionDescription(t){
+  if(isCashOut(t))return cleanCashOutDesc(t.description)||getCsvTransactionCategory(t);
+  if(isOpsExpense(t))return String(t.description||'').replace(OPS_PREFIX,'');
+  return cleanFirebaseDesc(t.description);
+}
+function getCsvSourceLabel(t){
+  if(t&&t.__firebasePreview)return 'Firebase Hari Ini (Live)';
+  if(isFirebaseUploaded(t))return 'Firebase LOCK';
+  return 'Manual';
+}
+function buildDailyCsvRows(rows){
   const byDay={};
-  monthTx.forEach(t=>{
-    if(!byDay[t.date])byDay[t.date]={income:0,expense:0,fbIncome:0,manualIncome:0};
+  rows.forEach(t=>{
+    const d=String(t.date||'').slice(0,10)||'-';
+    if(!byDay[d])byDay[d]={fbIncome:0,manualIncome:0,businessExpense:0,cashQris:0,cashTabungan:0,cashLainnya:0,opsExpense:0};
+    const amount=Number(t.amount||0);
     if(t.type==='income'){
-      byDay[t.date].income+=Number(t.amount||0);
-      if(isFirebaseUploaded(t))byDay[t.date].fbIncome+=Number(t.amount||0);
-      else byDay[t.date].manualIncome+=Number(t.amount||0);
-    } else {
-      byDay[t.date].expense+=Number(t.amount||0);
+      if(isFirebaseUploaded(t))byDay[d].fbIncome+=amount;
+      else byDay[d].manualIncome+=amount;
+    }else if(isCashOut(t)){
+      const tp=getCashOutType(t);
+      if(tp==='qris')byDay[d].cashQris+=amount;
+      else if(tp==='tabungan')byDay[d].cashTabungan+=amount;
+      else byDay[d].cashLainnya+=amount;
+    }else{
+      byDay[d].businessExpense+=amount;
+      if(isOpsExpense(t))byDay[d].opsExpense+=amount;
     }
   });
-  const dailyHeader=[['Tanggal','Pendapatan Firebase (Rp)','Pendapatan Manual (Rp)','Total Pendapatan (Rp)','Pengeluaran (Rp)','Laba Bersih Hari (Rp)']];
-  const dailyRows=Object.keys(byDay).sort().map(d=>{
-    const row=byDay[d];
-    const net=row.income-row.expense;
-    return [d,row.fbIncome,row.manualIncome,row.income,row.expense,net];
+  return Object.keys(byDay).sort().map(d=>{
+    const r=byDay[d];
+    const totalIncome=r.fbIncome+r.manualIncome;
+    const totalCashOut=r.cashQris+r.cashTabungan+r.cashLainnya;
+    const saldoBersih=totalIncome-r.businessExpense;
+    const laba20=totalIncome*.2;
+    const labaBersih20=laba20-r.businessExpense;
+    return [d,r.fbIncome,r.manualIncome,totalIncome,r.businessExpense,r.opsExpense,r.cashQris,r.cashTabungan,r.cashLainnya,totalCashOut,saldoBersih,laba20,labaBersih20];
   });
-  const dailyAll=[...dailyHeader,...dailyRows,
-    [],
-    ['TOTAL',
-      dailyRows.reduce((s,r)=>s+r[1],0),
-      dailyRows.reduce((s,r)=>s+r[2],0),
-      totalIncome,
-      totalExpense,
-      saldoBersih
-    ]
-  ];
-  const wsDay=XLSX.utils.aoa_to_sheet(dailyAll);
-  wsDay['!cols']=[{wch:13},{wch:24},{wch:24},{wch:22},{wch:20},{wch:22}];
-  XLSX.utils.book_append_sheet(wb,wsDay,'Rekap Harian');
-
-  // Download
-  const filename=`RockyHijab_${targetMonth}.xlsx`;
-  XLSX.writeFile(wb,filename);
-  showToast(`File ${filename} didownload`);
 }
+function csvCell(value){
+  const s=value===null||value===undefined?'':String(value);
+  return '"'+s.replace(/"/g,'""')+'"';
+}
+function csvFromRows(rows){return '\ufeff'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n')}
+function downloadCsvReport(){
+  const period=getCsvReportPeriod();
+  if((period.mode==='range')&&(!period.start||!period.end)){showToast('Pilih tanggal custom dulu');return;}
+  const rows=getCsvReportTransactions(period);
+  const totalIncome=rows.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount||0),0);
+  const firebaseIncome=rows.filter(t=>t.type==='income'&&isFirebaseUploaded(t)).reduce((s,t)=>s+Number(t.amount||0),0);
+  const manualIncome=rows.filter(t=>t.type==='income'&&!isFirebaseUploaded(t)).reduce((s,t)=>s+Number(t.amount||0),0);
+  const businessExpense=rows.filter(t=>t.type==='expense'&&!isCashOut(t)).reduce((s,t)=>s+Number(t.amount||0),0);
+  const opsExpense=rows.filter(t=>isOpsExpense(t)).reduce((s,t)=>s+Number(t.amount||0),0);
+  const cashQris=rows.filter(t=>isCashOut(t)&&getCashOutType(t)==='qris').reduce((s,t)=>s+Number(t.amount||0),0);
+  const cashTabungan=rows.filter(t=>isCashOut(t)&&getCashOutType(t)==='tabungan').reduce((s,t)=>s+Number(t.amount||0),0);
+  const cashLainnya=rows.filter(t=>isCashOut(t)&&!['qris','tabungan'].includes(getCashOutType(t))).reduce((s,t)=>s+Number(t.amount||0),0);
+  const totalCashOut=cashQris+cashTabungan+cashLainnya;
+  const saldoBersih=totalIncome-businessExpense;
+  const cashSetelahPindah=saldoBersih-totalCashOut;
+  const laba20=totalIncome*.2;
+  const labaBersih20=laba20-businessExpense;
+  const zakatEstimasi=laba20*.025;
+  const printedAt=new Date().toLocaleString('id-ID',{timeZone:'Asia/Jakarta'});
+  const csvRows=[
+    ['LAPORAN KEUANGAN LENGKAP alfajri'],
+    ['Periode',period.label],
+    ['Rentang Tanggal',period.mode==='all'?'Semua tanggal':`${period.start} s.d ${period.end}`],
+    ['Tanggal Export',printedAt],
+    ['Jumlah Transaksi',rows.length],
+    [],
+    ['RINGKASAN UTAMA'],
+    ['Keterangan','Nominal (Rp)'],
+    ['Total Pendapatan',Math.round(totalIncome)],
+    ['Pendapatan Firebase',Math.round(firebaseIncome)],
+    ['Pendapatan Manual',Math.round(manualIncome)],
+    ['Pengeluaran Bisnis',Math.round(businessExpense)],
+    ['Pengeluaran Operasional Toko',Math.round(opsExpense)],
+    ['Saldo Bersih Usaha',Math.round(saldoBersih)],
+    ['Laba 20% dari Pendapatan',Math.round(laba20)],
+    ['Laba Bersih 20% Setelah Pengeluaran',Math.round(labaBersih20)],
+    ['Zakat Estimasi 2.5% dari Laba 20%',Math.round(zakatEstimasi)],
+    [],
+    ['RINGKASAN CASH OUT / PINDAH CASH'],
+    ['Keterangan','Nominal (Rp)'],
+    ['Cash Out QRIS',Math.round(cashQris)],
+    ['Cash Out Tabungan',Math.round(cashTabungan)],
+    ['Cash Out Lainnya',Math.round(cashLainnya)],
+    ['Total Cash Out',Math.round(totalCashOut)],
+    ['Cash Setelah QRIS/Tabungan',Math.round(cashSetelahPindah)],
+    [],
+    ['REKAP HARIAN'],
+    ['Tanggal','Pendapatan Firebase (Rp)','Pendapatan Manual (Rp)','Total Pendapatan (Rp)','Pengeluaran Bisnis (Rp)','Ops Toko (Rp)','Cash Out QRIS (Rp)','Cash Out Tabungan (Rp)','Cash Out Lainnya (Rp)','Total Cash Out (Rp)','Saldo Bersih Usaha (Rp)','Laba 20% (Rp)','Laba Bersih 20% (Rp)'],
+    ...buildDailyCsvRows(rows).map(r=>r.map(v=>typeof v==='number'?Math.round(v):v)),
+    [],
+    ['DETAIL TRANSAKSI'],
+    ['No','Tanggal','Deskripsi','Jenis','Kategori','Nominal (Rp)','Sumber','Status'],
+    ...rows.map((t,i)=>[
+      i+1,
+      t.date,
+      getCsvTransactionDescription(t),
+      t.type==='income'?'Pemasukan':(isCashOut(t)?'Cash Out / Pindah Cash':'Pengeluaran'),
+      getCsvTransactionCategory(t),
+      Math.round(Number(t.amount||0)),
+      getCsvSourceLabel(t),
+      t.__firebasePreview?'LIVE':(isFirebaseUploaded(t)?'LOCK':(isCashOut(t)?'TIDAK DIHITUNG PENGELUARAN':'MANUAL'))
+    ]),
+    [],
+    ['RIWAYAT ZAKAT DALAM PERIODE'],
+    ['Tanggal','Dari Laba (Rp)','Zakat Dibayar (Rp)','Status','Catatan'],
+  ];
+  const zakatRows=getZakatHistory().filter(z=>isDateInCsvPeriod(String(z.date||'').slice(0,10),period));
+  if(zakatRows.length){
+    zakatRows.forEach(z=>csvRows.push([z.date,Math.round(Number(z.profitAtPayment||0)),Math.round(Number(z.zakatPaid||0)),z.cancelled?'Batal':'Lunas',z.note||'']));
+  }else{
+    csvRows.push(['Belum ada riwayat zakat dalam periode','','','','']);
+  }
+  const safeLabel=(period.mode==='all'?'semua':`${period.start}_sd_${period.end}`).replace(/[^0-9A-Za-z_-]/g,'');
+  const filename=`alfajri_laporan_keuangan_${safeLabel}.csv`;
+  const blob=new Blob([csvFromRows(csvRows)],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);
+  showToast(`CSV ${filename} didownload`);
+}
+
+
+// =====================================================
+// DOWNLOAD LAPORAN BULANAN XLS LENGKAP
+// Isi: Ringkasan total, rekap harian, semua transaksi,
+// pendapatan, pengeluaran, cash out, dan zakat bulan terkait.
+// Cash Out QRIS/Tabungan tetap masuk data, tapi tidak dihitung
+// sebagai pengeluaran bisnis sesuai logika aplikasi.
+// =====================================================
+function getMonthlyReportTargetMonth(){
+  const today=getLocalDateString();
+  let targetMonth=today.slice(0,7);
+  if(currentFilter==='range'){
+    const s=$('filterStartDate')?$('filterStartDate').value:'';
+    if(s&&s.length>=7)targetMonth=s.slice(0,7);
+  }
+  return targetMonth;
+}
+function getMonthlyReportMonthLabel(monthKey){
+  const parts=String(monthKey||'').split('-');
+  const y=parts[0]||'';
+  const m=Number(parts[1]||0);
+  const names=['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  return `${names[m]||monthKey} ${y}`.trim();
+}
+function getMonthlyReportRows(monthKey){
+  let rows=(getDashboardTransactions()||[]).filter(t=>String(t.date||'').startsWith(monthKey));
+  const today=getLocalDateString();
+  const liveToday=getTodayFirebasePreviewTransaction();
+  if(liveToday&&String(liveToday.date||'').startsWith(monthKey)){
+    rows=rows.filter(t=>!(t.date===today&&isFirebaseUploaded(t)));
+    rows.push({...liveToday,description:'[FIREBASE:'+today+'] Omset Firebase Hari Ini'});
+  }
+  return rows.slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||(Number(a.id)||0)-(Number(b.id)||0));
+}
+function getMonthlyReportCategory(t){
+  if(t.type==='income')return isFirebaseUploaded(t)?(t.__firebasePreview?'Pendapatan Firebase Live':'Pendapatan Firebase LOCK'):'Pendapatan Manual';
+  if(isCashOut(t)){
+    const type=getCashOutType(t);
+    if(type==='qris')return 'Cash Out QRIS';
+    if(type==='tabungan')return 'Cash Out Tabungan';
+    return 'Cash Out Lainnya';
+  }
+  if(isOpsExpense(t))return 'Operasional Toko';
+  return 'Pengeluaran Bisnis';
+}
+function getMonthlyReportDesc(t){
+  if(isCashOut(t))return cleanCashOutDesc(t.description)||getMonthlyReportCategory(t);
+  if(isOpsExpense(t))return String(t.description||'').replace(OPS_PREFIX,'');
+  return cleanFirebaseDesc(t.description);
+}
+function getMonthlyReportSource(t){
+  if(t&&t.__firebasePreview)return 'Firebase Hari Ini (Live)';
+  if(isFirebaseUploaded(t))return 'Firebase LOCK / Supabase';
+  return 'Manual';
+}
+function makeSheetFromAoa(data,cols,currencyCols,autoFilterRef){
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  if(cols)ws['!cols']=cols.map(w=>({wch:w}));
+  if(autoFilterRef)ws['!autofilter']={ref:autoFilterRef};
+  if(ws['!ref']){
+    const range=XLSX.utils.decode_range(ws['!ref']);
+    for(let R=range.s.r;R<=range.e.r;R++){
+      for(let C=range.s.c;C<=range.e.c;C++){
+        const addr=XLSX.utils.encode_cell({r:R,c:C});
+        const cell=ws[addr];
+        if(!cell)continue;
+        if(typeof cell.v==='number'){
+          if(currencyCols&&currencyCols.includes(C))cell.z='#,##0';
+          else cell.z='0';
+        }
+      }
+    }
+  }
+  return ws;
+}
+function sumAmount(rows){return rows.reduce((s,t)=>s+Number(t.amount||0),0)}
+function buildMonthlyDailyRows(rows){
+  const byDay={};
+  rows.forEach(t=>{
+    const d=String(t.date||'').slice(0,10)||'-';
+    if(!byDay[d])byDay[d]={fbLock:0,fbLive:0,manualIncome:0,ops:0,expenseOther:0,cashQris:0,cashTabungan:0,cashLainnya:0,count:0};
+    byDay[d].count++;
+    const amount=Number(t.amount||0);
+    if(t.type==='income'){
+      if(t.__firebasePreview)byDay[d].fbLive+=amount;
+      else if(isFirebaseUploaded(t))byDay[d].fbLock+=amount;
+      else byDay[d].manualIncome+=amount;
+    }else if(isCashOut(t)){
+      const type=getCashOutType(t);
+      if(type==='qris')byDay[d].cashQris+=amount;
+      else if(type==='tabungan')byDay[d].cashTabungan+=amount;
+      else byDay[d].cashLainnya+=amount;
+    }else if(isOpsExpense(t)){
+      byDay[d].ops+=amount;
+    }else{
+      byDay[d].expenseOther+=amount;
+    }
+  });
+  return Object.keys(byDay).sort().map(d=>{
+    const r=byDay[d];
+    const totalIncome=r.fbLock+r.fbLive+r.manualIncome;
+    const totalExpense=r.ops+r.expenseOther;
+    const totalCashOut=r.cashQris+r.cashTabungan+r.cashLainnya;
+    const saldoBersih=totalIncome-totalExpense;
+    const cashSetelahPindah=saldoBersih-totalCashOut;
+    const laba20=totalIncome*.2;
+    const labaBersih20=laba20-totalExpense;
+    return [d,r.fbLock,r.fbLive,r.manualIncome,totalIncome,r.ops,r.expenseOther,totalExpense,r.cashQris,r.cashTabungan,r.cashLainnya,totalCashOut,saldoBersih,cashSetelahPindah,laba20,labaBersih20,r.count];
+  });
+}
+function downloadMonthlyFinanceReport(){
+  if(typeof XLSX==='undefined'){showToast('Library XLS belum siap, coba lagi');return;}
+
+  const targetMonth=getMonthlyReportTargetMonth();
+  const monthLabel=getMonthlyReportMonthLabel(targetMonth);
+  const startDate=`${targetMonth}-01`;
+  const endDate=getMonthEndDate(targetMonth);
+  const rows=getMonthlyReportRows(targetMonth);
+
+  const incomeRows=rows.filter(t=>t.type==='income');
+  const firebaseLockIncomeRows=rows.filter(t=>t.type==='income'&&isFirebaseUploaded(t)&&!t.__firebasePreview);
+  const firebaseLiveIncomeRows=rows.filter(t=>t.type==='income'&&t.__firebasePreview);
+  const manualIncomeRows=rows.filter(t=>t.type==='income'&&!isFirebaseUploaded(t));
+  const businessExpenseRows=rows.filter(t=>t.type==='expense'&&!isCashOut(t));
+  const opsRows=rows.filter(t=>isOpsExpense(t));
+  const otherExpenseRows=businessExpenseRows.filter(t=>!isOpsExpense(t));
+  const cashOutRows=rows.filter(t=>isCashOut(t));
+  const cashQrisRows=cashOutRows.filter(t=>getCashOutType(t)==='qris');
+  const cashTabunganRows=cashOutRows.filter(t=>getCashOutType(t)==='tabungan');
+  const cashLainnyaRows=cashOutRows.filter(t=>!['qris','tabungan'].includes(getCashOutType(t)));
+  const zakatRows=getZakatHistory().filter(z=>String(z.date||'').slice(0,7)===targetMonth);
+
+  const totalIncome=sumAmount(incomeRows);
+  const firebaseLockIncome=sumAmount(firebaseLockIncomeRows);
+  const firebaseLiveIncome=sumAmount(firebaseLiveIncomeRows);
+  const manualIncome=sumAmount(manualIncomeRows);
+  const totalExpense=sumAmount(businessExpenseRows);
+  const opsExpense=sumAmount(opsRows);
+  const otherExpense=sumAmount(otherExpenseRows);
+  const cashQris=sumAmount(cashQrisRows);
+  const cashTabungan=sumAmount(cashTabunganRows);
+  const cashLainnya=sumAmount(cashLainnyaRows);
+  const totalCashOut=cashQris+cashTabungan+cashLainnya;
+  const saldoBersih=totalIncome-totalExpense;
+  const cashSetelahPindah=saldoBersih-totalCashOut;
+  const laba20=totalIncome*.2;
+  const labaBersih20=laba20-totalExpense;
+  const zakatEstimasi=laba20*.025;
+  const zakatDibayar=zakatRows.filter(z=>!z.cancelled).reduce((s,z)=>s+Number(z.zakatPaid||0),0);
+  const printedAt=new Date().toLocaleString('id-ID',{timeZone:'Asia/Jakarta'});
+
+  const wb=XLSX.utils.book_new();
+  wb.Props={Title:`Laporan Bulanan alfajri ${monthLabel}`,Subject:'Laporan Keuangan Bulanan',Author:'alfajri Finance',CreatedDate:new Date()};
+
+  const summaryData=[
+    ['LAPORAN KEUANGAN BULANAN ALFAJRI'],
+    ['Bulan',monthLabel],
+    ['Periode',`${startDate} s.d ${endDate}`],
+    ['Tanggal Download',printedAt],
+    ['Total Baris Data',rows.length],
+    [],
+    ['RINGKASAN TOTAL BULANAN'],
+    ['Keterangan','Nominal (Rp)','Catatan'],
+    ['Pendapatan Bulanan',totalIncome,'Firebase + manual'],
+    ['Pendapatan Firebase LOCK',firebaseLockIncome,'Data Firebase yang sudah sync ke Supabase'],
+    ['Pendapatan Firebase Hari Ini Live',firebaseLiveIncome,'Masuk agar omset hari ini tidak kosong / tidak tertinggal'],
+    ['Pendapatan Manual',manualIncome,'Input manual'],
+    ['Pengeluaran Bulanan',totalExpense,'Tidak termasuk Cash Out QRIS/Tabungan'],
+    ['Operasional Toko',opsExpense,'Termasuk di Pengeluaran Bulanan'],
+    ['Pengeluaran Lainnya',otherExpense,'Pengeluaran manual selain operasional'],
+    ['Saldo Bersih Bulanan',saldoBersih,'Pendapatan - Pengeluaran'],
+    ['Laba 20% dari Pendapatan',laba20,'20% × Pendapatan Bulanan'],
+    ['Laba Bersih 20% Setelah Pengeluaran',labaBersih20,'Laba 20% - Pengeluaran Bulanan'],
+    ['Zakat Estimasi',zakatEstimasi,'2.5% × Laba 20%'],
+    ['Zakat Dibayar Bulan Ini',zakatDibayar,'Hanya riwayat zakat yang tidak batal'],
+    [],
+    ['RINGKASAN CASH OUT / PINDAH CASH'],
+    ['Keterangan','Nominal (Rp)','Catatan'],
+    ['Cash Out QRIS',cashQris,'Tidak dihitung sebagai pengeluaran bisnis'],
+    ['Cash Out Tabungan',cashTabungan,'Tidak dihitung sebagai pengeluaran bisnis'],
+    ['Cash Out Lainnya',cashLainnya,'Tidak dihitung sebagai pengeluaran bisnis'],
+    ['Total Cash Out',totalCashOut,'QRIS + Tabungan + Lainnya'],
+    ['Cash Setelah Pindah QRIS/Tabungan',cashSetelahPindah,'Saldo Bersih - Total Cash Out'],
+    [],
+    ['JUMLAH DATA'],
+    ['Jenis Data','Jumlah Baris','Total (Rp)'],
+    ['Pendapatan',incomeRows.length,totalIncome],
+    ['Pengeluaran Bisnis',businessExpenseRows.length,totalExpense],
+    ['Cash Out',cashOutRows.length,totalCashOut],
+    ['Zakat',zakatRows.length,zakatDibayar],
+    ['Semua Transaksi',rows.length,'']
+  ];
+  const wsSummary=makeSheetFromAoa(summaryData,[38,22,48],[1,2],null);
+  wsSummary['!merges']=[{s:{r:0,c:0},e:{r:0,c:2}}];
+  XLSX.utils.book_append_sheet(wb,wsSummary,'Ringkasan');
+
+  const dailyRows=buildMonthlyDailyRows(rows);
+  const dailyHeader=[['Tanggal','Firebase LOCK (Rp)','Firebase Live (Rp)','Manual (Rp)','Total Pendapatan (Rp)','Ops Toko (Rp)','Pengeluaran Lainnya (Rp)','Total Pengeluaran (Rp)','QRIS (Rp)','Tabungan (Rp)','Cash Out Lainnya (Rp)','Total Cash Out (Rp)','Saldo Bersih (Rp)','Cash Setelah Pindah (Rp)','Laba 20% (Rp)','Laba Bersih 20% (Rp)','Jumlah Data']];
+  const dailyTotals=['TOTAL'];
+  for(let c=1;c<17;c++)dailyTotals[c]=dailyRows.reduce((ss,r)=>ss+Number(r[c]||0),0);
+  const dailyData=[...dailyHeader,...dailyRows,[],dailyTotals];
+  const wsDaily=makeSheetFromAoa(dailyData,[13,18,18,16,21,16,23,22,14,16,22,19,18,23,17,22,12],[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],'A1:Q1');
+  XLSX.utils.book_append_sheet(wb,wsDaily,'Rekap Harian');
+
+  const detailData=[
+    ['No','Tanggal','Deskripsi','Jenis','Kategori','Sumber','Nominal (Rp)','Status / Catatan'],
+    ...(rows.length?rows.map((t,i)=>[
+      i+1,
+      t.date,
+      getMonthlyReportDesc(t),
+      t.type==='income'?'Pemasukan':(isCashOut(t)?'Cash Out / Pindah Cash':'Pengeluaran'),
+      getMonthlyReportCategory(t),
+      getMonthlyReportSource(t),
+      Math.round(Number(t.amount||0)),
+      t.__firebasePreview?'LIVE FIREBASE HARI INI':(isFirebaseUploaded(t)?'FIREBASE LOCK':(isCashOut(t)?'TIDAK DIHITUNG PENGELUARAN BISNIS':'MANUAL'))
+    ]):[['Belum ada data bulan ini','','','','','','','']]),
+    [],
+    ['','','','','','TOTAL PENDAPATAN',totalIncome,''],
+    ['','','','','','TOTAL PENGELUARAN',totalExpense,''],
+    ['','','','','','TOTAL CASH OUT',totalCashOut,''],
+    ['','','','','','SALDO BERSIH',saldoBersih,'']
+  ];
+  const wsDetail=makeSheetFromAoa(detailData,[6,13,42,22,24,24,18,34],[6],'A1:H1');
+  XLSX.utils.book_append_sheet(wb,wsDetail,'Semua Transaksi');
+
+  const pendapatanData=[
+    ['No','Tanggal','Deskripsi','Kategori','Sumber','Nominal (Rp)'],
+    ...(incomeRows.length?incomeRows.map((t,i)=>[i+1,t.date,getMonthlyReportDesc(t),getMonthlyReportCategory(t),getMonthlyReportSource(t),Math.round(Number(t.amount||0))]):[['Belum ada pendapatan bulan ini','','','','','']]),
+    [],
+    ['','','','TOTAL FIREBASE LOCK','',firebaseLockIncome],
+    ['','','','TOTAL FIREBASE LIVE','',firebaseLiveIncome],
+    ['','','','TOTAL MANUAL','',manualIncome],
+    ['','','','TOTAL PENDAPATAN','',totalIncome]
+  ];
+  const wsIncome=makeSheetFromAoa(pendapatanData,[6,13,42,26,24,18],[5],'A1:F1');
+  XLSX.utils.book_append_sheet(wb,wsIncome,'Pendapatan');
+
+  const pengeluaranData=[
+    ['No','Tanggal','Deskripsi','Kategori','Sumber','Nominal (Rp)'],
+    ...(businessExpenseRows.length?businessExpenseRows.map((t,i)=>[i+1,t.date,getMonthlyReportDesc(t),getMonthlyReportCategory(t),getMonthlyReportSource(t),Math.round(Number(t.amount||0))]):[['Belum ada pengeluaran bulan ini','','','','','']]),
+    [],
+    ['','','','TOTAL OPERASIONAL TOKO','',opsExpense],
+    ['','','','TOTAL PENGELUARAN LAINNYA','',otherExpense],
+    ['','','','TOTAL PENGELUARAN BULANAN','',totalExpense]
+  ];
+  const wsExpense=makeSheetFromAoa(pengeluaranData,[6,13,42,28,24,18],[5],'A1:F1');
+  XLSX.utils.book_append_sheet(wb,wsExpense,'Pengeluaran');
+
+  const cashOutData=[
+    ['No','Tanggal','Keterangan','Jenis Cash Out','Sumber','Nominal (Rp)','Catatan'],
+    ...(cashOutRows.length?cashOutRows.map((t,i)=>[i+1,t.date,getMonthlyReportDesc(t),getMonthlyReportCategory(t),getMonthlyReportSource(t),Math.round(Number(t.amount||0)),'Tidak dihitung pengeluaran bisnis']):[['Belum ada cash out bulan ini','','','','','','']]),
+    [],
+    ['','','','TOTAL QRIS','',cashQris,''],
+    ['','','','TOTAL TABUNGAN','',cashTabungan,''],
+    ['','','','TOTAL LAINNYA','',cashLainnya,''],
+    ['','','','TOTAL CASH OUT','',totalCashOut,'']
+  ];
+  const wsCash=makeSheetFromAoa(cashOutData,[6,13,38,24,24,18,34],[5],'A1:G1');
+  XLSX.utils.book_append_sheet(wb,wsCash,'Cash Out');
+
+  const zakatData=[
+    ['No','Tanggal','Dari Laba (Rp)','Zakat Dibayar (Rp)','Status','Catatan'],
+    ...(zakatRows.length?zakatRows.map((z,i)=>[i+1,z.date,Math.round(Number(z.profitAtPayment||0)),Math.round(Number(z.zakatPaid||0)),z.cancelled?'Batal':'Lunas',z.note||'']):[['Belum ada riwayat zakat bulan ini','','','','','']]),
+    [],
+    ['','','TOTAL ZAKAT DIBAYAR',zakatDibayar,'',''],
+    ['','','ZAKAT ESTIMASI BULAN INI',zakatEstimasi,'','']
+  ];
+  const wsZakat=makeSheetFromAoa(zakatData,[6,22,20,20,14,48],[2,3],'A1:F1');
+  XLSX.utils.book_append_sheet(wb,wsZakat,'Zakat');
+
+  const safeMonth=targetMonth.replace(/[^0-9A-Za-z_-]/g,'');
+  const filename=`alfajri_laporan_bulanan_${safeMonth}.xlsx`;
+  XLSX.writeFile(wb,filename,{bookType:'xlsx'});
+  showToast(`Laporan XLS ${monthLabel} didownload`);
+}
+
 
 async function initApp(){try{if(!initSupabase())return;
   // Tampilkan loading saat fetch Supabase
