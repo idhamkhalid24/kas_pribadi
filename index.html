@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>alfajri Finance v25 Sync Index Update</title>
+  <title>alfajri Finance v26 Selaras Database Bonus</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
@@ -259,7 +259,7 @@
           <div>
             <div class="section-title" style="margin:0 0 4px;color:#2563eb">Halaman Firebase</div>
             <b>Data Kasir Khusus</b>
-            <div class="small">Cek, audit, dan upload omset Firebase ke Supabase. Hari ini tetap dikunci.</div>
+            <div class="small">Cek, audit, dan upload omset Firebase ke Supabase. Hari ini tetap dikunci. Sync membaca server terbaru.</div>
           </div>
           <span class="pill" style="background:#dbeafe;color:#2563eb">READ ONLY</span>
         </div>
@@ -414,7 +414,7 @@ function getFirebaseRecordDateKey(t){
   if(Number(t.timestamp||0))return getLocalDateString(new Date(Number(t.timestamp)));
   return '';
 }
-function isFirebaseRecordDeleted(t){return t&&(t.deleted===true||t.deleted==='true'||t.isDeleted===true||t.isDeleted==='true'||t.status==='deleted')}
+function isFirebaseRecordDeleted(t){return t&&(t.deleted===true||t.deleted==='true'||t.isDeleted===true||t.isDeleted==='true'||t.canceled===true||t.canceled==='true'||t.cancelled===true||t.cancelled==='true'||['deleted','canceled','cancelled'].includes(String(t.status||'').toLowerCase()))}
 function normalizeFirebaseRows(rows){
   return (rows||[])
     .map(t=>({...t,dateKey:getFirebaseRecordDateKey(t),amount:Number(t.amount||0)}))
@@ -426,14 +426,19 @@ async function fetchFirebaseRowsByRange(start,end){
   if(!firebaseDb)return [];
   const merged={};
   const addSnap=(snap)=>snap.docs.forEach(d=>{merged[d.id]={id:d.id,_docId:d.id,...d.data()}});
-  try{addSnap(await firebaseDb.collection('transactions').where('dateKey','>=',start).where('dateKey','<=',end).get());}catch(e){console.warn('Query dateKey Firebase gagal:',e.message||e)}
+  try{addSnap(await getFirebaseQuerySnapshot(firebaseDb.collection('transactions').where('dateKey','>=',start).where('dateKey','<=',end)));}catch(e){console.warn('Query dateKey Firebase gagal:',e.message||e)}
   // Fallback untuk data lama/baru yang mungkin belum punya dateKey tapi punya createdAtMs.
-  try{addSnap(await firebaseDb.collection('transactions').where('createdAtMs','>=',wibDayStartMs(start)).where('createdAtMs','<=',wibDayEndMs(end)).get());}catch(e){console.warn('Query createdAtMs Firebase fallback dilewati:',e.message||e)}
+  try{addSnap(await getFirebaseQuerySnapshot(firebaseDb.collection('transactions').where('createdAtMs','>=',wibDayStartMs(start)).where('createdAtMs','<=',wibDayEndMs(end))));}catch(e){console.warn('Query createdAtMs Firebase fallback dilewati:',e.message||e)}
   // Fallback ekstra untuk index/backup lama yang memakai field timestamp angka.
-  try{addSnap(await firebaseDb.collection('transactions').where('timestamp','>=',wibDayStartMs(start)).where('timestamp','<=',wibDayEndMs(end)).get());}catch(e){console.warn('Query timestamp Firebase fallback dilewati:',e.message||e)}
+  try{addSnap(await getFirebaseQuerySnapshot(firebaseDb.collection('transactions').where('timestamp','>=',wibDayStartMs(start)).where('timestamp','<=',wibDayEndMs(end))));}catch(e){console.warn('Query timestamp Firebase fallback dilewati:',e.message||e)}
   return normalizeFirebaseRows(Object.values(merged)).filter(t=>t.dateKey>=start&&t.dateKey<=end);
 }
 function sumFirebaseRows(rows){return (rows||[]).reduce((a,b)=>a+Number(b.amount||0),0)}
+async function getFirebaseQuerySnapshot(q){
+  // Selaras dengan update database: setiap sync/cek wajib mencoba baca data terbaru dari server dulu,
+  // supaya omset yang baru dibuat dari index/trk/toko tidak tertinggal karena cache lokal.
+  try{return await q.get({source:'server'});}catch(e){console.warn('Baca Firebase server gagal, fallback cache:',e.message||e);return await q.get();}
+}
 async function refreshFirebaseRowsOnce(date,mode='selected'){
   // Baca ulang pakai range supaya data index lama/baru tetap kebaca walau field tanggal berbeda.
   if(!firebaseDb||!date)return;
@@ -773,9 +778,13 @@ async function scanPendingFirebaseUploads(){
 async function uploadPendingFirebaseDate(date){
   const item=(pendingFirebaseUploads||[]).find(x=>x.date===date);
   if(!item)return showToast('Data tidak ditemukan, scan ulang dulu');
-  await uploadFirebaseIncomeForDate(item.date,item.firebaseTotal,true);
-  pendingFirebaseUploads=pendingFirebaseUploads.filter(x=>x.date!==date);
-  renderPendingUploadList();
+  try{
+    const freshRows=await fetchFirebaseRowsByRange(item.date,item.date);
+    const freshTotal=sumFirebaseRows(freshRows.filter(t=>t.dateKey===item.date));
+    await uploadFirebaseIncomeForDate(item.date,freshTotal,true);
+    pendingFirebaseUploads=pendingFirebaseUploads.filter(x=>x.date!==date);
+    renderPendingUploadList();
+  }catch(e){showToast('Gagal cek ulang Firebase: '+e.message,5000)}
 }
 async function uploadFirebaseIncomeForDate(date,total,quiet=false){
   if(!supabaseClient)return showToast('Supabase belum aktif');
@@ -842,6 +851,12 @@ function renderFirebaseUploadCard(){
 }
 async function uploadFirebaseIncome(){
   const date=firebaseUploadDate||getLocalDateString();
+  try{
+    const freshRows=await fetchFirebaseRowsByRange(date,date);
+    firebaseIncomeRows=freshRows.filter(t=>t.dateKey===date);
+    firebaseIncomeTotal=sumFirebaseRows(firebaseIncomeRows);
+    renderFirebaseUploadCard();
+  }catch(e){showToast('Gagal cek ulang Firebase: '+e.message,5000);return;}
   await uploadFirebaseIncomeForDate(date,firebaseIncomeTotal,false);
 }
 function getDashboardTransactions(){
