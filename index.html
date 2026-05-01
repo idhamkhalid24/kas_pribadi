@@ -161,7 +161,7 @@
           <div style="min-width:0;flex:1">
             <div class="section-title" style="margin:0 0 4px;color:#2563eb">Cash Fisik Hari Ini</div>
             <div id="cashFisikTotal" class="num" style="font-size:26px;color:#2563eb;cursor:pointer" onclick="openCashOutModal()">Rp 0</div>
-            <div id="todayFirebaseIncomeInfo" class="small" style="color:#4b5563;margin-top:2px">Pendapatan - Ops Toko - QRIS - Tabungan</div>
+            <div id="todayFirebaseIncomeInfo" class="small" style="color:#4b5563;margin-top:2px">Firebase - Ops Toko - QRIS - Tabungan · Manual tidak masuk cash fisik</div>
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
             <span class="lock-badge" style="margin-left:0;background:#dbeafe;color:#1d4ed8">HARI INI</span>
@@ -1200,25 +1200,26 @@ function getTodayCashOutTotals(){
 
 function renderCashFisik(){
   const today=getLocalDateString();
+  // Manual income tetap tercatat untuk laporan/laba/zakat, tapi tidak dihitung sebagai cash fisik hari ini.
   const manualIncome=(transactions||[]).filter(t=>t.type==='income'&&t.date===today&&!isFirebaseUploaded(t)).reduce((s,t)=>s+Number(t.amount||0),0);
   const fbTotal=Number(todayFirebaseIncomeTotal||0);
   const opsTotal=(transactions||[]).filter(t=>isOpsExpense(t)&&t.date===today).reduce((s,t)=>s+Number(t.amount||0),0);
-  const pendapatanHariIni=manualIncome+fbTotal-opsTotal;
   const co=getTodayCashOutTotals();
-  const cashFisik=pendapatanHariIni-co.total;
+  // Cash fisik hari ini hanya dari omset Firebase/kasir, dikurangi Ops Toko, QRIS, dan Tabungan.
+  const cashFisik=fbTotal-opsTotal-co.total;
   // Update home card gabungan
   const cfEl=$('cashFisikTotal');
   if(cfEl){cfEl.innerText=formatRupiah(cashFisik<0?0:cashFisik);cfEl.style.color=cashFisik<0?'var(--red)':'#2563eb';}
-  // Update info text dengan breakdown sumber pendapatan
+  // Update info text dengan breakdown sumber cash fisik
   const infoEl=$('todayFirebaseIncomeInfo');
   if(infoEl){
     const parts=[];
     if(fbTotal>0)parts.push(`Firebase ${formatRupiah(fbTotal)}`);
-    if(manualIncome>0)parts.push(`Manual ${formatRupiah(manualIncome)}`);
     if(opsTotal>0)parts.push(`Ops -${formatRupiah(opsTotal)}`);
     if(co.qris>0)parts.push(`QRIS -${formatRupiah(co.qris)}`);
     if(co.tabungan>0)parts.push(`Tabungan -${formatRupiah(co.tabungan)}`);
-    infoEl.innerText=parts.length?parts.join(' · '):'Pendapatan - Ops Toko - QRIS - Tabungan';
+    if(manualIncome>0)parts.push(`Manual ${formatRupiah(manualIncome)} tidak masuk cash`);
+    infoEl.innerText=parts.length?parts.join(' · '):'Firebase - Ops Toko - QRIS - Tabungan · Manual tidak masuk cash fisik';
   }
   // Update ops total di breakdown
   const opsTodayHomeEl=$('opsTodayHomeTotal');if(opsTodayHomeEl)opsTodayHomeEl.innerText=formatRupiah(opsTotal);
