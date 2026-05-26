@@ -867,15 +867,30 @@
         </div>
         <div class="cash-fisik-breakdown" style="border-color:#fde68a;margin-top:9px">
           <div class="breakdown-row">
-            <span class="breakdown-label">Total Pinjaman</span>
-            <b id="debtTodayBorrowed" class="breakdown-val num" style="color:#92400e" onclick="openDebtModal('list')">Rp 0</b>
+            <span class="breakdown-label">Belum Dibayar</span>
+            <b id="debtCardUnpaid" class="breakdown-val num" style="color:#92400e" onclick="openDebtModal('list')">Rp 0</b>
           </div>
           <div class="breakdown-row">
-            <span class="breakdown-label">Total Bayar Pokok</span>
-            <b id="debtTodayPaid" class="breakdown-val num" style="color:#15803d" onclick="openDebtModal('list')">Rp 0</b>
+            <span class="breakdown-label">Status</span>
+            <b id="debtCardStatus" class="breakdown-val" style="color:#92400e" onclick="openDebtModal('list')">Lunas</b>
           </div>
         </div>
         <div class="debt-note">Tidak masuk pendapatan, pengeluaran, laba, atau zakat. Hanya mutasi Saldo Bersih dan sisa hutang.</div>
+      </div>
+
+      <div class="grid2">
+        <div class="stat" onclick="openDebtModal('list')" style="cursor:pointer;background:#fffbeb;border-color:#fde68a">
+          <span>Total Pinjaman</span>
+          <b id="debtTotalBorrowed" class="num" style="color:#92400e">Rp 0</b>
+        </div>
+        <div class="stat" onclick="openDebtModal('list')" style="cursor:pointer;background:#f0fdf4;border-color:#bbf7d0">
+          <span>Sudah Dibayar</span>
+          <b id="debtTotalPaid" class="num" style="color:#15803d">Rp 0</b>
+        </div>
+      </div>
+      <div class="stat" onclick="openDebtModal('list')" style="cursor:pointer;background:#fff7ed;border-color:#fed7aa;margin-bottom:10px">
+        <span>Belum Dibayar</span>
+        <b id="debtTotalUnpaid" class="num" style="color:#c2410c">Rp 0</b>
       </div>
 
       <!-- Hidden elements tetap ada agar JS tidak error -->
@@ -2313,11 +2328,15 @@ function renderDebtSummary(){
   const s=getDebtSummary();
   const setText=(id,val)=>{const el=$(id);if(el)el.innerText=formatRupiah(val)};
   setText('debtActiveTotal',s.active);
-  setText('debtTodayBorrowed',s.borrowed);
-  setText('debtTodayPaid',s.paid);
+  setText('debtCardUnpaid',s.active);
+  setText('debtTotalBorrowed',s.borrowed);
+  setText('debtTotalPaid',s.paid);
+  setText('debtTotalUnpaid',s.active);
   setText('debtModalActiveTotal',s.active);
   setText('debtModalBorrowed',s.borrowed);
   setText('debtModalPaid',s.paid);
+  const cardStatus=$('debtCardStatus');
+  if(cardStatus){cardStatus.innerText=s.active>0?'Belum Lunas':'Lunas';cardStatus.style.color=s.active>0?'#c2410c':'#15803d'}
   const info=$('debtTodayInfo');
   if(info)info.innerText=s.active>0?`Belum dibayar: ${formatRupiah(s.active)}`:'Hutang lunas';
   renderDebtHistoryList();
