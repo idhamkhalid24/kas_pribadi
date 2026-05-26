@@ -1,0 +1,2999 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>alfajri Finance v26</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;900&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #f0f2ec;
+      --surface: #ffffff;
+      --surface2: #f7f8f4;
+      --ink: #1a1f18;
+      --ink2: #4a5247;
+      --muted: #8a9487;
+      --line: #e2e6db;
+      --green: #1a7a4a;
+      --green-light: #e6f4ed;
+      --green-dark: #0f5132;
+      --gold: #a07820;
+      --gold-light: #fef3d0;
+      --red: #c0392b;
+      --red-light: #fdf0ee;
+      --blue: #1d4ed8;
+      --blue-light: #eff6ff;
+      --orange: #c96a00;
+      --orange-light: #fff4e5;
+      --shadow-sm: 0 1px 3px rgba(26,31,24,.07), 0 1px 2px rgba(26,31,24,.05);
+      --shadow: 0 4px 12px rgba(26,31,24,.08), 0 1px 3px rgba(26,31,24,.05);
+      --shadow-lg: 0 8px 24px rgba(26,31,24,.10), 0 2px 6px rgba(26,31,24,.06);
+      --r-sm: 10px;
+      --r: 14px;
+      --r-lg: 18px;
+      --r-xl: 22px;
+      --font: 'DM Sans', system-ui, sans-serif;
+      --mono: 'DM Mono', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    button, input, select, textarea { font: inherit; }
+    button { border: 0; cursor: pointer; background: transparent; }
+
+    /* === TYPOGRAPHY === */
+    .num { font-family: var(--mono); font-weight: 500; letter-spacing: -.3px; }
+
+    /* === LAYOUT === */
+    .app { max-width: 420px; margin: 0 auto; min-height: 100vh; padding: 12px 12px 80px; }
+
+    /* === TOP BAR === */
+    .top {
+      position: sticky; top: 0; z-index: 10;
+      margin: -12px -12px 14px;
+      padding: 10px 14px;
+      background: rgba(240,242,236,.92);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--line);
+    }
+    .brand { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .brand h1 { font-size: 18px; font-weight: 900; line-height: 1; letter-spacing: -.4px; }
+    .brand small { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; font-weight: 500; }
+    .pill {
+      font-size: 11px; padding: 5px 10px; border-radius: 999px;
+      background: var(--green-light); color: var(--green); font-weight: 700;
+      white-space: nowrap; border: 1px solid rgba(26,122,74,.15);
+    }
+
+    /* === CARDS === */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--r-lg);
+      box-shadow: var(--shadow-sm);
+      padding: 11px 12px;
+      margin-bottom: 8px;
+    }
+
+    /* === HERO CARD === */
+    .hero {
+      background: linear-gradient(135deg, #0f5132 0%, #1a7a4a 60%, #23a05e 100%);
+      color: white;
+      border-radius: var(--r-xl);
+      padding: 14px;
+      margin-bottom: 10px;
+      box-shadow: 0 6px 18px rgba(15,81,50,.22), 0 2px 5px rgba(15,81,50,.12);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -30px; right: -30px;
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.06);
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -20px; left: 20px;
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.04);
+    }
+    .hero .label { opacity: .75; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
+    .hero .value { font-size: 24px; margin: 4px 0 10px; font-weight: 900; letter-spacing: -.5px; line-height: 1; }
+    .hero .mini { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; opacity: .9; }
+    .hero .mini b { font-weight: 700; }
+
+    /* === STAT GRID === */
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 8px; }
+    .stat {
+      padding: 10px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--r);
+      box-shadow: var(--shadow-sm);
+      min-width: 0;
+    }
+    .stat span { font-size: 9px; text-transform: uppercase; color: var(--muted); font-weight: 700; letter-spacing: .3px; display: block; }
+    .stat b { display: block; margin-top: 4px; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700; }
+
+    /* === SECTION TITLE === */
+    .section-title {
+      margin: 2px 0 8px;
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      font-weight: 800;
+    }
+
+    /* === FORM === */
+    .field { margin-bottom: 9px; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1.5px solid var(--line);
+      background: var(--surface2);
+      border-radius: var(--r);
+      padding: 11px 13px;
+      outline: none;
+      min-height: 44px;
+      color: var(--ink);
+      transition: border-color .15s;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--green); background: white; }
+
+    .amount-wrap { position: relative; }
+    .amount-wrap input { font-size: 20px; font-weight: 700; padding-right: 110px; font-family: var(--mono); }
+    .preview {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      font-size: 10px; color: var(--green); font-weight: 700;
+      max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      pointer-events: none;
+    }
+    /* PREVIEW text inside .right (list items) should not show as absolute */
+    .right .preview, .item .preview {
+      position: static; transform: none;
+      display: block; font-size: 9px; color: var(--green);
+      max-width: none; margin-top: 1px;
+    }
+
+    /* === BUTTONS === */
+    .btn {
+      width: 100%; border-radius: var(--r); padding: 12px 16px;
+      font-weight: 700; font-size: 14px;
+      background: var(--green); color: white;
+      min-height: 46px; transition: opacity .15s, transform .1s;
+      letter-spacing: -.1px;
+    }
+    .btn:active { transform: scale(.98); opacity: .9; }
+    .btn.secondary { background: var(--surface2); color: var(--ink); border: 1.5px solid var(--line); }
+    .btn.gold { background: var(--gold); color: white; }
+    .btn.red { background: var(--red-light); color: var(--red); border: 1.5px solid rgba(192,57,43,.15); }
+    .btn.whatsapp { background: #18a558; color: white; }
+
+    /* === TABS === */
+    .tabs { display: flex; gap: 6px; overflow: auto; margin-bottom: 12px; scrollbar-width: none; padding-bottom: 2px; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab {
+      padding: 8px 14px; border-radius: 999px;
+      background: var(--surface); border: 1.5px solid var(--line);
+      color: var(--muted); font-size: 12px; font-weight: 700;
+      white-space: nowrap; transition: all .15s;
+    }
+    .tab.active { background: var(--green); color: white; border-color: var(--green); }
+
+    /* === LIST ITEMS === */
+    .list { display: flex; flex-direction: column; gap: 5px; }
+    .item {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 8px; background: var(--surface); border: 1px solid var(--line);
+      border-radius: var(--r); padding: 8px 10px;
+    }
+    .item .left { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; overflow: hidden; }
+    .icon { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font-weight: 700; flex: 0 0 28px; font-size: 12px; }
+    .icon.in { background: var(--green-light); color: var(--green); }
+    .icon.out { background: var(--red-light); color: var(--red); }
+    .desc { min-width: 0; overflow: hidden; }
+    .desc b { display: block; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+    .desc small { display: block; color: var(--muted); font-size: 10px; margin-top: 1px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .right { text-align: right; white-space: nowrap; flex-shrink: 0; }
+    .right b { font-size: 12px; font-weight: 700; }
+    .x { background: transparent; color: var(--muted); font-size: 18px; padding: 2px 0 2px 8px; line-height: 1; flex-shrink: 0; }
+    .empty { text-align: center; color: var(--muted); font-size: 12px; padding: 20px; }
+
+    /* === COLORS === */
+    .green { color: var(--green); }
+    .red { color: var(--red); }
+    .gold { color: var(--gold); }
+    .blue { color: var(--blue); }
+
+    /* === NAV === */
+    .nav {
+      position: fixed; left: 50%; bottom: 0; transform: translateX(-50%);
+      width: min(420px,100%);
+      background: rgba(255,255,255,.96);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-top: 1px solid var(--line);
+      display: grid; grid-template-columns: repeat(4,1fr);
+      padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+      z-index: 40;
+      gap: 4px;
+    }
+    .nav button { border-radius: var(--r-sm); background: transparent; color: var(--muted); font-size: 11px; font-weight: 700; padding: 8px 4px; transition: all .15s; }
+    .nav button.active { background: var(--green-light); color: var(--green); }
+
+    /* === FAB === */
+    .fab {
+      position: fixed; right: calc(50% - 196px); bottom: 76px;
+      width: 54px; height: 54px; border-radius: 16px;
+      background: var(--green); color: white;
+      font-size: 28px; font-weight: 900;
+      box-shadow: 0 8px 20px rgba(15,81,50,.30), 0 2px 6px rgba(15,81,50,.15);
+      z-index: 60; display: grid; place-items: center;
+      transition: transform .15s, box-shadow .15s;
+    }
+    .fab:active { transform: scale(.93); box-shadow: 0 4px 10px rgba(15,81,50,.20); }
+    @media(max-width:420px) { .fab { right: 14px; } }
+
+    /* === PAGE === */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* === MODAL === */
+    .modal {
+      position: fixed; inset: 0; background: rgba(26,31,24,.5);
+      z-index: 100; display: flex; align-items: flex-end; justify-content: center; padding: 0;
+    }
+    .box {
+      background: white; border-radius: var(--r-xl) var(--r-xl) 0 0;
+      padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+      max-width: 420px; width: 100%; max-height: 92vh; overflow-y: auto;
+    }
+    .box h3 { font-size: 17px; font-weight: 800; letter-spacing: -.3px; }
+    .hidden { display: none !important; }
+
+    /* === TOAST === */
+    .toast {
+      position: fixed; left: 50%; bottom: 82px; transform: translateX(-50%);
+      background: var(--ink); color: white; padding: 10px 16px;
+      border-radius: 999px; z-index: 200; font-size: 12px; font-weight: 700;
+      max-width: 88%; text-align: center; box-shadow: var(--shadow-lg);
+    }
+
+    /* === MISC HELPERS === */
+    .compact-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .small { font-size: 11px; color: var(--muted); font-weight: 500; line-height: 1.45; }
+    .zakat-mini { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .chip { font-size: 10px; background: var(--gold-light); color: #7c5f13; border: 1px solid #f2df9b; border-radius: 999px; padding: 4px 9px; font-weight: 700; }
+    .danger-card { background: #fffaf9; border-color: #ffd7d0; }
+    .safe-card { background: #f5fcf8; border-color: #ccefd9; }
+
+    /* === FIREBASE UPLOAD === */
+    .firebase-upload-card { background: var(--blue-light); border-color: #bfdbfe; }
+    .firebase-upload-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .firebase-status { font-size: 10px; border-radius: 999px; padding: 5px 10px; font-weight: 700; white-space: nowrap; }
+    .st-uploaded { background: var(--green-light); color: var(--green); }
+    .st-pending { background: var(--gold-light); color: #7c5f13; }
+    .st-update { background: var(--red-light); color: var(--red); }
+    .firebase-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 10px; margin: 10px 0; }
+    .firebase-label { font-size: 10px; font-weight: 800; color: var(--blue); text-transform: uppercase; letter-spacing: .4px; }
+    .lock-badge {
+      font-size: 9px; background: var(--blue-light); color: var(--blue);
+      border: 1px solid #bfdbfe; border-radius: 999px; padding: 2px 7px; font-weight: 700; margin-left: 4px;
+    }
+    .audit-box { margin-top: 8px; border-radius: var(--r-sm); padding: 10px 12px; font-size: 11px; font-weight: 700; line-height: 1.4; }
+    .audit-ok { background: var(--green-light); color: var(--green); border: 1px solid #ccefd9; }
+    .audit-warn { background: var(--gold-light); color: #7c5f13; border: 1px solid #f2df9b; }
+    .audit-bad { background: var(--red-light); color: var(--red); border: 1px solid #ffd7d0; }
+    .pending-upload-list { display: flex; flex-direction: column; gap: 7px; margin-top: 10px; }
+    .pending-upload-row {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 10px; background: white; border: 1px solid var(--line);
+      border-radius: var(--r); padding: 10px 12px;
+    }
+    .pending-upload-row .btn { width: auto; min-width: 80px; padding: 8px 10px; min-height: 36px; border-radius: var(--r-sm); font-size: 12px; }
+
+    /* === MONTH VALID CARD === */
+    .month-valid-card {
+      padding: 12px 14px; border-radius: var(--r-lg); border: 1px solid var(--line);
+      margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; background: white; box-shadow: var(--shadow-sm);
+    }
+    .month-valid-left { min-width: 0; }
+    .month-valid-title { font-size: 12px; font-weight: 800; margin-bottom: 3px; }
+    .month-valid-desc { font-size: 10.5px; color: var(--muted); line-height: 1.4; }
+    .month-valid-card.ok { background: #f5fcf8; border-color: #ccefd9; }
+    .month-valid-card.warn { background: var(--gold-light); border-color: #f2df9b; }
+    .month-valid-card.bad { background: var(--red-light); border-color: #ffd7d0; }
+    .month-valid-card.idle { background: var(--blue-light); border-color: #bfdbfe; }
+
+    /* === SUMMARY NET CARD === */
+    .summary-net-card {
+      background: white; border: 1px solid var(--line); border-radius: var(--r-xl);
+      padding: 12px; margin-bottom: 10px; box-shadow: var(--shadow-sm);
+    }
+    .summary-net-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .summary-net-head b { font-size: 13px; font-weight: 800; }
+    .summary-net-head small { font-size: 10px; color: var(--muted); font-weight: 600; display: block; margin-top: 2px; }
+    .summary-net-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .summary-net-box {
+      background: var(--surface2); border: 1px solid var(--line);
+      border-radius: var(--r); padding: 9px; min-width: 0;
+    }
+    .summary-net-box span { display: block; font-size: 9px; color: var(--muted); font-weight: 700; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: .3px; }
+    .summary-net-box b { display: block; margin-top: 3px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700; }
+
+    /* === PROFIT SUMMARY CARD === */
+    .profit-summary-card {
+      background: linear-gradient(135deg, #0f1c14 0%, #162d1e 50%, #1a3d26 100%);
+      color: white; border-radius: var(--r-xl); padding: 13px; margin-bottom: 9px;
+      box-shadow: 0 5px 16px rgba(15,28,20,.22);
+    }
+    .profit-summary-card .ps-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
+    .profit-summary-card .ps-title { font-size: 9px; font-weight: 800; opacity: .7; text-transform: uppercase; letter-spacing: .5px; }
+    .profit-summary-card .ps-filters { display: flex; gap: 4px; flex-wrap: wrap; }
+    .profit-summary-card .ps-tab {
+      font-size: 10px; padding: 3px 8px; border-radius: 999px;
+      background: rgba(255,255,255,.1); color: rgba(255,255,255,.65);
+      font-weight: 700; border: none; cursor: pointer; white-space: nowrap; transition: all .15s;
+    }
+    .profit-summary-card .ps-tab.active { background: rgba(255,255,255,.92); color: #0f1c14; }
+    .profit-summary-card .ps-value { font-size: 22px; font-weight: 900; letter-spacing: -.6px; margin: 0 0 2px; font-family: var(--mono); }
+    .profit-summary-card .ps-desc { font-size: 10px; opacity: .65; font-weight: 600; margin-bottom: 9px; }
+    .profit-summary-card .ps-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px; }
+    .profit-summary-card .ps-box { background: rgba(255,255,255,.1); border-radius: 9px; padding: 7px; min-width: 0; }
+    .profit-summary-card .ps-box span { display: block; font-size: 9px; opacity: .65; font-weight: 700; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: .3px; }
+    .profit-summary-card .ps-box b { display: block; margin-top: 3px; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--mono); }
+    .profit-summary-card .ps-range-row { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 9px; }
+    .profit-summary-card .ps-range-row input {
+      background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
+      color: white; border-radius: 9px; padding: 7px 9px;
+      font-size: 12px; min-height: 36px; width: 100%;
+    }
+    .profit-summary-card .ps-range-row input::-webkit-calendar-picker-indicator { filter: invert(1); opacity: .6; }
+
+    /* === CASH OUT MODAL === */
+    .cashout-modal-card { background: var(--blue-light); border: 1px solid #bfdbfe; border-radius: var(--r-xl); padding: 14px; margin-bottom: 10px; }
+    .cashout-type-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+    .cashout-type-btn {
+      padding: 10px 8px; border-radius: var(--r); border: 2px solid var(--line);
+      background: white; font-size: 13px; font-weight: 700; cursor: pointer; text-align: center; transition: all .15s;
+    }
+    .cashout-type-btn.active { border-color: var(--blue); background: var(--blue-light); color: var(--blue); }
+    .cashout-list-item {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 8px; background: white; border: 1px solid #bfdbfe;
+      border-radius: var(--r-sm); padding: 9px 11px; margin-bottom: 6px;
+    }
+    .cashout-badge { font-size: 9px; border-radius: 999px; padding: 2px 7px; font-weight: 700; }
+    .cashout-badge.qris { background: #dbeafe; color: #1d4ed8; }
+    .cashout-badge.tabungan { background: #fef9c3; color: #854d0e; }
+    .cashout-badge.lainnya { background: #f3f4f6; color: #374151; }
+
+    /* === CATEGORY MODAL === */
+    #categoryModal { z-index: 5000 !important; align-items: flex-start !important; overflow-y: auto; padding-top: calc(14px + env(safe-area-inset-top)); padding-bottom: calc(14px + env(safe-area-inset-bottom)); }
+    #categoryModal .box { position: relative; z-index: 5001; max-height: calc(100vh - 28px); overflow-y: auto; border-radius: var(--r-xl); }
+    body.category-modal-open #transactionModal:not(.hidden) { pointer-events: none; }
+    body.category-modal-open #categoryModal { pointer-events: auto; }
+    .category-form-card { background: var(--green-light); border: 1px solid #ccefd9; border-radius: var(--r-lg); padding: 14px; margin-bottom: 14px; }
+    .category-form-title { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .category-form-title b { font-size: 13px; color: var(--green); font-weight: 800; }
+    .category-form-card label { display: block; font-size: 10px; font-weight: 800; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .4px; }
+    .category-form-card input { background: white; border-color: #ccefd9; font-size: 15px; font-weight: 700; }
+    .category-form-actions { display: grid; grid-template-columns: .8fr 1.2fr; gap: 8px; margin-top: 10px; }
+
+    /* === OPS MODAL === */
+    .ops-modal-card { background: var(--orange-light); border: 1px solid #ffd7a0; border-radius: var(--r-xl); padding: 14px; margin-bottom: 10px; }
+    .ops-modal-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .ops-today-badge { font-size: 10px; background: #fff0d0; color: var(--orange); border-radius: 999px; padding: 4px 9px; font-weight: 700; }
+    .ops-list-item {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 8px; background: white; border: 1px solid #ffe0b2;
+      border-radius: var(--r-sm); padding: 9px 11px; margin-bottom: 6px;
+    }
+
+    /* === KATEGORI & LAPORAN === */
+    .category-manage-row {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 8px; background: white; border: 1px solid var(--line);
+      border-radius: var(--r); padding: 10px 12px; margin-bottom: 7px;
+    }
+    .category-actions { display: flex; gap: 6px; align-items: center; flex: 0 0 auto; }
+    .mini-btn { border-radius: 999px; padding: 7px 10px; font-size: 11px; font-weight: 700; background: var(--surface2); color: var(--ink); border: 1px solid var(--line); white-space: nowrap; }
+    .mini-btn.danger { background: var(--red-light); color: var(--red); border-color: #ffd7d0; }
+    .category-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 9px; background: var(--surface2); color: var(--ink2);
+      border-radius: 999px; padding: 3px 8px; font-weight: 700; margin-top: 3px;
+      max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .category-chip.redchip { background: var(--red-light); color: var(--red); }
+    .category-summary-row {
+      display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center;
+      background: white; border: 1px solid var(--line); border-radius: var(--r);
+      padding: 10px 12px; margin-bottom: 7px;
+    }
+    #reportCategoryList { max-height: 46vh; overflow: auto; padding-right: 2px; }
+    .category-accordion {
+      background: var(--cat-bg, #fff); border: 1px solid var(--cat-border, var(--line));
+      border-radius: var(--r); margin-bottom: 8px; overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    .category-accordion-head {
+      display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center;
+      padding: 11px 12px; background: linear-gradient(180deg, var(--cat-bg-soft, var(--surface2)), var(--cat-bg, #fff));
+      cursor: pointer;
+    }
+    .category-accordion-title { min-width: 0; }
+    .category-accordion-title b { font-size: 13px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--cat-ink, var(--ink)); font-weight: 700; }
+    .category-accordion-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 3px; }
+    .category-accordion-meta small { font-size: 10px; color: var(--cat-muted, var(--muted)); font-weight: 600; }
+    .category-accordion-amount { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+    .category-accordion-detail { border-top: 1px solid var(--cat-border, var(--line)); background: var(--cat-bg-soft, var(--surface2)); max-height: 220px; overflow: auto; padding: 8px; }
+    .category-accordion-detail.hidden { display: none; }
+    .category-detail-row {
+      display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center;
+      background: white; border: 1px solid var(--cat-border, var(--line));
+      border-radius: var(--r-sm); padding: 8px 10px; margin-bottom: 6px;
+    }
+    .category-detail-row:last-child { margin-bottom: 0; }
+    .category-detail-row b { display: block; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+    .category-detail-row small { display: block; font-size: 10px; color: var(--cat-muted, var(--muted)); font-weight: 600; margin-top: 2px; }
+    .progressbar { height: 6px; background: rgba(255,255,255,.5); border-radius: 999px; overflow: hidden; margin-top: 7px; border: 1px solid rgba(0,0,0,.04); }
+    .progressbar span { display: block; height: 100%; background: var(--cat-bar, var(--green)); border-radius: 999px; }
+    .report-filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+    .report-detail-list { max-height: 42vh; overflow: auto; }
+    .report-kpi {
+      background: white; border: 1px solid var(--line); border-radius: var(--r);
+      padding: 10px 12px; min-width: 0;
+    }
+    .report-kpi span { display: block; font-size: 9px; color: var(--muted); font-weight: 700; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: .3px; }
+    .report-kpi b { display: block; margin-top: 4px; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700; }
+
+    /* === CASH FISIK CARD === */
+    .cash-fisik-card {
+      background: white;
+      border: 1.5px solid #bfdbfe;
+      border-radius: var(--r-lg);
+      padding: 12px;
+      margin-bottom: 9px;
+      box-shadow: var(--shadow-sm);
+    }
+    .cash-fisik-header {
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 9px;
+    }
+    .cash-fisik-title { font-size: 9px; font-weight: 800; color: var(--blue); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 2px; }
+    .cash-fisik-amount { font-size: 22px; color: var(--blue); cursor: pointer; font-family: var(--mono); font-weight: 500; }
+    .cash-fisik-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+    .cash-fisik-badge { font-size: 9px; background: #dbeafe; color: var(--blue); border: 1px solid #bfdbfe; border-radius: 999px; padding: 2px 7px; font-weight: 700; }
+    .cash-fisik-btns { display: flex; gap: 4px; }
+    .cash-fisik-btn-small {
+      font-size: 10px; padding: 4px 8px; border-radius: 999px;
+      font-weight: 700; border: 1px solid; cursor: pointer; white-space: nowrap;
+    }
+    .cash-fisik-breakdown { padding-top: 9px; border-top: 1px solid #dbeafe; display: flex; flex-direction: column; gap: 5px; }
+    .breakdown-row { display: flex; justify-content: space-between; align-items: center; }
+    .breakdown-label { font-size: 10px; color: var(--muted); font-weight: 700; }
+    .breakdown-val { font-size: 12px; font-family: var(--mono); font-weight: 500; cursor: pointer; }
+
+    /* === ZAKAT CARD === */
+    .zakat-card {
+      background: white; border: 1px solid var(--line);
+      border-radius: var(--r-lg); padding: 12px; margin-bottom: 9px;
+      box-shadow: var(--shadow-sm);
+    }
+    .zakat-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+    .zakat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 9px; }
+
+    /* === OPERATIONAL CARD === */
+    .ops-status-card {
+      border-radius: var(--r); padding: 10px 12px; margin-bottom: 9px;
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    }
+    .ops-status-card.safe { background: #f5fcf8; border: 1px solid #ccefd9; }
+    .ops-status-card.danger { background: var(--red-light); border: 1px solid #ffd7d0; }
+
+    @media (max-width: 360px) {
+      .app { padding-left: 10px; padding-right: 10px; }
+      .hero .value { font-size: 24px; }
+      .stat b { font-size: 13px; }
+      .amount-wrap input { padding-right: 80px; }
+      .preview { max-width: 75px; }
+      .row { grid-template-columns: 1fr; }
+      .grid2 { gap: 7px; }
+      .profit-summary-card .ps-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <!-- ====== MODALS ====== -->
+  <div id="passwordModal" class="modal hidden">
+    <div class="box">
+      <h3 style="margin-bottom:6px;text-align:center">Verifikasi PIN</h3>
+      <p class="small" style="text-align:center;margin-bottom:14px">Masukkan PIN untuk hapus transaksi</p>
+      <input type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" id="confirmPasswordInput" placeholder="PIN" maxlength="8" style="text-align:center;font-size:26px;letter-spacing:8px;font-family:var(--mono)">
+      <div class="row" style="margin-top:12px">
+        <button class="btn secondary" onclick="closePasswordModal()">Batal</button>
+        <button id="btnConfirmAction" class="btn">Lanjut</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="zakatHistoryModal" class="modal hidden">
+    <div class="box">
+      <h3 style="margin-bottom:14px;text-align:center">Riwayat Zakat</h3>
+      <div id="zakatHistoryList"></div>
+      <button class="btn gold" onclick="closeZakatHistoryModal()" style="margin-top:14px">Tutup</button>
+    </div>
+  </div>
+
+  <div id="backupOptionModal" class="modal hidden">
+    <div class="box">
+      <h3 style="margin-bottom:14px;text-align:center">Backup</h3>
+      <div class="compact-actions">
+        <button class="btn secondary" onclick="exportToFile()">File JSON</button>
+        <button class="btn secondary" onclick="copyToClipboard()">Salin</button>
+        <button class="btn secondary" onclick="showImportModal()">Import</button>
+        <button class="btn secondary" onclick="closeBackupModal()">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="importModal" class="modal hidden">
+    <div class="box">
+      <h3 style="margin-bottom:14px;text-align:center">Import JSON</h3>
+      <textarea id="importDataText" rows="7" placeholder="Tempel data JSON di sini..."></textarea>
+      <div class="row" style="margin-top:12px">
+        <button class="btn secondary" onclick="closeImportModal()">Batal</button>
+        <button class="btn" onclick="importFromText()">Import</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="categoryModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="categoryModalTitle">
+    <div class="box" style="max-width:420px;width:100%;border-radius:var(--r-xl)">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px">
+        <div>
+          <h3 id="categoryModalTitle">Kategori Pengeluaran</h3>
+          <small class="small" style="margin-top:3px;display:block">Tambah, edit, hapus kategori. Data lama otomatis masuk Lainnya.</small>
+        </div>
+        <button class="x" onclick="closeCategoryModal()" type="button">×</button>
+      </div>
+
+      <div class="category-form-card">
+        <div class="category-form-title">
+          <b>Form Kategori</b>
+          <span class="lock-badge" style="margin-left:0">WAJIB ISI NAMA</span>
+        </div>
+        <input type="hidden" id="categoryEditId">
+        <label for="categoryNameInput">Nama Kategori</label>
+        <input type="text" id="categoryNameInput" placeholder="Contoh: Makan, Listrik, Plastik, Bensin" autocomplete="off">
+        <div class="category-form-actions">
+          <button class="btn secondary" onclick="resetCategoryForm()" type="button">Reset</button>
+          <button id="btnSaveCategory" class="btn" onclick="saveCategoryFromModal()" type="button">Simpan Kategori</button>
+        </div>
+        <div class="small" style="margin-top:8px;color:var(--green);font-weight:700">Setelah disimpan, kategori langsung muncul di pilihan pengeluaran.</div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px">
+        <b style="font-size:13px;font-weight:800">Daftar Kategori</b>
+        <span class="small" style="font-weight:700">Edit / hapus</span>
+      </div>
+      <div id="categoryList" class="list"></div>
+      <button class="btn secondary" onclick="closeCategoryModal()" style="margin-top:14px" type="button">Tutup</button>
+    </div>
+  </div>
+
+  <!-- Modal Cash Out -->
+  <div id="cashOutModal" class="modal hidden">
+    <div class="box" style="max-width:420px;width:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px">
+        <div>
+          <h3>💰 Pengurangan Cash</h3>
+          <small class="small" style="color:var(--blue);font-weight:700;display:block;margin-top:2px">QRIS &amp; Tabungan tidak dihitung pengeluaran bisnis</small>
+        </div>
+        <button class="x" style="font-size:24px" onclick="closeCashOutModal()">×</button>
+      </div>
+
+      <div style="background:var(--blue-light);border:1px solid #bfdbfe;border-radius:var(--r-lg);padding:12px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <div>
+          <div style="font-size:10px;font-weight:800;color:var(--blue);margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px">Cash di Tangan Hari Ini</div>
+          <div id="cashOutModalFisikTotal" class="num" style="font-size:24px;font-weight:500;color:var(--blue)">Rp 0</div>
+        </div>
+        <div style="text-align:right;font-size:11px;color:var(--ink2);font-weight:700;line-height:2">
+          <div>QRIS: <span id="cashOutModalQris" class="num" style="color:var(--blue)">Rp 0</span></div>
+          <div>Tabungan: <span id="cashOutModalTabungan" class="num" style="color:#854d0e">Rp 0</span></div>
+        </div>
+      </div>
+
+      <div class="cashout-type-row">
+        <button id="cashout-type-qris" class="cashout-type-btn active" onclick="setCashOutType('qris')">📱 QRIS</button>
+        <button id="cashout-type-tabungan" class="cashout-type-btn" onclick="setCashOutType('tabungan')">🏦 Tabungan</button>
+      </div>
+      <div class="field"><input type="text" id="cashOutDesc" placeholder="Keterangan (opsional)"></div>
+      <div class="field amount-wrap">
+        <input type="number" id="cashOutAmount" placeholder="Nominal" oninput="handleCashOutPreview(this)">
+        <span id="cashOutAmountPreview" class="preview"></span>
+      </div>
+      <div class="row" style="margin-bottom:14px">
+        <button class="btn secondary" onclick="closeCashOutModal()">Batal</button>
+        <button class="btn" style="background:var(--blue)" onclick="addCashOut()">💾 Simpan</button>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <b style="font-size:13px;font-weight:800">📋 Cash Keluar Hari Ini</b>
+        <span id="cashOutTodayTotal" class="num" style="font-size:14px;color:var(--blue);font-weight:500">Rp 0</span>
+      </div>
+      <div id="cashOutTodayList" style="max-height:40vh;overflow-y:auto"></div>
+      <button class="btn secondary" onclick="closeCashOutModal()" style="margin-top:14px">Tutup</button>
+    </div>
+  </div>
+
+  <!-- Modal Operasional Toko -->
+  <div id="opsModal" class="modal hidden">
+    <div class="box" style="max-width:400px;width:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px">
+        <div>
+          <h3>Pengeluaran Operasional</h3>
+          <small class="small" style="display:block;margin-top:2px">Mengurangi pendapatan hari ini · Masuk total pengeluaran</small>
+        </div>
+        <button class="x" onclick="closeOpsModal()">×</button>
+      </div>
+      <div class="field"><input type="text" id="opsDesc" placeholder="Misal: plastik, bensin, dll"></div>
+      <div class="field amount-wrap">
+        <input type="number" id="opsAmount" placeholder="Nominal" oninput="handleOpsAmountPreview(this)">
+        <span id="opsAmountPreview" class="preview"></span>
+      </div>
+      <div class="row" style="margin-bottom:12px">
+        <button class="btn secondary" onclick="closeOpsModal()">Batal</button>
+        <button class="btn" style="background:var(--orange)" onclick="addOpsExpense()">Simpan</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <b style="font-size:13px;font-weight:800">Operasional Hari Ini</b>
+        <span id="opsTodayTotal" class="num" style="font-size:13px;color:var(--orange);font-weight:500">Rp 0</span>
+      </div>
+      <div id="opsTodayList" class="list" style="max-height:35vh;overflow-y:auto"></div>
+      <button class="btn secondary" onclick="closeOpsModal()" style="margin-top:12px">Tutup</button>
+    </div>
+  </div>
+
+  <!-- Modal Semua Pengeluaran -->
+  <div id="expenseListModal" class="modal hidden">
+    <div class="box" style="max-width:420px;width:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px">
+        <div>
+          <h3>Semua Pengeluaran</h3>
+          <small id="expenseListSubtitle" class="small" style="display:block;margin-top:2px"></small>
+        </div>
+        <button class="x" onclick="closeExpenseListModal()">×</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--red-light);border-radius:var(--r);margin-bottom:12px">
+        <span style="font-size:12px;font-weight:800;color:var(--red)">Total Pengeluaran</span>
+        <b id="expenseListTotal" class="num red" style="font-size:16px">Rp 0</b>
+      </div>
+      <div id="expenseListContent" class="list" style="max-height:55vh;overflow-y:auto"></div>
+      <button class="btn secondary" onclick="closeExpenseListModal()" style="margin-top:14px">Tutup</button>
+    </div>
+  </div>
+
+  <!-- Modal Input Transaksi -->
+  <div id="transactionModal" class="modal hidden">
+    <div class="box">
+      <h3 style="margin-bottom:14px;text-align:center">Input Transaksi</h3>
+      <div class="row">
+        <div class="field"><input type="date" id="inputDate"></div>
+        <div class="field">
+          <select id="type" onchange="updatePlaceholder()">
+            <option value="income">Pemasukan</option>
+            <option value="expense">Pengeluaran</option>
+          </select>
+        </div>
+      </div>
+      <div id="expenseCategoryField" class="field hidden">
+        <div style="display:grid;grid-template-columns:1fr auto;gap:8px">
+          <select id="expenseCategorySelect"></select>
+          <button class="mini-btn" style="min-width:80px" onclick="openCategoryModal()" type="button">+ Kategori</button>
+        </div>
+        <div class="small" style="margin-top:5px;color:var(--red);font-weight:700">Pengeluaran wajib pilih kategori.</div>
+      </div>
+      <div class="field"><input type="text" id="description" placeholder="Deskripsi"></div>
+      <div class="field amount-wrap">
+        <input type="number" id="amount" placeholder="Nominal" oninput="handleSmartAmount(this)">
+        <span id="liveAmountPreview" class="preview"></span>
+      </div>
+      <div class="row">
+        <button class="btn secondary" onclick="closeTransactionModal()">Batal</button>
+        <button class="btn" onclick="addTransaction()">Simpan</button>
+      </div>
+      <p class="small" style="margin-top:10px;text-align:center">Nominal otomatis dikali 1.000</p>
+    </div>
+  </div>
+
+  <!-- ====== MAIN APP ====== -->
+  <main class="app">
+    <div class="top">
+      <div class="brand">
+        <div>
+          <h1>alfajri</h1>
+          <small>Finance &amp; Zakat</small>
+        </div>
+        <div id="statusBadge" class="pill"><span id="statusText">Aman</span></div>
+      </div>
+    </div>
+
+    <!-- ====== HOME PAGE ====== -->
+    <section id="pageHome" class="page active">
+
+      <!-- Hero Saldo -->
+      <div class="hero">
+        <div class="label">Saldo Bersih · Semua Data Supabase</div>
+        <div id="netBalance" class="value num">Rp 0</div>
+        <div class="mini">
+          <span>Masuk <b id="totalIncome">Rp 0</b></span>
+          <span>Keluar Hari Ini <b id="totalExpense" onclick="showExpenseListTodayModal()" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px">Rp 0</b></span>
+        </div>
+      </div>
+
+      <!-- Cash Fisik Card -->
+      <div class="cash-fisik-card">
+        <div class="cash-fisik-header">
+          <div>
+            <div class="cash-fisik-title">Cash Fisik Hari Ini</div>
+            <div id="cashFisikTotal" class="cash-fisik-amount num" onclick="openCashOutModal()">Rp 0</div>
+            <div id="todayFirebaseIncomeInfo" class="small" style="margin-top:3px">Server Pusat − Ops − QRIS − Tabungan</div>
+          </div>
+          <div class="cash-fisik-actions">
+            <span class="cash-fisik-badge">HARI INI</span>
+            <div class="cash-fisik-btns">
+              <button onclick="openOpsModal()" class="cash-fisik-btn-small" style="background:var(--orange-light);color:var(--orange);border-color:#ffd7a0">+ Ops</button>
+              <button onclick="openCashOutModal()" class="cash-fisik-btn-small" style="background:var(--blue-light);color:var(--blue);border-color:#bfdbfe">+ QRIS</button>
+            </div>
+          </div>
+        </div>
+        <div class="cash-fisik-breakdown">
+          <div class="breakdown-row">
+            <span class="breakdown-label">Operasional Toko</span>
+            <b id="opsTodayHomeTotal" class="breakdown-val num" style="color:var(--orange)" onclick="openOpsModal()">Rp 0</b>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-label">QRIS</span>
+            <b id="cashOutQrisTotal" class="breakdown-val num" style="color:var(--blue)" onclick="openCashOutModal()">Rp 0</b>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-label">Tabungan</span>
+            <b id="cashOutTabunganTotal" class="breakdown-val num" style="color:#854d0e" onclick="openCashOutModal()">Rp 0</b>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hidden elements tetap ada agar JS tidak error -->
+      <div id="todayIncomeCard" class="hidden"></div>
+      <div id="todayFirebaseIncomeHome" class="hidden"></div>
+      <div id="todayIncomeSectionTitle" class="hidden"></div>
+
+      <!-- Ringkasan Laba -->
+      <div class="profit-summary-card">
+        <div class="ps-head">
+          <div class="ps-title">Ringkasan Laba</div>
+          <div class="ps-filters">
+            <button class="ps-tab active" id="ps-tab-today" onclick="setProfitFilter('today')">Hari Ini</button>
+            <button class="ps-tab" id="ps-tab-month" onclick="setProfitFilter('month')">Bulan</button>
+            <button class="ps-tab" id="ps-tab-year" onclick="setProfitFilter('year')">Tahun</button>
+            <button class="ps-tab" id="ps-tab-custom" onclick="setProfitFilter('custom')">Custom</button>
+          </div>
+        </div>
+        <div id="psCustomRange" class="ps-range-row" style="display:none;margin-bottom:12px">
+          <input type="date" id="psStartDate" onchange="renderProfitSummary()">
+          <input type="date" id="psEndDate" onchange="renderProfitSummary()">
+        </div>
+        <div class="ps-value num" id="psLaba">Rp 0</div>
+        <div class="ps-desc" id="psDesc">Sisa operasional = limit 20% − pengeluaran</div>
+        <div class="ps-grid">
+          <div class="ps-box"><span>Pendapatan</span><b id="psPendapatan" class="num">Rp 0</b></div>
+          <div class="ps-box"><span>Terpakai</span><b id="psPengeluaran" class="num" style="color:#ff8a80">Rp 0</b></div>
+          <div class="ps-box"><span>Limit 20%</span><b id="psLabaBersih" class="num" style="color:#69f0ae">Rp 0</b></div>
+        </div>
+      </div>
+
+      <!-- Stat Grid -->
+      <div class="grid2">
+        <div class="stat">
+          <span>Laba 20% (Semua)</span>
+          <b id="autoProfit" class="blue num">Rp 0</b>
+        </div>
+        <div class="stat" onclick="showExpenseListTodayModal()" style="cursor:pointer;border-color:#ffd7d0;background:#fffaf9">
+          <span>Pengeluaran Hari Ini</span>
+          <b id="spendingLimit" class="red num">Rp 0</b>
+          <div style="font-size:9px;color:var(--red);font-weight:700;margin-top:3px">Tap untuk detail</div>
+        </div>
+      </div>
+
+      <!-- Sisa Operasional -->
+      <div id="operationalCard" class="ops-status-card safe">
+        <div style="min-width:0">
+          <b style="font-size:13px;font-weight:800">Sisa Operasional</b>
+          <div class="small" style="margin-top:2px">Ikut filter Ringkasan Laba · Limit 20%: <span id="operationalTotal">Rp 0</span> · Terpakai: <span id="operationalSpent">Rp 0</span></div>
+          <div id="limitWarning" class="small red" style="font-weight:800;margin-top:4px"></div>
+        </div>
+        <b id="operationalUsed" class="num" style="font-size:16px;white-space:nowrap;font-family:var(--mono);font-weight:500">Rp 0</b>
+      </div>
+
+      <!-- Zakat Mal -->
+      <div id="zakatMalCard" class="zakat-card">
+        <div class="zakat-header">
+          <div>
+            <div class="section-title" style="margin:0 0 4px">Zakat Mal</div>
+            <div id="zakatAmountLarge" class="num gold" style="font-size:20px;font-weight:500">Rp 0</div>
+            <div id="zakatPaymentStatusText" class="small" style="margin-top:3px">Menunggu</div>
+          </div>
+          <button id="payZakatBtn" class="btn gold" style="width:auto;min-width:90px;padding:10px" onclick="markZakatPaid()">Bayar</button>
+        </div>
+        <div class="zakat-grid">
+          <div class="stat"><span>Laba 20% Final s.d H-1</span><b id="totalProfitDisplay" class="num">Rp 0</b></div>
+          <div class="stat"><span>Belum Dizakatkan Final</span><b id="unpaidProfitDisplay" class="num">Rp 0</b></div>
+        </div>
+        <div id="zakatBasisInfo" class="small" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line)">Zakat = 2.5% × laba 20% dari data final sampai kemarin. Transaksi hari ini masuk hitungan besok setelah Server Pusat sync/LOCK.</div>
+        <div style="display:none"><span id="totalZakatPaidProfit">Rp 0</span></div>
+        <div id="zakatHistoryPreview" class="zakat-mini" style="display:none">
+          <div id="zakatHistoryMiniList" class="zakat-mini"></div>
+          <button class="tab" onclick="showZakatHistoryModal()">Semua</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== HISTORY PAGE ====== -->
+    <section id="pageHistory" class="page">
+      <div id="netSummaryCard" class="summary-net-card">
+        <div class="summary-net-head">
+          <div>
+            <b>Ringkasan Pendapatan Bersih</b>
+            <small>Pendapatan Server Pusat + Manual dikurangi Pengeluaran</small>
+          </div>
+          <span class="pill">Supabase</span>
+        </div>
+        <div class="summary-net-grid">
+          <div class="summary-net-box"><span>Hari Ini</span><b id="netTodaySummary" class="num green">Rp 0</b></div>
+          <div class="summary-net-box"><span>Bulan Ini</span><b id="netMonthSummary" class="num blue">Rp 0</b></div>
+          <div class="summary-net-box"><span>Semua</span><b id="netAllSummary" class="num gold">Rp 0</b></div>
+          <div class="summary-net-box" id="netRangeBox" style="display:none"><span id="netRangeLabel">Custom</span><b id="netRangeSummary" class="num">Rp 0</b></div>
+        </div>
+        <div id="netSummaryNote" class="small" style="margin-top:10px;color:var(--blue);font-weight:700">Semua angka = pemasukan (Server Pusat + manual) <b>dikurangi pengeluaran</b> per periode.</div>
+      </div>
+
+      <div class="tabs">
+        <button onclick="changeFilter('today')" id="filter-today" class="tab active">Hari Ini</button>
+        <button onclick="changeFilter('month')" id="filter-month" class="tab">Bulan Ini</button>
+        <button onclick="changeFilter('range')" id="filter-range" class="tab">Custom</button>
+        <button onclick="changeFilter('all')" id="filter-all" class="tab">Semua</button>
+      </div>
+      <div id="rangeSelectorHistory" class="card hidden" style="margin-bottom:10px">
+        <div class="row">
+          <input type="date" id="filterStartDateHistory" onchange="onHistoryRangeChange()">
+          <input type="date" id="filterEndDateHistory" onchange="onHistoryRangeChange()">
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="stat" onclick="showExpenseListModalFiltered()" style="cursor:pointer;border-color:#ffd7d0;background:#fffaf9">
+          <span id="expenseFilteredLabel">Pengeluaran Hari Ini</span>
+          <b id="expenseFilteredSummary" class="red num">Rp 0</b>
+          <div style="font-size:9px;color:var(--red);font-weight:700;margin-top:3px">Tap untuk detail</div>
+        </div>
+        <div class="stat" onclick="showExpenseListModal()" style="cursor:pointer;border-color:#ffd7d0;background:#fffaf9">
+          <span>Total Semua Pengeluaran</span>
+          <b id="expenseAllSummary" class="red num">Rp 0</b>
+          <div style="font-size:9px;color:var(--red);font-weight:700;margin-top:3px">Tap untuk semua</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:10px">
+        <button class="btn" style="background:var(--green-dark)" onclick="downloadMonthlyFinanceReport()">⬇ Download Laporan Bulanan XLS</button>
+        <div class="small" style="margin-top:6px;color:var(--blue);font-weight:700;text-align:center">Isi laporan XLS: ringkasan total, rekap harian, semua transaksi, pendapatan, pengeluaran, cash out, dan zakat.</div>
+      </div>
+
+      <div class="card danger-card" style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px">
+          <div>
+            <b style="color:var(--red);font-size:13px;font-weight:800">Hapus Semua Data Full</b>
+            <div class="small" style="margin-top:3px">Hapus semua transaksi manual, Server Pusat sync/LOCK, cash out, ops, dan zakat.</div>
+          </div>
+          <span class="lock-badge" style="background:var(--red-light);color:var(--red);border-color:#ffd7d0">PIN</span>
+        </div>
+        <button class="btn red" onclick="requestFullReset()">Hapus Semua Data Full</button>
+        <div class="small" style="margin-top:6px;color:var(--red);font-weight:700">Data mentah di Server Pusat kasir tidak dihapus (read only).</div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <b id="currentPeriodLabel" style="font-size:13px;font-weight:800">Riwayat</b>
+          <button class="tab" style="color:var(--red)" onclick="requestClearAll()">Reset Manual</button>
+        </div>
+        <div id="transactionList" class="list"></div>
+      </div>
+    </section>
+
+    <!-- ====== LAPORAN PAGE ====== -->
+    <section id="pageLaporan" class="page">
+      <div class="card" style="background:#f5fcf8;border-color:#ccefd9;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <div>
+            <div class="section-title" style="color:var(--green)">Laporan Keuangan Rinci</div>
+            <b style="font-size:14px;font-weight:800">Ringkasan + Pengeluaran per Kategori</b>
+            <div class="small" style="margin-top:3px">Cash out QRIS/Tabungan bukan pengeluaran bisnis.</div>
+          </div>
+          <button class="mini-btn" onclick="openCategoryModal()">Kategori</button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button onclick="setFinanceReportFilter('today')" id="report-filter-today" class="tab">Hari Ini</button>
+        <button onclick="setFinanceReportFilter('month')" id="report-filter-month" class="tab active">Bulan Ini</button>
+        <button onclick="setFinanceReportFilter('range')" id="report-filter-range" class="tab">Custom</button>
+        <button onclick="setFinanceReportFilter('all')" id="report-filter-all" class="tab">Semua</button>
+      </div>
+      <div id="reportRangeBox" class="card hidden" style="margin-bottom:10px">
+        <div class="report-filter-row">
+          <input type="date" id="reportStartDate" onchange="renderFinanceReport()">
+          <input type="date" id="reportEndDate" onchange="renderFinanceReport()">
+        </div>
+      </div>
+
+      <div class="grid2" style="margin-bottom:10px">
+        <div class="report-kpi"><span>Pendapatan</span><b id="reportIncome" class="num green">Rp 0</b></div>
+        <div class="report-kpi"><span>Pengeluaran</span><b id="reportExpense" class="num red">Rp 0</b></div>
+        <div class="report-kpi"><span>Saldo Bersih</span><b id="reportNet" class="num blue">Rp 0</b></div>
+        <div class="report-kpi"><span>Cash Out</span><b id="reportCashOut" class="num gold">Rp 0</b></div>
+        <div class="report-kpi"><span>Laba 20%</span><b id="reportProfit20" class="num blue">Rp 0</b></div>
+        <div class="report-kpi"><span>Sisa Operasional</span><b id="reportOpsRemain" class="num green">Rp 0</b></div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px">
+          <b style="font-size:13px;font-weight:800">Pengeluaran per Kategori</b>
+          <span id="reportPeriodLabel" class="small" style="font-weight:800;color:var(--green)">Bulan Ini</span>
+        </div>
+        <div id="reportCategoryList"></div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px">
+          <b style="font-size:13px;font-weight:800">Detail Transaksi</b>
+          <span id="reportCount" class="small">0 data</span>
+        </div>
+        <div id="reportDetailList" class="report-detail-list list"></div>
+      </div>
+
+      <div class="grid2" style="margin-bottom:10px">
+        <button class="btn" onclick="downloadMonthlyFinanceReport()">Download XLS</button>
+        <button class="btn secondary" onclick="downloadCsvReportFromFinancePage()">Download CSV</button>
+      </div>
+    </section>
+
+    <!-- ====== SERVER PAGE ====== -->
+    <section id="pageFirebase" class="page">
+      <div class="card" style="background:var(--blue-light);border-color:#bfdbfe;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <div>
+            <div class="section-title" style="color:var(--blue)">Halaman Server Pusat</div>
+            <b style="font-size:14px;font-weight:800">Data Kasir Khusus</b>
+            <div class="small" style="margin-top:3px">Cek, audit, dan upload omset Server Pusat ke Supabase. Hari ini tetap dikunci.</div>
+          </div>
+          <span class="pill" style="background:#dbeafe;color:var(--blue)">READ ONLY</span>
+        </div>
+      </div>
+
+      <div id="monthValidityCard" class="month-valid-card idle">
+        <div class="month-valid-left">
+          <div id="monthValidityTitle" class="month-valid-title">Validasi Bulan</div>
+          <div id="monthValidityDesc" class="month-valid-desc">Klik cek untuk memastikan semua omset Server Pusat bulan ini sudah masuk Supabase.</div>
+        </div>
+        <button id="btnCheckMonthValid" class="btn secondary" style="width:auto;min-width:80px;padding:8px 12px;min-height:38px;border-radius:var(--r-sm);font-size:12px" onclick="checkMonthValidity()">Cek</button>
+      </div>
+
+      <div id="rangeSelector" class="card hidden">
+        <div class="row">
+          <input type="date" id="filterStartDate" onchange="render()">
+          <input type="date" id="filterEndDate" onchange="render()">
+        </div>
+      </div>
+
+      <div id="firebaseUploadCard" class="card firebase-upload-card" style="margin-bottom:10px">
+        <div class="firebase-upload-head">
+          <div>
+            <b style="font-size:13px;font-weight:800">Omset Kasir Server Pusat</b>
+            <div class="small" style="margin-top:2px">Sync manual dari Server Pusat ke Kas Pribadi</div>
+          </div>
+          <span id="firebaseUploadStatus" class="firebase-status st-pending">Memuat</span>
+        </div>
+        <div class="row">
+          <input type="date" id="firebaseUploadDate" onchange="changeFirebaseUploadDate(this.value)">
+          <button class="btn secondary" onclick="refreshFirebaseUpload()">Refresh</button>
+        </div>
+        <div class="firebase-row">
+          <div>
+            <div class="firebase-label">Total dari Server Pusat</div>
+            <div id="firebaseUploadTotal" class="num blue" style="font-size:22px;font-family:var(--mono);font-weight:500">Rp 0</div>
+            <div id="firebaseUploadInfo" class="small" style="margin-top:2px">Belum ada data</div>
+          </div>
+          <button id="btnUploadFirebaseIncome" class="btn" style="width:auto;min-width:100px;padding:10px" onclick="uploadFirebaseIncome()">Sync</button>
+        </div>
+        <div id="firebaseAuditInfo" class="audit-box audit-warn">Audit: menunggu data Server Pusat...</div>
+        <div class="small" style="margin-top:8px;color:var(--blue);font-weight:700">Data Server Pusat tidak otomatis masuk Riwayat. Klik Sync agar data Kas Pribadi sama dengan Server Pusat. Data hasil Sync tetap LOCK dan tidak bisa dihapus.</div>
+      </div>
+
+      <div id="firebasePendingCard" class="card" style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px">
+          <div>
+            <b style="font-size:13px;font-weight:800">Cek Belum Sync</b>
+            <div class="small" style="margin-top:2px">Scan pendapatan Server Pusat lama yang belum/salah sync ke Kas Pribadi</div>
+          </div>
+          <span id="pendingScanStatus" class="firebase-status st-pending">Idle</span>
+        </div>
+        <div class="row">
+          <input type="date" id="pendingStartDate">
+          <input type="date" id="pendingEndDate">
+        </div>
+        <div class="compact-actions" style="margin-top:8px">
+          <button class="btn secondary" onclick="setPendingThisMonth()">Bulan Ini</button>
+          <button class="btn" onclick="scanPendingFirebaseUploads()">Cek Data</button>
+        </div>
+        <div id="pendingUploadSummary" class="audit-box audit-warn" style="margin-top:10px">Pilih rentang tanggal lalu klik Cek Data untuk mencari yang belum sync.</div>
+        <div id="pendingUploadList" class="pending-upload-list"></div>
+      </div>
+    </section>
+  </main>
+
+  <button class="fab" onclick="openTransactionModal()" aria-label="Input transaksi">+</button>
+
+  <nav class="nav">
+    <button id="nav-home" class="active" onclick="goPage('home')">🏠 Home</button>
+    <button id="nav-history" onclick="goPage('history')">📋 Riwayat</button>
+    <button id="nav-laporan" onclick="goPage('laporan')">📊 Laporan</button>
+    <button id="nav-firebase" onclick="goPage('firebase')">🌐 Server</button>
+  </nav>
+
+<script>
+const SUPABASE_URL='https://myxrvipyodadnldtomzs.supabase.co';
+const SUPABASE_ANON_KEY='sb_publishable_aG-kyasJNCEk2U9fN5T4qg_GfY0FpPH';
+const OWNER_ID='rocky-hijab'; const APP_PIN='170845';
+
+// === SERVER PUSAT SUPABASE SOURCE ===
+// Kas Pribadi tetap menyimpan data finance di Supabase pribadi di atas,
+// sedangkan omset kasir dibaca dari Server Pusat Supabase yang sama dengan aplikasi utama.
+const SERVER_PUSAT_URL='https://ismjupxoiywttkrekmfg.supabase.co';
+const SERVER_PUSAT_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzbWp1cHhvaXl3dHRrcmVrbWZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzc4MDEsImV4cCI6MjA5NDg1MzgwMX0.WVwqEdkPQ_x9NWR8QXTm85mIAvN8d9V2FaMJ2NiAMC0';
+let serverPusatClient=null;
+
+let supabaseClient=null,transactions=[],zakatHistory=[],expenseCategories=[],currentFilter='today',currentFinanceReportFilter='month',pendingAction=null,currentPage='home';
+let firebaseDb=null,firebaseUnsub=null,todayFirebaseUnsub=null,firebaseUploadDate='',firebaseIncomeRows=[],firebaseIncomeTotal=0,todayFirebaseIncomeRows=[],todayFirebaseIncomeTotal=0,pendingFirebaseUploads=[],monthValidityBusy=false;
+function $(id){return document.getElementById(id)}
+function isSupabaseConfigured(){return SUPABASE_URL&&SUPABASE_ANON_KEY&&!SUPABASE_URL.includes('ISI_')&&!SUPABASE_ANON_KEY.includes('ISI_')}
+function initSupabase(){if(!isSupabaseConfigured()){showToast('Supabase belum disetting');return false}supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);return true}
+function goPage(p){currentPage=p;['home','history','laporan','firebase'].forEach(x=>{ const page=$('page'+x[0].toUpperCase()+x.slice(1)); if(page)page.classList.toggle('active',x===p); const nav=$('nav-'+x); if(nav)nav.classList.toggle('active',x===p)}); render(); if(p==='firebase')renderFirebaseUploadCard(); if(p==='laporan')renderFinanceReport()}
+function openTransactionModal(){$('inputDate').value=getLocalDateString();renderCategorySelects();updatePlaceholder();$('transactionModal').classList.remove('hidden');setTimeout(()=>$('amount').focus(),80)}
+function closeTransactionModal(){$('transactionModal').classList.add('hidden')}
+
+const DEFAULT_CATEGORY_NAME='Lainnya';
+const OPS_CATEGORY_NAME='Operasional Toko';
+function normalizeCategoryRecord(r={}){return {id:Number(r.id)||Date.now(),owner_id:r.owner_id||OWNER_ID,name:String(r.name||'').trim(),sort_order:Number(r.sort_order||0),created_at:r.created_at||''}}
+function sortExpenseCategories(){expenseCategories=(expenseCategories||[]).filter(c=>c&&c.name).sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)||String(a.name).localeCompare(String(b.name),'id'))}
+function getCategoryById(id){return (expenseCategories||[]).find(c=>String(c.id)===String(id))||null}
+function getCategoryByName(name){return (expenseCategories||[]).find(c=>String(c.name||'').toLowerCase()===String(name||'').toLowerCase())||null}
+function getDefaultExpenseCategory(){return getCategoryByName(DEFAULT_CATEGORY_NAME)||expenseCategories[0]||null}
+async function loadExpenseCategories(){
+  if(!supabaseClient)return [];
+  const {data,error}=await supabaseClient.from('expense_categories').select('*').eq('owner_id',OWNER_ID).order('sort_order',{ascending:true}).order('name',{ascending:true});
+  if(error){expenseCategories=[];showToast('Tabel kategori belum ada. Jalankan SQL kategori dulu.');throw error}
+  expenseCategories=(data||[]).map(normalizeCategoryRecord);sortExpenseCategories();return expenseCategories;
+}
+async function insertExpenseCategory(name,sortOrder=0){
+  name=String(name||'').trim();if(!name)throw new Error('Nama kategori kosong');
+  const row={id:Date.now()+Math.floor(Math.random()*999),owner_id:OWNER_ID,name,sort_order:sortOrder};
+  const {error}=await supabaseClient.from('expense_categories').insert(row);
+  if(error)throw error;return row;
+}
+async function ensureDefaultExpenseCategories(){
+  if(!supabaseClient)return;
+  try{
+    if(!getCategoryByName(DEFAULT_CATEGORY_NAME)){await insertExpenseCategory(DEFAULT_CATEGORY_NAME,1)}
+    if(!getCategoryByName(OPS_CATEGORY_NAME)){await insertExpenseCategory(OPS_CATEGORY_NAME,2)}
+    await loadExpenseCategories();
+  }catch(e){console.warn('Default kategori gagal:',e);}
+}
+async function migrateLegacyExpenseCategories(){
+  const def=getDefaultExpenseCategory();
+  if(!supabaseClient||!def)return;
+  const legacy=(transactions||[]).filter(t=>t.type==='expense'&&!isCashOut(t)&&!t.category_id&&!String(t.category_name||'').trim());
+  if(!legacy.length)return;
+  try{
+    for(let i=0;i<legacy.length;i+=80){
+      const ids=legacy.slice(i,i+80).map(t=>Number(t.id));
+      const {error}=await supabaseClient.from('transactions').update({category_id:def.id,category_name:def.name}).eq('owner_id',OWNER_ID).in('id',ids);
+      if(error)throw error;
+    }
+    transactions=(transactions||[]).map(t=>legacy.some(x=>Number(x.id)===Number(t.id))?{...t,category_id:def.id,category_name:def.name}:t);
+    showToast(`${legacy.length} pengeluaran lama masuk kategori ${def.name}`);
+  }catch(e){console.warn('Migrasi kategori lama gagal:',e);showToast('Migrasi kategori lama gagal: '+(e.message||e));}
+}
+function renderCategorySelects(selectedId){
+  const sel=$('expenseCategorySelect');if(!sel)return;
+  sortExpenseCategories();
+  if(!expenseCategories.length){sel.innerHTML='<option value="">Jalankan SQL kategori dulu</option>';return;}
+  const def=getDefaultExpenseCategory();
+  const value=selectedId||sel.value||(def?def.id:'');
+  sel.innerHTML=expenseCategories.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+  if(value)sel.value=String(value);
+}
+function resetCategoryForm(){const id=$('categoryEditId'),inp=$('categoryNameInput'),btn=$('btnSaveCategory');if(id)id.value='';if(inp){inp.value='';inp.focus()}if(btn)btn.innerText='Simpan Kategori'}
+function renderCategoryModal(){
+  renderCategorySelects();
+  const list=$('categoryList');if(!list)return;
+  if(!expenseCategories.length){list.innerHTML='<div class="empty">Belum ada kategori. Jalankan SQL lalu tambah kategori.</div>';return;}
+  const usage={};(transactions||[]).forEach(t=>{if(t.type==='expense'&&!isCashOut(t)){const nm=getExpenseCategoryName(t);usage[nm]=(usage[nm]||0)+1}});
+  list.innerHTML=expenseCategories.map(c=>{
+    const isDefault=String(c.name).toLowerCase()===DEFAULT_CATEGORY_NAME.toLowerCase();
+    const used=usage[c.name]||0;
+    return `<div class="category-manage-row"><div style="min-width:0"><b style="font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(c.name)}${isDefault?'<span class="lock-badge">WAJIB</span>':''}</b><small style="color:var(--muted);font-size:10px">${used} transaksi</small></div><div class="category-actions"><button class="mini-btn" type="button" onclick="editCategory(${c.id})">Edit</button><button class="mini-btn danger" type="button" ${isDefault?'disabled style="opacity:.45"':''} onclick="deleteCategory(${c.id})">Hapus</button></div></div>`;
+  }).join('');
+}
+function openCategoryModal(){
+  const modal=$('categoryModal');
+  if(!modal){showToast('Modal kategori belum ditemukan');return;}
+  document.body.classList.add('category-modal-open');
+  modal.classList.remove('hidden');
+  modal.style.zIndex='5000';
+  modal.scrollTop=0;
+  renderCategoryModal();
+  setTimeout(()=>{const inp=$('categoryNameInput');if(inp){inp.scrollIntoView({block:'center',behavior:'smooth'});inp.focus();}},120);
+}
+function closeCategoryModal(){$('categoryModal').classList.add('hidden');document.body.classList.remove('category-modal-open');resetCategoryForm();renderCategorySelects();}
+function editCategory(id){const c=getCategoryById(id);if(!c)return;$('categoryEditId').value=c.id;$('categoryNameInput').value=c.name;$('btnSaveCategory').innerText='Simpan Edit';$('categoryNameInput').focus()}
+async function saveCategoryFromModal(){
+  const input=$('categoryNameInput');
+  if(!input){showToast('Kolom nama kategori belum tampil, buka ulang modal kategori');return;}
+  const name=String(input.value||'').trim();if(!name){showToast('Nama kategori wajib diisi');input.focus();return;}
+  const editId=$('categoryEditId')?$('categoryEditId').value:'';
+  const duplicate=(expenseCategories||[]).find(c=>String(c.name).toLowerCase()===name.toLowerCase()&&String(c.id)!==String(editId));
+  if(duplicate){showToast('Kategori sudah ada');return;}
+  try{
+    if(editId){
+      const old=getCategoryById(editId);const {error}=await supabaseClient.from('expense_categories').update({name,updated_at:new Date().toISOString()}).eq('owner_id',OWNER_ID).eq('id',Number(editId));
+      if(error)throw error;
+      await supabaseClient.from('transactions').update({category_name:name}).eq('owner_id',OWNER_ID).eq('category_id',Number(editId));
+      showToast(`Kategori ${old?old.name:''} diubah`);
+    }else{
+      await insertExpenseCategory(name,(expenseCategories.length+1)*10);showToast('Kategori ditambahkan');
+    }
+    await loadExpenseCategories();resetCategoryForm();renderCategoryModal();renderCategorySelects();render();
+  }catch(e){showToast('Gagal simpan kategori: '+(e.message||e));}
+}
+async function deleteCategory(id){
+  const c=getCategoryById(id);if(!c)return;
+  if(String(c.name).toLowerCase()===DEFAULT_CATEGORY_NAME.toLowerCase()){showToast('Kategori Lainnya tidak bisa dihapus');return;}
+  const def=getDefaultExpenseCategory();if(!def){showToast('Kategori Lainnya belum ada');return;}
+  if(!confirm(`Hapus kategori "${c.name}"?\nTransaksi yang sudah memakai kategori ini akan dipindah ke "${def.name}".`))return;
+  try{
+    await supabaseClient.from('transactions').update({category_id:def.id,category_name:def.name}).eq('owner_id',OWNER_ID).eq('category_id',Number(id));
+    const {error}=await supabaseClient.from('expense_categories').delete().eq('owner_id',OWNER_ID).eq('id',Number(id));
+    if(error)throw error;
+    await loadExpenseCategories();await loadTransactions();renderCategoryModal();renderCategorySelects();render();showToast('Kategori dihapus');
+  }catch(e){showToast('Gagal hapus kategori: '+(e.message||e));}
+}
+function getExpenseCategoryName(t={}){
+  if(!t||t.type!=='expense')return '';
+  if(isCashOut(t)){
+    const type=getCashOutType(t);return type==='qris'?'Cash Out QRIS':type==='tabungan'?'Cash Out Tabungan':'Cash Out Lainnya';
+  }
+  const byId=getCategoryById(t.category_id);if(byId)return byId.name;
+  const stored=String(t.category_name||'').trim();if(stored)return stored;
+  return DEFAULT_CATEGORY_NAME;
+}
+function getExpenseCategoryChip(t={}){
+  if(!t||t.type!=='expense')return '';
+  const name=getExpenseCategoryName(t);
+  return `<span class="category-chip ${isCashOut(t)?'':'redchip'}">${escapeHtml(name)}</span>`;
+}
+
+const ZAKAT_LOCAL_BACKUP_KEY='kas_zakat_history_backup_v2';
+function roundRp(n){const x=Number(n||0);return Number.isFinite(x)?Math.round(x):0}
+function normalizeZakatRecord(r={}){
+  const zakatPaidRaw=r.zakatPaid??r.zakat_paid??0;
+  const rawProfit=roundRp(r.profitAtPayment??r.profit_at_payment??0);
+  const paid=roundRp(zakatPaidRaw);
+  const profitFromPaid=paid?roundRp(paid/0.025):0;
+  // Fix data lama: kalau profitAtPayment pernah tersimpan sebesar nominal zakat,
+  // basis laba yang sudah dizakatkan dipulihkan dari zakatPaid / 2.5%.
+  let profit=Math.max(rawProfit,profitFromPaid);
+  if(!profit&&rawProfit)profit=rawProfit;
+  const note=r.note||'';
+  const autoCancelled=!!r.cancelled&&/auto batal/i.test(note);
+  const migrated=paid&&rawProfit&&profitFromPaid>rawProfit;
+  const finalNote=autoCancelled?(note+' · dipulihkan oleh fix'):(migrated&&!/basis zakat dipulihkan/i.test(note)?(note+' · basis zakat dipulihkan'):note);
+  return {id:Number(r.id)||Date.now(),date:r.date||getWibDateTimeString(),profitAtPayment:profit,zakatPaid:paid||roundRp(profit*0.025),cancelled:autoCancelled?false:!!r.cancelled,cancelledAt:autoCancelled?null:(r.cancelledAt||r.cancelled_at||null),note:finalNote};
+}
+function getZakatHistory(){return Array.isArray(zakatHistory)?zakatHistory:[]}
+function persistZakatLocal(history=getZakatHistory()){try{localStorage.setItem(ZAKAT_LOCAL_BACKUP_KEY,JSON.stringify((history||[]).map(normalizeZakatRecord)))}catch(e){}}
+function readZakatLocal(){try{return (JSON.parse(localStorage.getItem(ZAKAT_LOCAL_BACKUP_KEY)||'[]')||[]).map(normalizeZakatRecord)}catch(e){return[]}}
+async function loadZakatHistory(){
+  if(!supabaseClient){zakatHistory=readZakatLocal();return zakatHistory}
+  const{data,error}=await supabaseClient.from('zakat_history').select('*').eq('owner_id',OWNER_ID).order('id',{ascending:true});
+  if(error){const backup=readZakatLocal();if(backup.length){zakatHistory=backup;showToast('Riwayat zakat pakai backup lokal');return zakatHistory}throw error}
+  zakatHistory=(data||[]).map(normalizeZakatRecord);
+  persistZakatLocal(zakatHistory);
+  return zakatHistory;
+}
+async function saveZakatHistory(history){
+  const clean=(history||[]).map(normalizeZakatRecord);
+  const old=getZakatHistory();
+  zakatHistory=clean;
+  persistZakatLocal(clean);
+  if(!supabaseClient)return;
+  const del=await supabaseClient.from('zakat_history').delete().eq('owner_id',OWNER_ID);
+  if(del.error){zakatHistory=old;persistZakatLocal(old);throw del.error}
+  if(!clean.length)return;
+  const rows=clean.map(r=>({id:r.id,owner_id:OWNER_ID,date:r.date,profit_at_payment:roundRp(r.profitAtPayment),zakat_paid:roundRp(r.zakatPaid),cancelled:!!r.cancelled,cancelled_at:r.cancelledAt||null,note:r.note||''}));
+  const ins=await supabaseClient.from('zakat_history').insert(rows);
+  if(ins.error){showToast('Zakat aman di backup lokal, Supabase gagal simpan');throw ins.error}
+}
+async function appendZakatHistoryRecord(record){
+  const row=normalizeZakatRecord(record);
+  zakatHistory=[...getZakatHistory(),row];
+  persistZakatLocal(zakatHistory);
+  if(!supabaseClient)return;
+  const payload={id:row.id,owner_id:OWNER_ID,date:row.date,profit_at_payment:roundRp(row.profitAtPayment),zakat_paid:roundRp(row.zakatPaid),cancelled:false,cancelled_at:null,note:row.note||''};
+  const ins=await supabaseClient.from('zakat_history').insert(payload);
+  if(ins.error)throw ins.error;
+}
+async function appendZakatHistory(row){return appendZakatHistoryRecord(row)}
+function getWibDateTimeString(){const p=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).map(x=>[x.type,x.value]));return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}`}
+function getJakartaDateTimeString(){return getWibDateTimeString()}
+function getWibDateOffsetString(offsetDays=0){const today=getLocalDateString();const ms=new Date(`${today}T00:00:00+07:00`).getTime()+(Number(offsetDays||0)*86400000);return getLocalDateString(new Date(ms))}
+function getZakatCutoffDate(){return getWibDateOffsetString(-1)}
+function isOnOrBeforeZakatCutoff(date){const d=String(date||'').slice(0,10);return !!d&&d<=getZakatCutoffDate()}
+function getZakatBasisLabel(){return `s.d ${getZakatCutoffDate()} (H-1 / data final)`}
+function getTotalProfit(){
+  // Basis zakat dibuat FINAL sampai H-1 agar tidak berubah saat ada transaksi baru hari ini.
+  // Yang dihitung hanya pemasukan manual + SERVER LOCK yang sudah masuk Supabase sampai kemarin.
+  // Server Pusat hari ini sengaja TIDAK dihitung; sync dulu besok, baru masuk zakat berikutnya.
+  let totalIncome=0;
+  (transactions||[]).forEach(t=>{
+    if(t&&t.type==='income'&&isOnOrBeforeZakatCutoff(t.date))totalIncome+=Number(t.amount||0);
+  });
+  return roundRp(totalIncome*.2);
+}
+function getZakatCoveredProfit(r={}){const profit=roundRp(r.profitAtPayment??r.profit_at_payment??0),paid=roundRp(r.zakatPaid??r.zakat_paid??0),fromPaid=paid?roundRp(paid/0.025):0;return Math.max(profit,fromPaid)}
+function getPaidProfitFromZakatRow(r){return (!r||r.cancelled)?0:getZakatCoveredProfit(r)}
+function getTotalProfitZakatPaid(){return getZakatHistory().reduce((a,r)=>a+(!r.cancelled?getZakatCoveredProfit(r):0),0)}
+function getUnpaidProfit(){return Math.max(0,roundRp(getTotalProfit()-getTotalProfitZakatPaid()))}
+function getCurrentZakatDue(){return roundRp(getUnpaidProfit()*.025)}
+function validateAndCancelInvalidZakat(){
+  // Jangan auto-batalkan riwayat zakat yang sudah dibayar.
+  // Riwayat lama yang sempat auto-batal dipulihkan lewat normalizeZakatRecord().
+  return false;
+}
+async function markZakatPaid(){const due=getCurrentZakatDue();if(due<=0){showToast('Zakat sudah lunas');return}const unpaid=getUnpaidProfit();const ds=getWibDateTimeString();const cutoff=getZakatCutoffDate();if(confirm(`Bayar Zakat Mal:
+Data final sampai ${cutoff} (H-1)
+2.5% × ${formatRupiah(unpaid)} (laba belum dizakatkan)
+= ${formatRupiah(due)}
+
+Transaksi hari ini tidak ikut. Lanjutkan?`)){try{await appendZakatHistoryRecord({id:Date.now(),date:ds,profitAtPayment:unpaid,zakatPaid:due,cancelled:false,note:`Zakat 2.5% dari laba ${formatRupiah(unpaid)} sampai ${cutoff}`});render();showToast('Zakat tersimpan sampai '+cutoff)}catch(e){showToast('Gagal simpan zakat: '+e.message)}}}
+function showZakatHistoryModal(){const h=getZakatHistory(),box=$('zakatHistoryList');box.innerHTML=h.length?h.slice().reverse().map(r=>`<div class="item ${r.cancelled?'danger-card':''}"><div class="desc"><b>${r.date} ${r.cancelled?'(Batal)':''}</b><small>Dari laba ${formatRupiah(r.profitAtPayment)}</small></div><b class="num ${r.cancelled?'red':'gold'}">${formatRupiah(r.zakatPaid)}</b></div>`).join(''):'<div class="empty">Belum ada riwayat zakat</div>';$('zakatHistoryModal').classList.remove('hidden')}
+function closeZakatHistoryModal(){$('zakatHistoryModal').classList.add('hidden')}
+async function loadTransactions(){
+  // Hapus cache lama yang mungkin corrupt/dobel — Supabase adalah satu-satunya sumber kebenaran
+  try{localStorage.removeItem('rh_tx_cache');}catch(e){}
+  const{data,error}=await supabaseClient.from('transactions').select('*').eq('owner_id',OWNER_ID).order('date',{ascending:false}).order('id',{ascending:false});
+  if(error)throw error;
+  transactions=(data||[]).map(r=>({id:Number(r.id),date:r.date,description:r.description,amount:Number(r.amount||0),type:r.type,category_id:r.category_id||null,category_name:r.category_name||''}));
+  return transactions;
+}
+async function saveTransaction(t){
+  const{error}=await supabaseClient.from('transactions').insert({...t,owner_id:OWNER_ID});
+  if(error)throw error;
+}
+async function deleteTransactionFromDB(id){
+  const{error}=await supabaseClient.from('transactions').delete().eq('owner_id',OWNER_ID).eq('id',id);
+  if(error)throw error;
+}
+async function clearManualTransactions(){
+  // Proteksi: data hasil upload Server Pusat tetap LOCK dan tidak ikut dihapus massal.
+  const manualRows=transactions.filter(t=>!isFirebaseUploaded(t)&&!isAutoQrisCashOut(t));
+  for(const t of manualRows){
+    const{error}=await supabaseClient.from('transactions').delete().eq('owner_id',OWNER_ID).eq('id',t.id);
+    if(error)throw error;
+  }
+}
+async function clearAllTransactions(){
+  // Reset FULL: hapus semua transaksi Server Pusat, termasuk data Server Pusat sync/LOCK, cash out, dan ops.
+  return clearFullSupabaseData();
+}
+async function clearFullSupabaseData(){
+  if(!supabaseClient)throw new Error('Supabase belum aktif');
+  const txDel=await supabaseClient.from('transactions').delete().eq('owner_id',OWNER_ID);
+  if(txDel.error)throw txDel.error;
+  const zkDel=await supabaseClient.from('zakat_history').delete().eq('owner_id',OWNER_ID);
+  if(zkDel.error)throw zkDel.error;
+}
+function resetLocalAfterFullDelete(){
+  transactions=[];
+  zakatHistory=[];
+  pendingFirebaseUploads=[];
+  firebaseIncomeRows=[];
+  firebaseIncomeTotal=0;
+  todayFirebaseIncomeRows=[];
+  todayFirebaseIncomeTotal=0;
+  if($('pendingUploadList'))$('pendingUploadList').innerHTML='';
+  if($('pendingUploadSummary'))$('pendingUploadSummary').innerText='Belum ada scan setelah reset full.';
+  if($('pendingScanStatus'))$('pendingScanStatus').innerText='Idle';
+}
+async function importTransactions(newTransactions){
+  // Import hanya mengganti data manual. Data SERVER LOCK tetap dipertahankan.
+  await clearManualTransactions();
+  const rows=newTransactions
+    .filter(t=>!isFirebaseUploaded(t))
+    .map(t=>({id:t.id,owner_id:OWNER_ID,date:t.date,description:t.description,amount:t.amount,type:t.type,category_id:t.category_id||null,category_name:t.category_name||''}));
+  if(!rows.length)return;
+  const{error}=await supabaseClient.from('transactions').insert(rows);
+  if(error)throw error;
+}
+function getLocalDateString(date=new Date()){
+  // Pakai tanggal WIB agar sama dengan aplikasi kasir Server Pusat utama.
+  return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).format(date);
+}
+function getFirebaseRecordDateKey(t){
+  if(!t)return '';
+  if(t.dateKey)return String(t.dateKey).slice(0,10);
+  if(t.date)return String(t.date).slice(0,10);
+  if(typeof t.time==='string'&&t.time.length>=10)return t.time.slice(0,10);
+  if(typeof t.createdAt==='string'&&t.createdAt.length>=10)return t.createdAt.slice(0,10);
+  if(t.createdAt&&typeof t.createdAt.toDate==='function')return getLocalDateString(t.createdAt.toDate());
+  if(Number(t.createdAtMs||0))return getLocalDateString(new Date(Number(t.createdAtMs)));
+  // Index versi baru tetap pakai createdAtMs, tapi beberapa backup/data lama masih menyimpan timestamp angka.
+  if(Number(t.timestamp||0))return getLocalDateString(new Date(Number(t.timestamp)));
+  return '';
+}
+function isFirebaseRecordDeleted(t){return t&&(t.deleted===true||t.deleted==='true'||t.isDeleted===true||t.isDeleted==='true'||t.canceled===true||t.canceled==='true'||t.cancelled===true||t.cancelled==='true'||['deleted','canceled','cancelled'].includes(String(t.status||'').toLowerCase()))}
+function normalizeFirebaseRows(rows){
+  return (rows||[])
+    .map(t=>({...t,dateKey:getFirebaseRecordDateKey(t),amount:Number(t.amount||0)}))
+    .filter(t=>t.dateKey&&!isFirebaseRecordDeleted(t));
+}
+function wibDayStartMs(date){return new Date(`${date}T00:00:00+07:00`).getTime()}
+function wibDayEndMs(date){return new Date(`${date}T23:59:59+07:00`).getTime()}
+async function fetchFirebaseRowsByRange(start,end){
+  if(!serverPusatClient)return [];
+  // Server Pusat memakai model tabel: transactions(id text primary key, data jsonb).
+  // Ambil batch besar lalu filter di browser agar kompatibel dengan field lama/baru.
+  const {data,error}=await serverPusatClient.from('transactions').select('id,data').limit(5000);
+  if(error)throw error;
+  const rows=(data||[]).map(r=>({id:r.id,_docId:r.id,...((r&&r.data&&typeof r.data==='object')?r.data:{})}));
+  return normalizeFirebaseRows(rows).filter(t=>t.dateKey>=start&&t.dateKey<=end);
+}
+function sumFirebaseRows(rows){return (rows||[]).reduce((a,b)=>a+Number(b.amount||0),0)}
+
+// === AUTO CASH OUT QRIS DARI SERVER PUSAT KASIR ===
+// Transaksi kasir yang metode pembayarannya QRIS / Transfer tetap dihitung sebagai omset,
+// lalu otomatis dibuat sebagai Cash Out QRIS supaya Cash Fisik berkurang tanpa input manual.
+function getFirebaseDocKeyForAutoCashOut(t={}){
+  return String(t._docId||t.clientId||t.id||t.docId||t.doc_id||[
+    t.dateKey||getFirebaseRecordDateKey(t),
+    t.user||t.username||t.name||'',
+    t.note||t.description||'',
+    t.amount||0,
+    t.createdAtMs||t.timestamp||''
+  ].join('|')).trim();
+}
+function isFirebaseQrisPayment(t={}){
+  const raw=String(t.paymentMethod||t.payment_method||t.paymentLabel||t.payment_label||t.paymentType||t.payment_type||t.metodePembayaran||t.metode_pembayaran||'').toLowerCase();
+  if(!raw)return false;
+  if(/cash|tunai/.test(raw))return false;
+  return /qris|qr\s*is|transfer|bank/.test(raw);
+}
+function autoQrisHash(s){
+  let h=2166136261;
+  s=String(s||'');
+  for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}
+  return Math.abs(h>>>0)%1000000;
+}
+function getAutoQrisCashOutId(t={}){
+  const dateDigits=String(t.dateKey||getFirebaseRecordDateKey(t)||getLocalDateString()).replace(/\D/g,'').slice(0,8)||'19700101';
+  const hash=String(autoQrisHash(getFirebaseDocKeyForAutoCashOut(t))).padStart(6,'0');
+  return Number(dateDigits+'88'+hash);
+}
+function getAutoQrisCashOutMarker(t={}){
+  return `[AUTO-QRIS:${String(autoQrisHash(getFirebaseDocKeyForAutoCashOut(t))).padStart(6,'0')}]`;
+}
+function buildAutoQrisCashOutDesc(t={}){
+  const note=String(t.note||t.description||t.keterangan||'Transaksi QRIS').trim()||'Transaksi QRIS';
+  const staff=String(t.name||t.user||t.username||t.kasir||t.createdBy||'').trim();
+  const staffText=staff?` · ${staff}`:'';
+  return `${CASHOUT_PREFIX}qris] ${getAutoQrisCashOutMarker(t)} QRIS otomatis kasir - ${note}${staffText}`;
+}
+function isAutoQrisCashOut(t={}){
+  const desc=String(t.description||'');
+  return isCashOut(t)&&getCashOutType(t)==='qris'&&(desc.includes('[AUTO-QRIS:')||/QRIS\s+otomatis\s+kasir/i.test(desc));
+}
+function getAutoQrisSyncDates(rows=[],opts={}){
+  const dates=new Set();
+  const add=d=>{d=String(d||'').slice(0,10);if(/^\d{4}-\d{2}-\d{2}$/.test(d))dates.add(d)};
+  add(opts.date||opts.dateKey||opts.firebaseUploadDate);
+  if(Array.isArray(opts.dates))opts.dates.forEach(add);
+  (rows||[]).forEach(t=>add(t&&((t.dateKey)||getFirebaseRecordDateKey(t))));
+  return Array.from(dates);
+}
+async function deleteStaleAutoQrisCashOut(validIds,dates,opts={}){
+  if(!supabaseClient||!dates||!dates.length)return false;
+  const dateSet=new Set(dates.map(String));
+  const stale=(transactions||[]).filter(t=>isAutoQrisCashOut(t)&&dateSet.has(String(t.date||''))&&!validIds.has(Number(t.id)));
+  if(!stale.length)return false;
+  for(const t of stale){
+    const {error}=await supabaseClient.from('transactions').delete().eq('owner_id',OWNER_ID).eq('id',Number(t.id));
+    if(error)throw error;
+  }
+  if(!opts.quiet)showToast(`${stale.length} QRIS otomatis dihapus karena transaksi staff sudah dihapus`);
+  return true;
+}
+async function syncFirebaseQrisCashOut(rows,opts={}){
+  if(!supabaseClient||!Array.isArray(rows))return false;
+  const candidates=[];
+  const seen=new Set();
+  (rows||[]).forEach(t=>{
+    if(!t||isFirebaseRecordDeleted(t)||!isFirebaseQrisPayment(t))return;
+    const amount=Number(t.amount||0);
+    const date=t.dateKey||getFirebaseRecordDateKey(t);
+    if(!date||!amount||amount<=0)return;
+    const id=getAutoQrisCashOutId(t);
+    if(seen.has(id))return;
+    seen.add(id);
+    candidates.push({id,owner_id:OWNER_ID,date,description:buildAutoQrisCashOutDesc(t),amount,type:'expense'});
+  });
+  const validIds=new Set(candidates.map(r=>Number(r.id)));
+  const syncDates=getAutoQrisSyncDates(rows,opts);
+  const existing=new Map((transactions||[]).map(t=>[Number(t.id),t]));
+  const rowsToUpsert=candidates.filter(r=>{
+    const old=existing.get(Number(r.id));
+    return !(old&&String(old.date||'')===String(r.date)&&String(old.description||'')===String(r.description)&&Number(old.amount||0)===Number(r.amount)&&String(old.type||'')===String(r.type));
+  });
+  try{
+    const staleChanged=await deleteStaleAutoQrisCashOut(validIds,syncDates,opts);
+    if(rowsToUpsert.length){
+      const {error}=await supabaseClient.from('transactions').upsert(rowsToUpsert,{onConflict:'id'});
+      if(error)throw error;
+      if(!opts.quiet)showToast(`${rowsToUpsert.length} QRIS otomatis masuk Pengurangan Cash`);
+    }
+    return staleChanged||rowsToUpsert.length>0;
+  }catch(e){
+    console.warn('Auto Cash Out QRIS gagal:',e);
+    if(!opts.quiet)showToast('Auto QRIS gagal: '+(e.message||e));
+    return false;
+  }
+}
+
+async function getFirebaseQuerySnapshot(q){
+  throw new Error('Query Server Pusat sudah diganti ke Server Pusat Supabase');
+}
+async function refreshFirebaseRowsOnce(date,mode='selected'){
+  // Baca ulang pakai range supaya data index lama/baru tetap kebaca walau field tanggal berbeda.
+  if(!firebaseDb||!date)return;
+  try{
+    const rows=await fetchFirebaseRowsByRange(date,date);
+    const qrisChanged=await syncFirebaseQrisCashOut(rows,{quiet:true,date});
+    if(qrisChanged)await loadTransactions();
+    if(mode==='today'){
+      todayFirebaseIncomeRows=rows.filter(t=>t.dateKey===date);
+      todayFirebaseIncomeTotal=sumFirebaseRows(todayFirebaseIncomeRows);
+      renderTodayFirebaseIncomeHome();
+      renderZakatSection();
+      renderProfitSummary();
+  renderFinanceReport();
+      renderCashFisik();
+      render();
+    }else{
+      firebaseIncomeRows=rows.filter(t=>t.dateKey===date);
+      firebaseIncomeTotal=sumFirebaseRows(firebaseIncomeRows);
+      renderFirebaseUploadCard();
+    }
+  }catch(e){console.warn('Refresh Server Pusat range gagal:',e.message||e)}
+}
+$('inputDate').value=getLocalDateString();$('filterStartDate').value=getLocalDateString();$('filterEndDate').value=getLocalDateString();if($('filterStartDateHistory'))$('filterStartDateHistory').value=getLocalDateString();if($('filterEndDateHistory'))$('filterEndDateHistory').value=getLocalDateString();if($('reportStartDate'))$('reportStartDate').value=getLocalDateString();if($('reportEndDate'))$('reportEndDate').value=getLocalDateString();firebaseUploadDate=getLocalDateString();setTimeout(()=>{if($('firebaseUploadDate'))$('firebaseUploadDate').value=firebaseUploadDate;setPendingThisMonth(false);updateMonthValidityIdle()},0);
+function openPasswordModal(cb){pendingAction=cb;$('passwordModal').classList.remove('hidden');$('confirmPasswordInput').value='';setTimeout(()=>$('confirmPasswordInput').focus(),80)}function closePasswordModal(){$('passwordModal').classList.add('hidden');pendingAction=null}$('confirmPasswordInput').addEventListener('input',()=>{$('confirmPasswordInput').value=$('confirmPasswordInput').value.replace(/\D/g,'')});$('confirmPasswordInput').addEventListener('keydown',(e)=>{if(e.key==='Enter')$('btnConfirmAction').click()});$('btnConfirmAction').addEventListener('click',()=>{if($('confirmPasswordInput').value===APP_PIN){const a=pendingAction;closePasswordModal();if(a)a()}else{showToast('PIN salah');$('confirmPasswordInput').value='';setTimeout(()=>$('confirmPasswordInput').focus(),80)}});
+async function addTransaction(){try{const dateVal=$('inputDate').value,type=$('type').value;let desc=$('description').value.trim();const amount=getActualAmount($('amount').value);let categoryPayload={};if(type==='income'&&!desc)desc='Omset';if(type==='expense'){if(!desc){showToast('Deskripsi pengeluaran wajib');return}const catId=$('expenseCategorySelect')?$('expenseCategorySelect').value:'';const cat=getCategoryById(catId);if(!cat){showToast('Kategori pengeluaran wajib dipilih');return}categoryPayload={category_id:Number(cat.id),category_name:cat.name};}if(!dateVal||amount<=0){showToast('Nominal tidak valid');return}await saveTransaction({id:Date.now(),date:dateVal,description:desc,amount,type,...categoryPayload});await loadTransactions();render();$('description').value='';$('amount').value='';$('liveAmountPreview').innerText='';$('inputDate').value=getLocalDateString();renderCategorySelects();closeTransactionModal();showToast('Transaksi tersimpan');goPage('home')}catch(e){showToast('Gagal simpan: '+e.message)}}
+function onHistoryRangeChange(){$('filterStartDate').value=$('filterStartDateHistory').value;$('filterEndDate').value=$('filterEndDateHistory').value;render();}
+function changeFilter(f){currentFilter=f;$('rangeSelector').classList.toggle('hidden',f!=='range');const rh=$('rangeSelectorHistory');if(rh)rh.classList.toggle('hidden',f!=='range');if(f==='range'){const s=$('filterStartDateHistory'),e=$('filterEndDateHistory');if(s&&!s.value)s.value=getLocalDateString();if(e&&!e.value)e.value=getLocalDateString();$('filterStartDate').value=s?s.value:getLocalDateString();$('filterEndDate').value=e?e.value:getLocalDateString();}updateFilterUI();render();updateMonthValidityIdle()}function updateFilterUI(){['today','month','range','all'].forEach(f=>{const el=$('filter-'+f);if(el)el.classList.toggle('active',f===currentFilter)})}
+async function deleteTransaction(id){const t=transactions.find(x=>Number(x.id)===Number(id));if(t&&isAutoQrisCashOut(t)){showToast('QRIS otomatis tidak bisa dihapus di sini. Hapus transaksi aslinya dari aplikasi staff.');return}if(t&&isFirebaseUploaded(t)){showToast('Data SERVER LOCK. Gunakan tombol Sync di halaman Server Pusat, bukan hapus manual.');return}openPasswordModal(async()=>{try{await deleteTransactionFromDB(id);await loadTransactions();validateAndCancelInvalidZakat();render();showToast('Transaksi dihapus')}catch(e){showToast('Gagal hapus: '+e.message)}})}
+async function requestClearAll(){
+  openPasswordModal(async()=>{
+    if(confirm('Hapus semua data manual? Data SERVER LOCK tidak akan dihapus.')){
+      try{
+        await clearManualTransactions();
+        await saveZakatHistory([]);
+        await loadTransactions();
+        render();
+        showToast('Data manual dihapus. SERVER LOCK tetap aman.');
+      }catch(e){showToast('Gagal reset: '+e.message)}
+    }
+  });
+}
+async function requestFullReset(){
+  openPasswordModal(async()=>{
+    const totalTx=(transactions||[]).length;
+    const ok1=confirm('PERINGATAN!\n\nHapus SEMUA data Supabase aplikasi?\n- Semua transaksi manual\n- Semua data Server Pusat sync/LOCK\n- Semua cash out QRIS/Tabungan\n- Semua operasional toko\n- Semua riwayat zakat\n\nTotal transaksi yang terbaca: '+totalTx+'.\n\nLanjutkan?');
+    if(!ok1)return;
+    const ok2=confirm('Konfirmasi terakhir: data yang dihapus tidak bisa dikembalikan dari aplikasi. Tetap hapus semua data full?');
+    if(!ok2)return;
+    try{
+      await clearFullSupabaseData();
+      resetLocalAfterFullDelete();
+      await loadTransactions();
+      try{await loadZakatHistory();}catch(e){}
+      render();
+      renderFirebaseUploadCard();
+      showToast('Semua data Supabase aplikasi sudah dihapus full');
+    }catch(e){showToast('Gagal hapus full: '+e.message)}
+  });
+}
+function formatRupiah(n){return new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',minimumFractionDigits:0,maximumFractionDigits:0}).format(Math.round(Number(n||0)))}function getActualAmount(raw){if(!raw||isNaN(raw))return 0;return parseFloat(raw)*1000}function handleSmartAmount(input){$('liveAmountPreview').innerText=input.value?formatRupiah(getActualAmount(input.value)):''}function updatePlaceholder(){const isExpense=$('type').value==='expense';$('description').placeholder=isExpense?'Contoh: Makan, listrik':'Omset (boleh kosong)';const f=$('expenseCategoryField');if(f)f.classList.toggle('hidden',!isExpense);if(isExpense)renderCategorySelects();}
+function getGrossIncomeForRange(mode,startDate,endDate){
+  const today=getLocalDateString(), month=today.slice(0,7);
+  if(mode==='today'){
+    // Pendapatan Hari Ini = Server Pusat hari ini + pemasukan manual - pengeluaran manual hari ini
+    const manualIncome=(transactions||[])
+      .filter(t=>t.type==='income' && t.date===today && !isFirebaseUploaded(t))
+      .reduce((sum,t)=>sum+Number(t.amount||0),0);
+    const manualExpense=(transactions||[])
+      .filter(t=>t.type==='expense' && !isCashOut(t) && t.date===today)
+      .reduce((sum,t)=>sum+Number(t.amount||0),0);
+    return manualIncome + Number(todayFirebaseIncomeTotal||0) - manualExpense;
+  }
+  const incomeRows=transactions.filter(t=>{
+    if(t.type!=='income')return false;
+    if(mode==='month')return String(t.date||'').startsWith(month);
+    if(mode==='range')return t.date>=(startDate||'') && t.date<=(endDate||'');
+    return true; // all
+  });
+  const expenseRows=transactions.filter(t=>{
+    if(t.type!=='expense'||isCashOut(t))return false;
+    if(mode==='month')return String(t.date||'').startsWith(month);
+    if(mode==='range')return t.date>=(startDate||'') && t.date<=(endDate||'');
+    return true; // all
+  });
+  const totalIncome=incomeRows.reduce((sum,t)=>sum+Number(t.amount||0),0);
+  const totalExpense=expenseRows.reduce((sum,t)=>sum+Number(t.amount||0),0);
+  return totalIncome - totalExpense;
+}
+function updateNetSummary(){
+  const s=$('filterStartDate')?$('filterStartDate').value:'', e=$('filterEndDate')?$('filterEndDate').value:'';
+  const todayGross=getGrossIncomeForRange('today'), monthGross=getGrossIncomeForRange('month'), allGross=getGrossIncomeForRange('all');
+  const rangeGross=getGrossIncomeForRange('range',s,e);
+  if($('netTodaySummary')){$('netTodaySummary').innerText=formatRupiah(todayGross);$('netTodaySummary').className='num '+(todayGross>=0?'green':'red')}
+  if($('netMonthSummary')){$('netMonthSummary').innerText=formatRupiah(monthGross);$('netMonthSummary').className='num '+(monthGross>=0?'blue':'red')}
+  if($('netAllSummary')){$('netAllSummary').innerText=formatRupiah(allGross);$('netAllSummary').className='num '+(allGross>=0?'gold':'red')}
+  // Kotak Custom: muncul hanya kalau filter range aktif
+  const rangeBox=$('netRangeBox');
+  if(rangeBox){
+    if(currentFilter==='range'&&s&&e){
+      rangeBox.style.display='';
+      const lbl=$('netRangeLabel');if(lbl)lbl.innerText=`${s.slice(5)} s.d ${e.slice(5)}`;
+      const val=$('netRangeSummary');if(val){val.innerText=formatRupiah(rangeGross);val.className='num '+(rangeGross>=0?'green':'red');}
+    } else {
+      rangeBox.style.display='none';
+    }
+  }
+}
+function getTodayManualTransactions(){
+  const today=getLocalDateString();
+  return (transactions||[]).filter(t=>t.date===today && !isFirebaseUploaded(t));
+}
+function getTodayFirebasePreviewTransaction(){
+  const today=getLocalDateString();
+  const total=Number(todayFirebaseIncomeTotal||0);
+  if(!total || total<=0)return null;
+  return {
+    id:'firebase_today_preview',
+    date:today,
+    description:'[SERVERPUSAT:'+today+'] Omset Server Pusat Hari Ini',
+    amount:total,
+    type:'income',
+    __firebasePreview:true
+  };
+}
+function getFilteredTransactions(){
+  const now=getLocalDateString(),s=$('filterStartDate').value,e=$('filterEndDate').value;
+  if(currentFilter==='today'){
+    const rows=getTodayManualTransactions();
+    const fb=getTodayFirebasePreviewTransaction();
+    return fb?[fb,...rows]:rows;
+  }
+  return transactions.filter(t=>currentFilter==='month'?t.date.startsWith(now.substring(0,7)):currentFilter==='range'?t.date>=s&&t.date<=e:true)
+}
+function getPeriodLabel(){const now=getLocalDateString();if(currentFilter==='today')return `Hari Ini (${now})`;if(currentFilter==='month')return `Bulan Ini`;if(currentFilter==='range')return `${$('filterStartDate').value} s.d ${$('filterEndDate').value}`;return 'Semua Riwayat'}
+function generateWhatsAppReport(){const f=getFilteredTransactions();let ti=0,te=0,inc=[],exp=[];f.forEach(t=>{if(t.type==='income'){ti+=t.amount;inc.push(`📥 ${t.date} | ${t.description} | +${formatRupiah(t.amount)}`)}else if(!isCashOut(t)){te+=t.amount;exp.push(`📤 ${t.date} | ${t.description} | -${formatRupiah(t.amount)}`)}});const labaTotal=getTotalProfit();const zakatDue=getCurrentZakatDue();let r=`📊 *LAPORAN alfajri*\nPeriode: ${getPeriodLabel()}\n\n💚 Pemasukan: ${formatRupiah(ti)}\n❤️ Pengeluaran: ${formatRupiah(te)}\n💙 Saldo: ${formatRupiah(ti-te)}\n💜 Laba 20% final s.d H-1: ${formatRupiah(labaTotal)}\n🕌 Zakat wajib final: ${formatRupiah(zakatDue)}\n\n`;if(inc.length)r+=`*PEMASUKAN*\n${inc.join('\n')}\n\n`;if(exp.length)r+=`*PENGELUARAN*\n${exp.join('\n')}\n\n`;return r+'_Dikirim dari alfajri Finance_'}
+function sendWhatsAppReport(){if(!getFilteredTransactions().length){showToast('Tidak ada transaksi');return}const no=prompt('Nomor WhatsApp tujuan. Kosongkan untuk copy laporan.','');const report=generateWhatsAppReport();if(no&&no.trim()){let n=no.replace(/[^0-9]/g,'');if(n.startsWith('0'))n='62'+n.slice(1);if(!n.startsWith('62'))n='62'+n;window.open(`https://wa.me/${n}?text=${encodeURIComponent(report)}`,'_blank');showToast('Membuka WhatsApp')}else{navigator.clipboard.writeText(report).then(()=>showToast('Laporan disalin')).catch(()=>showToast('Gagal salin'))}}
+
+function isFirebaseUploaded(t){const d=String(t?.description||'');return !!(t&&t.__firebasePreview) || d.startsWith('[FIREBASE:') || d.startsWith('[SERVERPUSAT:')}
+function cleanFirebaseDesc(desc){return String(desc||'').replace(/^\[(?:FIREBASE|SERVERPUSAT):\d{4}-\d{2}-\d{2}\]\s*/,'')}
+function getFirebaseUploadId(date){return Number(String(date||'').replace(/\D/g,'')+'777')}
+function getUploadedFirebaseTransaction(date){const id=getFirebaseUploadId(date);return transactions.find(t=>Number(t.id)===id || String(t.description||'').startsWith(`[FIREBASE:${date}]`) || String(t.description||'').startsWith(`[SERVERPUSAT:${date}]`))}
+function initFirebase(){try{serverPusatClient=window.supabase.createClient(SERVER_PUSAT_URL,SERVER_PUSAT_ANON_KEY);firebaseDb=serverPusatClient;return true}catch(e){console.error(e);showToast('Server Pusat gagal aktif: '+e.message);return false}}
+function renderTodayFirebaseIncomeHome(){
+  // Card Pendapatan Hari Ini sudah digabung ke Cash Fisik — panggil renderCashFisik saja
+  renderCashFisik(); return;
+  // (kode lama di bawah tidak dipakai lagi)
+  const totalEl=$('todayFirebaseIncomeHome'),infoEl=$('todayFirebaseIncomeInfo');
+  const today=getLocalDateString();
+  const manualRows=(transactions||[]).filter(t=>t.type==='income' && t.date===today && !isFirebaseUploaded(t));
+  const manualTotal=manualRows.reduce((sum,t)=>sum+Number(t.amount||0),0);
+  const fbTotal=Number(todayFirebaseIncomeTotal||0);
+  // Hanya pengeluaran operasional toko yang mengurangi pendapatan hari ini di Home
+  const opsRows=(transactions||[]).filter(t=>t.type==='expense' && t.date===today && isOpsExpense(t));
+  const opsTotal=opsRows.reduce((sum,t)=>sum+Number(t.amount||0),0);
+  const total=manualTotal+fbTotal-opsTotal;
+  const fbCount=(todayFirebaseIncomeRows||[]).length;
+  // Update total ops di home card
+  const opsTodayHomeEl=$('opsTodayHomeTotal');
+  if(opsTodayHomeEl)opsTodayHomeEl.innerText=formatRupiah(opsTotal);
+  if(totalEl){totalEl.innerText=formatRupiah(total);totalEl.className='num '+(total>=0?'green':'red');totalEl.style.fontSize='24px';}
+  // warna card berubah merah kalau pendapatan negatif
+  const card=$('todayIncomeCard'),titleEl=$('todayIncomeSectionTitle');
+  if(card){card.style.background=total<0?'#fff6f4':'#f3fbf6';card.style.borderColor=total<0?'#ffd7d0':'#ccefd9';}
+  if(titleEl){titleEl.style.color=total<0?'var(--red)':'var(--green)';}
+  if(infoEl){
+    const parts=[];
+    if(fbTotal>0)parts.push(`Server Pusat ${formatRupiah(fbTotal)} (${fbCount} trx)`);
+    if(manualTotal>0)parts.push(`Manual ${formatRupiah(manualTotal)} (${manualRows.length} trx)`);
+    if(opsTotal>0)parts.push(`Ops Toko -${formatRupiah(opsTotal)}`);
+    infoEl.innerText=parts.length?parts.join(' · '):'Belum ada pendapatan hari ini';
+  }
+}
+function startTodayFirebaseWatch(){
+  if(!firebaseDb)return Promise.resolve();
+  const today=getLocalDateString();
+  if(todayFirebaseUnsub){todayFirebaseUnsub();todayFirebaseUnsub=null}
+  return refreshFirebaseRowsOnce(today,'today').then(()=>{
+    renderTodayFirebaseIncomeHome();
+    renderZakatSection();
+    renderProfitSummary();
+    renderCashFisik();
+  }).catch(err=>{
+    console.error(err);
+    if($('todayFirebaseIncomeInfo'))$('todayFirebaseIncomeInfo').innerText='Gagal baca Server Pusat hari ini';
+  });
+}
+function changeFirebaseUploadDate(date){firebaseUploadDate=date||getLocalDateString();startFirebaseWatch(firebaseUploadDate)}
+function refreshFirebaseUpload(){startFirebaseWatch(firebaseUploadDate||getLocalDateString());showToast('Data Server Pusat direfresh')}
+function startFirebaseWatch(date){
+  if(!firebaseDb)return;
+  firebaseUploadDate=date||getLocalDateString();
+  if($('firebaseUploadDate'))$('firebaseUploadDate').value=firebaseUploadDate;
+  if(firebaseUnsub){firebaseUnsub();firebaseUnsub=null}
+  return refreshFirebaseRowsOnce(firebaseUploadDate,'selected').then(async()=>{
+    const qrisChangedSelected=await syncFirebaseQrisCashOut(firebaseIncomeRows,{quiet:true,date:firebaseUploadDate});
+    if(qrisChangedSelected)await loadTransactions();
+    renderFirebaseUploadCard();
+    renderCashFisik();
+  }).catch(err=>{console.error(err);showToast('Gagal baca Server Pusat: '+err.message)});
+}
+
+
+function getCurrentMonthRange(){
+  const today=getLocalDateString();
+  return {start:today.slice(0,7)+'-01', end:today, month:today.slice(0,7)};
+}
+function setMonthValidityUI(state,title,desc){
+  const card=$('monthValidityCard'),t=$('monthValidityTitle'),d=$('monthValidityDesc'),btn=$('btnCheckMonthValid');
+  if(!card||!t||!d)return;
+  card.className='month-valid-card '+(state||'idle');
+  t.innerText=title;
+  d.innerText=desc;
+  if(btn){btn.disabled=monthValidityBusy;btn.innerText=monthValidityBusy?'Cek...':'Cek';}
+}
+function updateMonthValidityIdle(){
+  const r=getCurrentMonthRange();
+  setMonthValidityUI('idle','Validasi Bulan Ini',`Cek ${r.start} s.d ${r.end}: pastikan omset Server Pusat sudah diupload ke Supabase.`);
+}
+async function checkMonthValidity(){
+  if(!firebaseDb)return showToast('Server Pusat belum aktif');
+  const r=getCurrentMonthRange();
+  monthValidityBusy=true;
+  setMonthValidityUI('idle','Mengecek Bulan...',`Sedang cek ${r.start} s.d ${r.end}`);
+  try{
+    const firebaseRows=await fetchFirebaseRowsByRange(r.start,r.end);
+    const grouped={};
+    firebaseRows.forEach(t=>{
+      const date=getFirebaseRecordDateKey(t);
+      if(!date)return;
+      if(!grouped[date])grouped[date]={firebaseTotal:0,count:0};
+      grouped[date].firebaseTotal+=Number(t.amount||0);
+      grouped[date].count+=1;
+    });
+    const dates=Object.keys(grouped).sort();
+    const missing=[]; const diff=[]; let totalUploaded=0;
+    dates.forEach(date=>{
+      const fb=Number(grouped[date].firebaseTotal||0);
+      const uploaded=getUploadedFirebaseTransaction(date);
+      const up=Number(uploaded?.amount||0);
+      totalUploaded+=up;
+      if(!uploaded)missing.push(date);
+      else if(up!==fb)diff.push(date);
+    });
+    if(!dates.length){
+      setMonthValidityUI('ok','Bulan Valid','Belum ada omset Server Pusat bulan ini. Tidak ada yang perlu diupload.');
+    }else if(!missing.length&&!diff.length){
+      setMonthValidityUI('ok','Bulan Valid',`${dates.length} hari omset Server Pusat sudah sinkron di Supabase. Total synced bulan: ${formatRupiah(totalUploaded)}.`);
+    }else{
+      const parts=[];
+      if(missing.length)parts.push(`${missing.length} belum upload`);
+      if(diff.length)parts.push(`${diff.length} selisih`);
+      setMonthValidityUI(diff.length?'bad':'warn','Bulan Belum Valid',`${parts.join(' · ')}. Buka Cek Belum Sync lalu klik Sync sampai aman.`);
+      if($('pendingStartDate'))$('pendingStartDate').value=r.start;
+      if($('pendingEndDate'))$('pendingEndDate').value=r.end;
+    }
+  }catch(e){
+    console.error(e);
+    setMonthValidityUI('bad','Gagal Cek Bulan',e.message||'Gagal membaca data Server Pusat');
+  }finally{
+    monthValidityBusy=false;
+    const btn=$('btnCheckMonthValid'); if(btn){btn.disabled=false;btn.innerText='Cek'}
+  }
+}
+
+function setPendingThisMonth(show=true){
+  const today=getLocalDateString();
+  const start=today.slice(0,7)+'-01';
+  if($('pendingStartDate'))$('pendingStartDate').value=start;
+  if($('pendingEndDate'))$('pendingEndDate').value=today;
+  if(show)showToast('Rentang diatur ke bulan ini');
+}
+function dateFromInputToMs(date){
+  const parts=String(date||'').split('-').map(Number);
+  if(parts.length!==3||!parts[0]||!parts[1]||!parts[2])return 0;
+  return new Date(parts[0],parts[1]-1,parts[2]).getTime();
+}
+function validatePendingRange(start,end){
+  const sMs=dateFromInputToMs(start),eMs=dateFromInputToMs(end);
+  if(!sMs||!eMs)return 'Tanggal awal dan akhir wajib diisi';
+  if(sMs>eMs)return 'Tanggal awal tidak boleh lebih besar dari tanggal akhir';
+  const days=Math.round((eMs-sMs)/86400000)+1;
+  if(days>370)return 'Maksimal scan 370 hari sekali cek biar ringan';
+  return '';
+}
+function renderPendingUploadList(){
+  const box=$('pendingUploadList'),sum=$('pendingUploadSummary'),status=$('pendingScanStatus');
+  if(!box||!sum||!status)return;
+  const items=pendingFirebaseUploads||[];
+  const totalMissing=items.filter(x=>x.status==='missing').reduce((a,b)=>a+Number(b.firebaseTotal||0),0);
+  const totalDiff=items.filter(x=>x.status==='diff').reduce((a,b)=>a+Math.abs(Number(b.firebaseTotal||0)-Number(b.uploadedAmount||0)),0);
+  if(!items.length){
+    status.className='firebase-status st-uploaded';status.innerText='Aman';
+    sum.className='audit-box audit-ok';sum.innerText='Tidak ada pendapatan Server Pusat yang belum diupload pada rentang ini.';
+    box.innerHTML='';return;
+  }
+  status.className='firebase-status st-update';status.innerText=`${items.length} Data`;
+  sum.className='audit-box '+(items.some(x=>x.status==='missing')?'audit-warn':'audit-bad');
+  sum.innerText=`Ditemukan ${items.length} tanggal perlu dicek. Belum upload: ${formatRupiah(totalMissing)} · Selisih: ${formatRupiah(totalDiff)}.`;
+  box.innerHTML=items.map(x=>{
+    const isToday=x.date===getLocalDateString();
+    const label=isToday?'HARI INI BELUM FINAL':(x.status==='missing'?'BELUM UPLOAD':'SELISIH');
+    const cls=isToday?'st-pending':(x.status==='missing'?'st-pending':'st-update');
+    const info=isToday
+      ? `Server Pusat ${formatRupiah(x.firebaseTotal)} · data masih bisa berubah, upload besok`
+      : (x.status==='missing'
+        ? `Server Pusat ${formatRupiah(x.firebaseTotal)} · ${x.count} transaksi`
+        : `Server Pusat ${formatRupiah(x.firebaseTotal)} · Supabase ${formatRupiah(x.uploadedAmount)}`);
+    const btn=isToday
+      ? `<button class="btn secondary" disabled>Lock</button>`
+      : `<button class="btn" onclick="uploadPendingFirebaseDate('${x.date}')">${x.status==='missing'?'Sync':'Sync'}</button>`;
+    return `<div class="pending-upload-row"><div style="min-width:0"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><b>${escapeHtml(x.date)}</b><span class="firebase-status ${cls}">${label}</span></div><div class="small" style="margin-top:3px">${escapeHtml(info)}</div></div>${btn}</div>`;
+  }).join('');
+}
+async function scanPendingFirebaseUploads(){
+  if(!firebaseDb)return showToast('Server Pusat belum aktif');
+  const start=$('pendingStartDate')?.value||getLocalDateString();
+  const end=$('pendingEndDate')?.value||getLocalDateString();
+  const err=validatePendingRange(start,end);
+  if(err)return showToast(err);
+  const status=$('pendingScanStatus'),sum=$('pendingUploadSummary'),box=$('pendingUploadList');
+  if(status){status.className='firebase-status st-pending';status.innerText='Scan...'}
+  if(sum){sum.className='audit-box audit-warn';sum.innerText='Sedang scan Server Pusat dan membandingkan dengan Kas Pribadi...'}
+  if(box)box.innerHTML='';
+  try{
+    const firebaseRows=await fetchFirebaseRowsByRange(start,end);
+    const grouped={};
+    firebaseRows.forEach(t=>{
+      const date=getFirebaseRecordDateKey(t);
+      if(!date)return;
+      if(!grouped[date])grouped[date]={date,firebaseTotal:0,count:0};
+      grouped[date].firebaseTotal+=Number(t.amount||0);
+      grouped[date].count+=1;
+    });
+    pendingFirebaseUploads=Object.values(grouped).map(row=>{
+      const uploaded=getUploadedFirebaseTransaction(row.date);
+      const uploadedAmount=Number(uploaded?.amount||0);
+      if(!uploaded)return {...row,uploadedAmount,status:'missing'};
+      if(uploadedAmount!==Number(row.firebaseTotal||0))return {...row,uploadedAmount,status:'diff'};
+      return null;
+    }).filter(Boolean).sort((a,b)=>a.date.localeCompare(b.date));
+    renderPendingUploadList();
+  }catch(e){
+    console.error(e);
+    pendingFirebaseUploads=[];
+    if(status){status.className='firebase-status st-pending';status.innerText='Error'}
+    if(sum){sum.className='audit-box audit-bad';sum.innerText='Gagal scan Server Pusat: '+e.message}
+    showToast('Gagal scan Server Pusat: '+e.message,5000);
+  }
+}
+async function uploadPendingFirebaseDate(date){
+  const item=(pendingFirebaseUploads||[]).find(x=>x.date===date);
+  if(!item)return showToast('Data tidak ditemukan, scan ulang dulu');
+  try{
+    const freshRows=await fetchFirebaseRowsByRange(item.date,item.date);
+    const freshTotal=sumFirebaseRows(freshRows.filter(t=>t.dateKey===item.date));
+    await uploadFirebaseIncomeForDate(item.date,freshTotal,true);
+    pendingFirebaseUploads=pendingFirebaseUploads.filter(x=>x.date!==date);
+    renderPendingUploadList();
+  }catch(e){showToast('Gagal cek ulang Server Pusat: '+e.message,5000)}
+}
+async function uploadFirebaseIncomeForDate(date,total,quiet=false){
+  if(!supabaseClient)return showToast('Supabase belum aktif');
+  if(date===getLocalDateString())return showToast('Pendapatan hari ini belum final. Sync setelah ganti tanggal.');
+  const uploadedBefore=getUploadedFirebaseTransaction(date);
+  const safeTotal=Number(total||0);
+  if(safeTotal<=0 && !uploadedBefore)return showToast('Omset Server Pusat kosong, tidak ada yang perlu disync');
+  // Sync berarti angka Kas Pribadi dibuat SAMA dengan Server Pusat, tapi record tetap LOCK dan tidak bisa dihapus manual.
+  // Kalau Server Pusat sudah kosong setelah sebelumnya ada arsip, amount akan menjadi 0, bukan menghapus data.
+  const row={id:getFirebaseUploadId(date),owner_id:OWNER_ID,date,description:`[SERVERPUSAT:${date}] Omset Kasir Server Pusat`,amount:safeTotal,type:'income'};
+  try{
+    const {error}=await supabaseClient.from('transactions').upsert(row,{onConflict:'id'});
+    if(error)throw error;
+    await loadTransactions();
+    render();
+    if(!quiet)showToast('Sync berhasil. Kas Pribadi sekarang sama dengan Server Pusat.');
+    else showToast(`Sync ${date} berhasil`);
+    updateMonthValidityIdle();
+  }catch(e){showToast('Gagal sync: '+e.message)}
+}
+function renderFirebaseUploadCard(){
+  const totalEl=$('firebaseUploadTotal'),statusEl=$('firebaseUploadStatus'),infoEl=$('firebaseUploadInfo'),btn=$('btnUploadFirebaseIncome'),auditEl=$('firebaseAuditInfo');
+  if(!totalEl||!statusEl||!infoEl||!btn)return;
+  totalEl.innerText=formatRupiah(firebaseIncomeTotal);
+  const uploaded=getUploadedFirebaseTransaction(firebaseUploadDate);
+  const uploadedAmount=Number(uploaded?.amount||0);
+  const fbAmount=Number(firebaseIncomeTotal||0);
+  const diff=fbAmount-uploadedAmount;
+  const count=firebaseIncomeRows.length;
+  const isToday=firebaseUploadDate===getLocalDateString();
+
+  function setAudit(cls, text){
+    if(!auditEl)return;
+    auditEl.className='audit-box '+cls;
+    auditEl.innerText=text;
+  }
+
+  if(isToday){
+    statusEl.className='firebase-status st-pending';statusEl.innerText='Hari Ini';
+    infoEl.innerText=fbAmount>0?`${count} transaksi Server Pusat · belum final, upload besok`:`${firebaseUploadDate} · hari ini belum ada omset Server Pusat`;
+    btn.disabled=true;btn.innerText='Belum Final';
+    setAudit('audit-warn',`Audit ${firebaseUploadDate}: HARI INI DIKUNCI. Data masih bisa berubah, jadi belum bisa diupload ke Supabase sebelum ganti tanggal.`);
+  }else if(!uploaded && fbAmount<=0){
+    statusEl.className='firebase-status st-pending';statusEl.innerText='Belum Ada';
+    infoEl.innerText=`${firebaseUploadDate} · belum ada omset Server Pusat`;
+    btn.disabled=true;btn.innerText='Sync';
+    setAudit('audit-warn',`Audit ${firebaseUploadDate}: Server Pusat kosong dan belum ada data sync Supabase.`);
+  }else if(!uploaded){
+    statusEl.className='firebase-status st-pending';statusEl.innerText='Belum Sync';
+    infoEl.innerText=`${count} transaksi Server Pusat · belum masuk Kas Pribadi`;
+    btn.disabled=false;btn.innerText='Sync';
+    setAudit('audit-warn',`Audit ${firebaseUploadDate}: belum tersync ke Kas Pribadi. Selisih ${formatRupiah(fbAmount)}.`);
+  }else if(uploadedAmount!==fbAmount){
+    statusEl.className='firebase-status st-update';statusEl.innerText='Perlu Sync';
+    infoEl.innerText=`Kas Pribadi ${formatRupiah(uploadedAmount)} · Server Pusat ${formatRupiah(fbAmount)}`;
+    btn.disabled=false;btn.innerText='Sync';
+    setAudit('audit-bad',`Audit ${firebaseUploadDate}: SELISIH ${formatRupiah(Math.abs(diff))}. Klik Sync agar Kas Pribadi sama dengan Server Pusat. Data tetap LOCK, bukan dihapus.`);
+  }else{
+    statusEl.className='firebase-status st-uploaded';statusEl.innerText='Sinkron';
+    infoEl.innerText=`Sama · ${count} transaksi Server Pusat`;
+    btn.disabled=true;btn.innerText='Sinkron';
+    setAudit('audit-ok',`Audit ${firebaseUploadDate}: SAMA. Kas Pribadi = Server Pusat ${formatRupiah(fbAmount)}.`);
+  }
+}
+async function uploadFirebaseIncome(){
+  const date=firebaseUploadDate||getLocalDateString();
+  try{
+    const freshRows=await fetchFirebaseRowsByRange(date,date);
+    firebaseIncomeRows=freshRows.filter(t=>t.dateKey===date);
+    firebaseIncomeTotal=sumFirebaseRows(firebaseIncomeRows);
+    const qrisChangedBeforeUpload=await syncFirebaseQrisCashOut(firebaseIncomeRows,{quiet:true,date:firebaseUploadDate});
+    if(qrisChangedBeforeUpload)await loadTransactions();
+    renderFirebaseUploadCard();
+    renderCashFisik();
+  }catch(e){showToast('Gagal cek ulang Server Pusat: '+e.message,5000);return;}
+  await uploadFirebaseIncomeForDate(date,firebaseIncomeTotal,false);
+}
+function getDashboardTransactions(){
+  // Dashboard utama wajib menghitung SEMUA data Supabase yang sudah tersimpan,
+  // termasuk arsip SERVER LOCK. Jangan ikut filter Riwayat/Server Pusat.
+  return transactions || [];
+}
+function renderZakatSection(){
+  validateAndCancelInvalidZakat();
+  // Zakat = 2.5% dari laba 20% data final sampai H-1.
+  const totalProfit=getTotalProfit(),paid=getTotalProfitZakatPaid(),unpaid=getUnpaidProfit(),due=getCurrentZakatDue(),cutoff=getZakatCutoffDate();
+  if($('zakatAmountLarge'))$('zakatAmountLarge').innerText=formatRupiah(due);
+  if($('totalProfitDisplay'))$('totalProfitDisplay').innerText=formatRupiah(totalProfit);
+  if($('totalZakatPaidProfit'))$('totalZakatPaidProfit').innerText=formatRupiah(paid);
+  if($('unpaidProfitDisplay'))$('unpaidProfitDisplay').innerText=formatRupiah(unpaid);
+  if($('zakatBasisInfo'))$('zakatBasisInfo').innerText=`Zakat dihitung dari data final sampai ${cutoff} (H-1). Transaksi hari ini belum ikut dan akan masuk hitungan besok setelah Server Pusat sync/LOCK.`;
+  const pay=$('payZakatBtn'),zs=$('zakatPaymentStatusText');
+  if(!pay||!zs)return;
+  if(totalProfit<=0){zs.innerText=`Belum ada laba final sampai ${cutoff}`;pay.disabled=true;pay.style.opacity=.5}
+  else if(due<=0){zs.innerText=`Zakat lunas ✓ sampai ${cutoff}`;pay.disabled=true;pay.style.opacity=.5}
+  else{zs.innerText=`Wajib bayar 2.5% dari laba final sampai ${cutoff}: Rp${formatRupiah(unpaid).replace('Rp','')}`;pay.disabled=false;pay.style.opacity=1}
+  const h=getZakatHistory(),prev=$('zakatHistoryPreview'),mini=$('zakatHistoryMiniList');
+  if(!prev||!mini)return;
+  if(h.length){prev.style.display='flex';const valid=h.filter(x=>!x.cancelled).slice(-2).reverse();mini.innerHTML=valid.length?valid.map(x=>`<span class="chip">${formatRupiah(x.zakatPaid)}</span>`).join(''):'<span class="chip">Zakat batal</span>'}
+  else prev.style.display='none';
+}
+function render(){
+  updateNetSummary();
+  renderTodayFirebaseIncomeHome();
+  renderProfitSummary();
+
+  // Ringkasan dashboard utama: semua data yang sudah masuk Supabase.
+  // Ini yang membuat Saldo Bersih langsung berubah setelah upload omset Server Pusat.
+  const dashboardRows=getDashboardTransactions();
+  const today=getLocalDateString(), thisMonth=today.slice(0,7);
+  let totalIn=0,totalOut=0,todayOut=0,monthOut=0;
+  dashboardRows.forEach(t=>{
+    if(t.type==='income')totalIn+=Number(t.amount||0);
+    else if(!isCashOut(t)){
+      // cashout (QRIS/Tabungan) hanya kurangi cash fisik, bukan pengeluaran bisnis
+      totalOut+=Number(t.amount||0);
+      if(t.date===today)todayOut+=Number(t.amount||0);
+      if(String(t.date||'').startsWith(thisMonth))monthOut+=Number(t.amount||0);
+    }
+  });
+  // Tambah Server Pusat hari ini ke totalIn jika belum di-sync (agar autoProfit & saldo realtime)
+  const fbTodayVal=Number(todayFirebaseIncomeTotal||0);
+  const uploadedTodayCheck=getUploadedFirebaseTransaction(today);
+  const totalInWithFirebase=totalIn+(fbTodayVal>0&&!uploadedTodayCheck?fbTodayVal:0);
+  const profit=totalInWithFirebase*.2;
+  const net=totalInWithFirebase-totalOut;
+  $('totalIncome').innerText=formatRupiah(totalInWithFirebase);
+  $('totalExpense').innerText=formatRupiah(todayOut);   // hero: hari ini
+  $('autoProfit').innerText=formatRupiah(profit);
+  $('netBalance').innerText=formatRupiah(net);
+  // Card Sisa Operasional bawah disamakan dengan Ringkasan Laba.
+  // Sebelumnya card ini memakai semua data/kumulatif, sedangkan Ringkasan Laba memakai filter
+  // today/month/year/custom. Akibatnya angka sisa operasional bisa terlihat berbeda.
+  const opDataForCard=getProfitSummaryData(currentProfitFilter);
+  const opProfit=opDataForCard?Number(opDataForCard.laba||0):profit;
+  const opSpent=opDataForCard?Number(opDataForCard.totalExpense||0):totalOut;
+  const remainingOps=opProfit-opSpent;
+  $('spendingLimit').innerText=formatRupiah(todayOut);  // stat card home: hari ini
+  $('operationalUsed').innerText=formatRupiah(remainingOps);
+  $('operationalTotal').innerText=formatRupiah(opProfit);
+  const spentEl=$('operationalSpent');if(spentEl)spentEl.innerText=formatRupiah(opSpent);
+  // Riwayat: pengeluaran sesuai filter aktif + semua
+  if($('expenseAllSummary'))$('expenseAllSummary').innerText=formatRupiah(totalOut);
+  // Stat card kiri ikut filter aktif
+  const s2=$('filterStartDate')?$('filterStartDate').value:'', e2=$('filterEndDate')?$('filterEndDate').value:'';
+  let filteredOut=0, filteredLabel='Pengeluaran Hari Ini';
+  if(currentFilter==='today'){
+    filteredOut=todayOut; filteredLabel='Pengeluaran Hari Ini';
+  } else if(currentFilter==='month'){
+    filteredOut=monthOut; filteredLabel='Pengeluaran Bulan Ini';
+  } else if(currentFilter==='range'){
+    filteredOut=dashboardRows.filter(t=>t.type==='expense'&&!isCashOut(t)&&t.date>=s2&&t.date<=e2).reduce((a,t)=>a+Number(t.amount||0),0);
+    filteredLabel=s2&&e2?`Pengeluaran ${s2.slice(5)} s.d ${e2.slice(5)}`:'Pengeluaran Custom';
+  } else {
+    filteredOut=totalOut; filteredLabel='Total Semua Pengeluaran';
+  }
+  if($('expenseFilteredSummary'))$('expenseFilteredSummary').innerText=formatRupiah(filteredOut);
+  if($('expenseFilteredLabel'))$('expenseFilteredLabel').innerText=filteredLabel;
+
+  renderZakatSection();
+
+  const over=opSpent>opProfit&&opProfit>0;
+  $('operationalCard').className='card '+(over?'danger-card':'safe-card');
+  $('limitWarning').innerText=over?'Over budget: pengeluaran lebih dari 20% omset periode ini':'';
+  $('statusText').innerText=over?'Bahaya':'Aman';
+  $('statusBadge').style.background=over?'#fff0ee':'#e9f7ef';
+  $('statusBadge').style.color=over?'#c0392b':'#176b43';
+
+  // List Riwayat tetap mengikuti filter yang sedang dipilih.
+  const f=getFilteredTransactions();
+  const periodIncome=f.reduce((sum,t)=>t.type==='income'?sum+Number(t.amount||0):sum,0);
+  // cashout (QRIS/Tabungan) tidak dihitung sebagai pengeluaran di summary
+  const list=$('transactionList');
+  if(!list){renderFirebaseUploadCard();return}
+  if(!f.length){list.innerHTML='<div class="empty">Belum ada transaksi</div>';renderFirebaseUploadCard();return}
+  const periodExpenseReal=f.filter(t=>t.type==='expense'&&!isCashOut(t)).reduce((sum,t)=>sum+Number(t.amount||0),0);
+  $('currentPeriodLabel').innerText=`${getPeriodLabel()} · ${formatRupiah(periodIncome-periodExpenseReal)}`;
+  list.innerHTML=f.slice(0,80).map(t=>{
+    const co=isCashOut(t);
+    const tp=co?getCashOutType(t):'';
+    const coLabel={qris:'QRIS',tabungan:'Tabungan',lainnya:'Lainnya'}[tp]||'';
+    const icon=co?'💳':(t.type==='income'?'+':'-');
+    const iconClass=co?'in':(t.type==='income'?'in':'out');
+    const iconStyle=co?'background:#e0f2fe;color:#0369a1':'';
+    const desc=co?cleanCashOutDesc(t.description)||coLabel:cleanFirebaseDesc(t.description);
+    const catLine=t.type==='expense'?getExpenseCategoryChip(t):'';
+    const amtColor=co?'#0369a1':(t.type==='income'?'var(--green)':'var(--red)');
+    const amtPrefix=co?'':'';
+    const amtSign=t.type==='income'?'+':'-';
+    const badge=co?`<span class="cashout-badge ${tp}" style="font-size:9px;margin-left:4px">${coLabel}</span>`:
+      (isFirebaseUploaded(t)?'<span class="lock-badge">SERVER LOCK</span>':'');
+    const ctrl=co
+      ? `<div class="small" style="color:#0369a1;font-weight:900;font-size:9px">CASH PINDAH</div>`
+      : (isFirebaseUploaded(t)?`<div class="small blue" style="font-weight:900">${t.__firebasePreview?'PREVIEW':'LOCK'}</div>`:`<button class="x" onclick="deleteTransaction(${t.id})">×</button>`);
+    return `<div class="item" style="${co?'background:#f0f9ff;border-color:#bfdbfe':''}"><div class="left"><div class="icon ${iconClass}" style="${iconStyle}">${icon}</div><div class="desc"><b>${escapeHtml(desc)}${badge}</b><small>${t.date}</small>${catLine}</div></div><div class="right"><b class="num" style="color:${amtColor}">${amtSign}${formatRupiah(t.amount).replace('Rp','')}</b>${ctrl}</div></div>`;
+  }).join('')+(f.length>80?`<div class="empty">Ditampilkan 80 dari ${f.length} data biar ringan</div>`:'');
+  renderFirebaseUploadCard();
+}
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
+function openBackupModal(){if(!transactions.length&&!zakatHistory.length){showToast('Data kosong');return}$('backupOptionModal').classList.remove('hidden')}function closeBackupModal(){$('backupOptionModal').classList.add('hidden')}function showImportModal(){closeBackupModal();$('importModal').classList.remove('hidden')}function closeImportModal(){$('importModal').classList.add('hidden');$('importDataText').value=''}function exportToFile(){const payload={transactions,zakatHistory,expenseCategories};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`rocky_backup_${getLocalDateString()}.json`;a.click();URL.revokeObjectURL(url);closeBackupModal();showToast('Backup tersimpan (transaksi + zakat)')}function copyToClipboard(){const payload={transactions,zakatHistory,expenseCategories};navigator.clipboard.writeText(JSON.stringify(payload)).then(()=>{closeBackupModal();showToast('Data disalin (transaksi + zakat)')}).catch(()=>showToast('Gagal salin'))}
+async function importFromText(){try{const raw=$('importDataText').value.trim();if(!raw){showToast('Data kosong');return}const parsed=JSON.parse(raw);
+  // Support format baru {transactions, zakatHistory} dan format lama (array langsung)
+  let importedTx=[], importedZakat=[];
+  if(Array.isArray(parsed)){
+    importedTx=parsed; // format lama
+  } else if(parsed&&Array.isArray(parsed.transactions)){
+    importedTx=parsed.transactions;
+    importedZakat=Array.isArray(parsed.zakatHistory)?parsed.zakatHistory:[];
+  } else throw new Error('format');
+  const ok=importedTx.every(i=>i.id&&i.date&&i.description&&typeof i.amount==='number'&&(i.type==='income'||i.type==='expense'));
+  if(!ok)throw new Error('format');
+  await importTransactions(importedTx);
+  if(importedZakat.length){await saveZakatHistory(importedZakat);}
+  await loadTransactions();await loadZakatHistory();render();closeImportModal();showToast('Import berhasil'+(importedZakat.length?` (${importedZakat.length} zakat restore)`:''))}catch(e){showToast('Format JSON salah')}}
+function showToast(message,duration=2600){const old=document.querySelector('.toast');if(old)old.remove();const t=document.createElement('div');t.className='toast';t.textContent=message;document.body.appendChild(t);setTimeout(()=>t.remove(),duration)}
+
+// =====================================================
+// PENGELUARAN OPERASIONAL TOKO
+// Ditandai dengan prefix [OPS] di deskripsi.
+// Mengurangi "Pendapatan Hari Ini" di Home, tapi
+// tetap dihitung sebagai pengeluaran biasa di Riwayat.
+// =====================================================
+const OPS_PREFIX='[OPS] ';
+function isOpsExpense(t){return t&&t.type==='expense'&&String(t.description||'').startsWith(OPS_PREFIX)}
+function handleOpsAmountPreview(input){$('opsAmountPreview').innerText=input.value?formatRupiah(getActualAmount(input.value)):''}
+function openOpsModal(){
+  $('opsDesc').value='';$('opsAmount').value='';$('opsAmountPreview').innerText='';
+  renderOpsTodayList();
+  $('opsModal').classList.remove('hidden');
+  setTimeout(()=>$('opsDesc').focus(),80);
+}
+function closeOpsModal(){$('opsModal').classList.add('hidden')}
+function renderOpsTodayList(){
+  const today=getLocalDateString();
+  const rows=(transactions||[]).filter(t=>isOpsExpense(t)&&t.date===today);
+  rows.sort((a,b)=>b.id-a.id);
+  const total=rows.reduce((s,t)=>s+Number(t.amount||0),0);
+  const te=$('opsTodayTotal');if(te)te.innerText=formatRupiah(total);
+  const list=$('opsTodayList');if(!list)return;
+  if(!rows.length){list.innerHTML='<div class="empty">Belum ada operasional hari ini</div>';return;}
+  list.innerHTML=rows.map(t=>`<div class="ops-list-item"><div style="min-width:0;flex:1"><b style="font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(String(t.description||'').replace(OPS_PREFIX,''))}</b><small style="color:var(--muted)">${t.date}</small></div><b class="num red" style="font-size:13px;white-space:nowrap">-${formatRupiah(t.amount).replace('Rp','')}</b><button class="x" onclick="deleteOpsWithPin(${t.id})">×</button></div>`).join('');
+}
+function deleteOpsWithPin(id){
+  closeOpsModal();
+  setTimeout(()=>{
+    openPasswordModal(async()=>{
+      try{
+        await deleteTransactionFromDB(id);
+        await loadTransactions();
+        render();
+        showToast('Operasional dihapus');
+      }catch(e){showToast('Gagal hapus: '+e.message)}
+      setTimeout(()=>{openOpsModal();},200);
+    });
+  },200);
+}
+async function addOpsExpense(){
+  const desc=$('opsDesc').value.trim();
+  const amount=getActualAmount($('opsAmount').value);
+  if(!desc){showToast('Isi deskripsi operasional');return}
+  if(!amount||amount<=0){showToast('Nominal tidak valid');return}
+  const today=getLocalDateString();
+  try{
+    const cat=getCategoryByName(OPS_CATEGORY_NAME)||getDefaultExpenseCategory();
+    await saveTransaction({id:Date.now(),date:today,description:OPS_PREFIX+desc,amount,type:'expense',category_id:cat?Number(cat.id):null,category_name:cat?cat.name:OPS_CATEGORY_NAME});
+    await loadTransactions();
+    render();
+    renderOpsTodayList();
+    $('opsDesc').value='';$('opsAmount').value='';$('opsAmountPreview').innerText='';
+    showToast('Operasional toko tersimpan');
+  }catch(e){showToast('Gagal simpan: '+e.message)}
+}
+
+
+// =====================================================
+// CASH OUT — QRIS / TABUNGAN / LAINNYA
+// Mengurangi CASH FISIK hari ini tapi bukan pengeluaran.
+// Disimpan dengan prefix [CASHOUT:qris], [CASHOUT:tabungan], dll.
+// Type tetap 'expense' tapi DIKECUALIKAN dari semua
+// perhitungan laba, zakat, sisa operasional.
+// =====================================================
+const CASHOUT_PREFIX='[CASHOUT:';
+let currentCashOutType='qris';
+
+function isCashOut(t){return t&&t.type==='expense'&&String(t.description||'').startsWith(CASHOUT_PREFIX)}
+function getCashOutType(t){
+  const m=String(t.description||'').match(/^\[CASHOUT:(\w+)\]/);
+  return m?m[1]:'lainnya';
+}
+function cleanCashOutDesc(desc){return String(desc||'').replace(/^\[CASHOUT:\w+\]\s*/,'').replace(/^\[AUTO-QRIS:[^\]]+\]\s*/,'')}
+
+function setCashOutType(type){
+  currentCashOutType=type;
+  ['qris','tabungan'].forEach(t=>{
+    const el=$('cashout-type-'+t);
+    if(el)el.classList.toggle('active',t===type);
+  });
+}
+function handleCashOutPreview(input){$('cashOutAmountPreview').innerText=input.value?formatRupiah(getActualAmount(input.value)):''}
+function openCashOutModal(){
+  $('cashOutDesc').value='';$('cashOutAmount').value='';$('cashOutAmountPreview').innerText='';
+  setCashOutType('qris');
+  renderCashOutTodayList();
+  renderCashFisik();
+  $('cashOutModal').classList.remove('hidden');
+  setTimeout(()=>$('cashOutAmount').focus(),80);
+}
+function closeCashOutModal(){$('cashOutModal').classList.add('hidden')}
+
+function renderCashOutTodayList(){
+  const today=getLocalDateString();
+  const rows=(transactions||[]).filter(t=>isCashOut(t)&&t.date===today);
+  rows.sort((a,b)=>b.id-a.id);
+  const total=rows.reduce((s,t)=>s+Number(t.amount||0),0);
+  const te=$('cashOutTodayTotal');if(te)te.innerText=formatRupiah(total);
+  const list=$('cashOutTodayList');if(!list)return;
+  if(!rows.length){list.innerHTML='<div class="empty" style="font-size:12px;padding:14px;text-align:center;color:#758071">Belum ada QRIS/Tabungan hari ini</div>';return;}
+  const typeLabel={qris:'QRIS',tabungan:'Tabungan',lainnya:'Lainnya'};
+  list.innerHTML=rows.map(t=>{
+    const tp=getCashOutType(t);
+    const desc=cleanCashOutDesc(t.description)||typeLabel[tp]||tp;
+    const locked=isAutoQrisCashOut(t);
+    const action=locked
+      ? `<span class="cashout-badge qris" style="background:#eef2ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:9px;white-space:nowrap">🔒 Staff</span>`
+      : `<button class="x" style="color:var(--red);font-size:18px;padding:4px 8px" onclick="deleteCashOutWithPin(${t.id})">×</button>`;
+    const sub=locked?'QRIS otomatis · hapus dari aplikasi staff':t.date;
+    return `<div class="cashout-list-item"><div style="min-width:0;flex:1;display:flex;align-items:center;gap:7px"><span class="cashout-badge ${tp}">${typeLabel[tp]||tp}</span><div style="min-width:0"><b style="font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(desc)}</b><span style="font-size:10px;color:var(--muted)">${escapeHtml(sub)}</span></div></div><b class="num" style="font-size:14px;color:#2563eb;white-space:nowrap">-${formatRupiah(t.amount).replace('Rp','')}</b>${action}</div>`;
+  }).join('');
+}
+
+
+function deleteCashOutWithPin(id){
+  const t=(transactions||[]).find(x=>Number(x.id)===Number(id));
+  if(t&&isAutoQrisCashOut(t)){
+    showToast('QRIS otomatis tidak bisa dihapus di sini. Hapus transaksi aslinya dari aplikasi staff.');
+    return;
+  }
+  closeCashOutModal();
+  setTimeout(()=>{
+    openPasswordModal(async()=>{
+      try{
+        await deleteTransactionFromDB(id);
+        await loadTransactions();
+        render();
+        renderCashFisik();
+        showToast('QRIS/Tabungan dihapus');
+      }catch(e){showToast('Gagal hapus: '+e.message)}
+      setTimeout(()=>{openCashOutModal();},200);
+    });
+  },200);
+}
+async function addCashOut(){
+  const type=currentCashOutType||'qris';
+  let desc=$('cashOutDesc').value.trim();
+  const amount=getActualAmount($('cashOutAmount').value);
+  if(!amount||amount<=0){showToast('Nominal tidak valid');return}
+  const today=getLocalDateString();
+  const fullDesc=`${CASHOUT_PREFIX}${type}] ${desc}`;
+  try{
+    await saveTransaction({id:Date.now(),date:today,description:fullDesc,amount,type:'expense'});
+    await loadTransactions();
+    render();
+    renderCashOutTodayList();
+    $('cashOutDesc').value='';$('cashOutAmount').value='';$('cashOutAmountPreview').innerText='';
+    showToast(`${type==='qris'?'QRIS':'Tabungan'} tersimpan`);
+  }catch(e){showToast('Gagal simpan: '+e.message)}
+}
+
+function getTodayCashOutTotals(){
+  const today=getLocalDateString();
+  const rows=(transactions||[]).filter(t=>isCashOut(t)&&t.date===today);
+  const qris=rows.filter(t=>getCashOutType(t)==='qris').reduce((s,t)=>s+Number(t.amount||0),0);
+  const tabungan=rows.filter(t=>getCashOutType(t)==='tabungan').reduce((s,t)=>s+Number(t.amount||0),0);
+  const lainnya=rows.filter(t=>getCashOutType(t)==='lainnya').reduce((s,t)=>s+Number(t.amount||0),0);
+  return {qris,tabungan,lainnya,total:qris+tabungan+lainnya};
+}
+
+function renderCashFisik(){
+  const today=getLocalDateString();
+  // Manual income tetap tercatat untuk laporan/laba/zakat, tapi tidak dihitung sebagai cash fisik hari ini.
+  const manualIncome=(transactions||[]).filter(t=>t.type==='income'&&t.date===today&&!isFirebaseUploaded(t)).reduce((s,t)=>s+Number(t.amount||0),0);
+  const fbTotal=Number(todayFirebaseIncomeTotal||0);
+  const opsTotal=(transactions||[]).filter(t=>isOpsExpense(t)&&t.date===today).reduce((s,t)=>s+Number(t.amount||0),0);
+  const co=getTodayCashOutTotals();
+  // Cash fisik hari ini hanya dari omset Server Pusat/kasir, dikurangi Ops Toko, QRIS, dan Tabungan.
+  const cashFisik=fbTotal-opsTotal-co.total;
+  // Update home card gabungan
+  const cfEl=$('cashFisikTotal');
+  if(cfEl){cfEl.innerText=formatRupiah(cashFisik<0?0:cashFisik);cfEl.style.color=cashFisik<0?'var(--red)':'#2563eb';}
+  // Update info text dengan breakdown sumber cash fisik
+  const infoEl=$('todayFirebaseIncomeInfo');
+  if(infoEl){
+    const parts=[];
+    if(fbTotal>0)parts.push(`Server Pusat ${formatRupiah(fbTotal)}`);
+    if(opsTotal>0)parts.push(`Ops -${formatRupiah(opsTotal)}`);
+    if(co.qris>0)parts.push(`QRIS -${formatRupiah(co.qris)}`);
+    if(co.tabungan>0)parts.push(`Tabungan -${formatRupiah(co.tabungan)}`);
+    if(manualIncome>0)parts.push(`Manual ${formatRupiah(manualIncome)} tidak masuk cash`);
+    infoEl.innerText=parts.length?parts.join(' · '):'Server Pusat - Ops Toko - QRIS - Tabungan · Manual tidak masuk cash fisik';
+  }
+  // Update ops total di breakdown
+  const opsTodayHomeEl=$('opsTodayHomeTotal');if(opsTodayHomeEl)opsTodayHomeEl.innerText=formatRupiah(opsTotal);
+  const qEl=$('cashOutQrisTotal');if(qEl)qEl.innerText=formatRupiah(co.qris);
+  const tEl=$('cashOutTabunganTotal');if(tEl)tEl.innerText=formatRupiah(co.tabungan);
+  // Update modal ringkasan
+  const mf=$('cashOutModalFisikTotal');if(mf){mf.innerText=formatRupiah(cashFisik<0?0:cashFisik);mf.style.color=cashFisik<0?'var(--red)':'#1d4ed8';}
+  const mq=$('cashOutModalQris');if(mq)mq.innerText=formatRupiah(co.qris);
+  const mt=$('cashOutModalTabungan');if(mt)mt.innerText=formatRupiah(co.tabungan);
+}
+
+// =====================================================
+// RINGKASAN LABA BARU — filter harian/bulanan/tahunan/custom
+// Angka utama menampilkan Sisa Operasional = Limit 20% - Terpakai.
+// Limit 20% tetap dihitung dari pendapatan manual + Server Pusat sesuai periode.
+// =====================================================
+let currentProfitFilter='today';
+function setProfitFilter(f){
+  currentProfitFilter=f;
+  ['today','month','year','custom'].forEach(x=>{
+    const el=$('ps-tab-'+x);if(el)el.classList.toggle('active',x===f);
+  });
+  const rangeRow=$('psCustomRange');
+  if(rangeRow)rangeRow.style.display=f==='custom'?'grid':'none';
+  if(f==='custom'){
+    const today=getLocalDateString();
+    if($('psStartDate')&&!$('psStartDate').value)$('psStartDate').value=today;
+    if($('psEndDate')&&!$('psEndDate').value)$('psEndDate').value=today;
+  }
+  renderProfitSummary();
+}
+function getProfitSummaryData(filter){
+  const today=getLocalDateString();
+  const thisMonth=today.slice(0,7);
+  const thisYear=today.slice(0,4);
+  const s=$('psStartDate')?$('psStartDate').value:'';
+  const e=$('psEndDate')?$('psEndDate').value:'';
+  // Pendapatan: dari Supabase (manual + Server Pusat lock) + todayFirebase kalau filter today/month/year/custom mencakup hari ini
+  let incomeRows=[], expenseRows=[];
+  const allTx=getDashboardTransactions();
+  // Helper: expense bisnis = expense tapi BUKAN cashout (QRIS/Tabungan hanya kurangi cash fisik)
+  const isRealExpense=t=>t.type==='expense'&&!isCashOut(t);
+  if(filter==='today'){
+    incomeRows=allTx.filter(t=>t.type==='income'&&t.date===today);
+    expenseRows=allTx.filter(t=>isRealExpense(t)&&t.date===today);
+  } else if(filter==='month'){
+    incomeRows=allTx.filter(t=>t.type==='income'&&String(t.date||'').startsWith(thisMonth));
+    expenseRows=allTx.filter(t=>isRealExpense(t)&&String(t.date||'').startsWith(thisMonth));
+  } else if(filter==='year'){
+    incomeRows=allTx.filter(t=>t.type==='income'&&String(t.date||'').startsWith(thisYear));
+    expenseRows=allTx.filter(t=>isRealExpense(t)&&String(t.date||'').startsWith(thisYear));
+  } else { // custom
+    if(!s||!e)return null;
+    incomeRows=allTx.filter(t=>t.type==='income'&&t.date>=s&&t.date<=e);
+    expenseRows=allTx.filter(t=>isRealExpense(t)&&t.date>=s&&t.date<=e);
+  }
+  // Tambahkan Server Pusat hari ini jika mencakup hari ini dan belum ada di Supabase
+  const fbToday=Number(todayFirebaseIncomeTotal||0);
+  const uploadedTodayTx=getUploadedFirebaseTransaction(today);
+  const todayCovered=(filter==='today')||(filter==='month'&&today.startsWith(thisMonth))||(filter==='year'&&today.startsWith(thisYear))||(filter==='custom'&&s&&e&&today>=s&&today<=e);
+  let fbExtra=0;
+  if(todayCovered&&fbToday>0&&!uploadedTodayTx)fbExtra=fbToday;
+  const totalIncome=incomeRows.reduce((sum,t)=>sum+Number(t.amount||0),0)+fbExtra;
+  const totalExpense=expenseRows.reduce((sum,t)=>sum+Number(t.amount||0),0);
+  const laba=Math.round(totalIncome*.2);
+  const sisaOperasional=Math.round(laba-totalExpense);
+  return {totalIncome,totalExpense,laba,laba20:laba,sisaOperasional,labaBersih:Math.max(0,sisaOperasional)};
+}
+function renderProfitSummary(){
+  const data=getProfitSummaryData(currentProfitFilter);
+  const labaEl=$('psLaba'),descEl=$('psDesc'),pendEl=$('psPendapatan'),pengeEl=$('psPengeluaran'),bersihEl=$('psLabaBersih');
+  if(!data){
+    if(labaEl)labaEl.innerText='Pilih tanggal dulu';
+    if(descEl)descEl.innerText='Pilih rentang tanggal custom';
+    return;
+  }
+  const {totalIncome,totalExpense,laba,sisaOperasional}=data;
+  const filterLabel={today:'Hari Ini',month:'Bulan Ini',year:'Tahun Ini',custom:'Custom'}[currentProfitFilter]||'';
+  // Angka utama Ringkasan Laba sekarang menampilkan SISA OPERASIONAL,
+  // supaya tidak rancu dengan limit laba 20%.
+  // Rumus: sisa operasional = 20% pendapatan - pengeluaran operasional.
+  if(labaEl){labaEl.innerText=formatRupiah(sisaOperasional);labaEl.style.color=sisaOperasional>=0?'#69f0ae':'#ff5252';}
+  if(descEl)descEl.innerText=`Sisa operasional ${filterLabel}: limit 20% ${formatRupiah(laba)} - terpakai ${formatRupiah(totalExpense)}`;
+  if(pendEl)pendEl.innerText=formatRupiah(totalIncome);
+  if(pengeEl)pengeEl.innerText=formatRupiah(totalExpense);
+  if(bersihEl){bersihEl.innerText=formatRupiah(laba);bersihEl.style.color=laba>=0?'#69f0ae':'#ff5252';}
+}
+function showExpenseListTodayModal(){
+  const today=getLocalDateString();
+  const expenses=getDashboardTransactions().filter(t=>t.type==='expense'&&!isCashOut(t)&&t.date===today);
+  expenses.sort((a,b)=>b.id-a.id);
+  const total=expenses.reduce((sum,t)=>sum+Number(t.amount||0),0);
+  $('expenseListTotal').innerText=formatRupiah(total);
+  $('expenseListSubtitle').innerText=`${expenses.length} transaksi · Pengeluaran hari ini (${today})`;
+  const c=$('expenseListContent');
+  if(!expenses.length){c.innerHTML='<div class="empty">Belum ada pengeluaran hari ini</div>';}
+  else{c.innerHTML=expenses.slice(0,100).map(t=>`<div class="item"><div class="left"><div class="icon out">-</div><div class="desc"><b>${escapeHtml(cleanFirebaseDesc(t.description))}</b><small>${t.date}</small>${getExpenseCategoryChip(t)}</div></div><div class="right"><b class="num red">-${formatRupiah(t.amount).replace('Rp','')}</b></div></div>`).join('')}
+  $('expenseListModal').classList.remove('hidden');
+}
+function showExpenseListModalFiltered(){
+  const today=getLocalDateString(), thisMonth=today.slice(0,7);
+  const s=$('filterStartDate')?$('filterStartDate').value:'', e=$('filterEndDate')?$('filterEndDate').value:'';
+  let expenses=getDashboardTransactions().filter(t=>t.type==='expense'&&!isCashOut(t));
+  let subtitle='';
+  if(currentFilter==='today'){
+    expenses=expenses.filter(t=>t.date===today);
+    subtitle='Pengeluaran hari ini';
+  } else if(currentFilter==='month'){
+    expenses=expenses.filter(t=>String(t.date||'').startsWith(thisMonth));
+    subtitle='Pengeluaran bulan ini';
+  } else if(currentFilter==='range'){
+    expenses=expenses.filter(t=>t.date>=s&&t.date<=e);
+    subtitle=s&&e?`Pengeluaran ${s} s.d ${e}`:'Pengeluaran custom';
+  } else {
+    subtitle='Semua pengeluaran';
+  }
+  expenses.sort((a,b)=>b.date.localeCompare(a.date)||(b.id-a.id));
+  const total=expenses.reduce((sum,t)=>sum+Number(t.amount||0),0);
+  $('expenseListTotal').innerText=formatRupiah(total);
+  $('expenseListSubtitle').innerText=`${expenses.length} transaksi · ${subtitle}`;
+  const c=$('expenseListContent');
+  if(!expenses.length){c.innerHTML='<div class="empty">Belum ada pengeluaran</div>';}
+  else{c.innerHTML=expenses.slice(0,100).map(t=>`<div class="item"><div class="left"><div class="icon out">-</div><div class="desc"><b>${escapeHtml(cleanFirebaseDesc(t.description))}${isFirebaseUploaded(t)?'<span class="lock-badge">SERVER LOCK</span>':''}</b><small>${t.date}</small>${getExpenseCategoryChip(t)}</div></div><div class="right"><b class="num red">-${formatRupiah(t.amount).replace('Rp','')}</b></div></div>`).join('')+(expenses.length>100?`<div class="empty">Ditampilkan 100 dari ${expenses.length} data</div>`:'')}
+  $('expenseListModal').classList.remove('hidden');
+}
+function showExpenseListModal(){
+  const expenses=getDashboardTransactions().filter(t=>t.type==='expense');
+  expenses.sort((a,b)=>b.date.localeCompare(a.date)||(b.id-a.id));
+  const total=expenses.reduce((s,t)=>s+Number(t.amount||0),0);
+  $('expenseListTotal').innerText=formatRupiah(total);
+  $('expenseListSubtitle').innerText=expenses.length+' transaksi pengeluaran (semua data)';
+  const c=$('expenseListContent');
+  if(!expenses.length){c.innerHTML='<div class="empty">Belum ada pengeluaran</div>';}
+  else{c.innerHTML=expenses.slice(0,100).map(t=>`<div class="item"><div class="left"><div class="icon out">-</div><div class="desc"><b>${escapeHtml(cleanFirebaseDesc(t.description))}${isFirebaseUploaded(t)?'<span class="lock-badge">SERVER LOCK</span>':''}</b><small>${t.date}</small>${getExpenseCategoryChip(t)}</div></div><div class="right"><b class="num red">-${formatRupiah(t.amount).replace('Rp','')}</b></div></div>`).join('')+(expenses.length>100?`<div class="empty">Ditampilkan 100 dari ${expenses.length} data</div>`:'')}
+  $('expenseListModal').classList.remove('hidden');
+}
+function closeExpenseListModal(){$('expenseListModal').classList.add('hidden');}
+
+
+// =====================================================
+// LAPORAN KEUANGAN RINCI DI APLIKASI
+// =====================================================
+function setFinanceReportFilter(f){
+  currentFinanceReportFilter=f;
+  ['today','month','range','all'].forEach(x=>{const el=$('report-filter-'+x);if(el)el.classList.toggle('active',x===f)});
+  const box=$('reportRangeBox');if(box)box.classList.toggle('hidden',f!=='range');
+  if(f==='range'){
+    const today=getLocalDateString();
+    if($('reportStartDate')&&!$('reportStartDate').value)$('reportStartDate').value=today;
+    if($('reportEndDate')&&!$('reportEndDate').value)$('reportEndDate').value=today;
+  }
+  renderFinanceReport();
+}
+function getFinanceReportPeriod(){
+  const today=getLocalDateString(),month=today.slice(0,7);
+  if(currentFinanceReportFilter==='today')return {label:`Hari Ini (${today})`,start:today,end:today,mode:'today'};
+  if(currentFinanceReportFilter==='month')return {label:`Bulan Ini (${month})`,start:`${month}-01`,end:getMonthEndDate(month),mode:'month'};
+  if(currentFinanceReportFilter==='range')return {label:`Custom`,start:$('reportStartDate')?$('reportStartDate').value:'',end:$('reportEndDate')?$('reportEndDate').value:'',mode:'range'};
+  const dates=(getDashboardTransactions()||[]).map(t=>String(t.date||'')).filter(Boolean).sort();
+  return {label:'Semua Data',start:dates[0]||today,end:dates[dates.length-1]||today,mode:'all'};
+}
+function getFinanceReportRows(){
+  const p=getFinanceReportPeriod();
+  let rows=(getDashboardTransactions()||[]).filter(t=>p.mode==='all'?true:(t.date>=p.start&&t.date<=p.end));
+  const today=getLocalDateString();
+  const live=getTodayFirebasePreviewTransaction();
+  if(live&&p.mode!=='all'&&today>=p.start&&today<=p.end&&!getUploadedFirebaseTransaction(today))rows=[...rows,live];
+  if(live&&p.mode==='all'&&!getUploadedFirebaseTransaction(today))rows=[...rows,live];
+  return rows.slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||((Number(b.id)||0)-(Number(a.id)||0)));
+}
+function getReportCategoryPalette(idx,name){
+  const palettes=[
+    {bg:'#fff7ed',bgSoft:'#ffedd5',border:'#fdba74',bar:'#f97316',ink:'#9a3412',muted:'#c2410c'},
+    {bg:'#eff6ff',bgSoft:'#dbeafe',border:'#93c5fd',bar:'#2563eb',ink:'#1d4ed8',muted:'#2563eb'},
+    {bg:'#f0fdf4',bgSoft:'#dcfce7',border:'#86efac',bar:'#16a34a',ink:'#15803d',muted:'#16a34a'},
+    {bg:'#fdf2f8',bgSoft:'#fce7f3',border:'#f9a8d4',bar:'#db2777',ink:'#be185d',muted:'#db2777'},
+    {bg:'#f5f3ff',bgSoft:'#ede9fe',border:'#c4b5fd',bar:'#7c3aed',ink:'#6d28d9',muted:'#7c3aed'},
+    {bg:'#ecfeff',bgSoft:'#cffafe',border:'#67e8f9',bar:'#0891b2',ink:'#0e7490',muted:'#0891b2'},
+    {bg:'#fffbeb',bgSoft:'#fef3c7',border:'#fcd34d',bar:'#d97706',ink:'#b45309',muted:'#d97706'},
+    {bg:'#fef2f2',bgSoft:'#fee2e2',border:'#fca5a5',bar:'#dc2626',ink:'#b91c1c',muted:'#dc2626'}
+  ];
+  const safeIdx=Math.abs(Number(idx)||0)%palettes.length;
+  return palettes[safeIdx];
+}
+
+function toggleReportCategoryDetail(idx){
+  const el=$('report-cat-detail-'+idx);
+  if(!el)return;
+  el.classList.toggle('hidden');
+}
+function renderFinanceReport(){
+  if(!$('reportCategoryList'))return;
+  const p=getFinanceReportPeriod();
+  const rows=getFinanceReportRows();
+  const income=rows.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount||0),0);
+  const expenses=rows.filter(t=>t.type==='expense'&&!isCashOut(t));
+  const expenseTotal=expenses.reduce((s,t)=>s+Number(t.amount||0),0);
+  const cashOut=rows.filter(t=>isCashOut(t)).reduce((s,t)=>s+Number(t.amount||0),0);
+  const net=income-expenseTotal;
+  const profit20=Math.round(income*.2);
+  const opsRemain=Math.round(profit20-expenseTotal);
+  const set=(id,val,cls)=>{const el=$(id);if(el){el.innerText=formatRupiah(val);if(cls)el.className='num '+cls}};
+  set('reportIncome',income,'green');set('reportExpense',expenseTotal,'red');set('reportNet',net,net>=0?'blue':'red');set('reportCashOut',cashOut,'gold');set('reportProfit20',profit20,'blue');set('reportOpsRemain',opsRemain,opsRemain>=0?'green':'red');
+  if($('reportPeriodLabel'))$('reportPeriodLabel').innerText=p.mode==='range'?`${p.start||'-'} s.d ${p.end||'-'}`:p.label;
+  if($('reportCount'))$('reportCount').innerText=`${rows.length} data`;
+  const byCat={};expenses.forEach(t=>{const nm=getExpenseCategoryName(t);if(!byCat[nm])byCat[nm]={total:0,rows:[]};byCat[nm].total+=Number(t.amount||0);byCat[nm].rows.push(t)});
+  const catRows=Object.entries(byCat).sort((a,b)=>b[1].total-a[1].total);
+  const catBox=$('reportCategoryList');
+  if(!catRows.length){catBox.innerHTML='<div class="empty">Belum ada pengeluaran di periode ini</div>'}
+  else catBox.innerHTML=catRows.map(([name,info],idx)=>{
+    const total=info.total;const pct=expenseTotal?Math.round((total/expenseTotal)*100):0;
+    const pal=getReportCategoryPalette(idx,name);
+    const catStyle=`--cat-bg:${pal.bg};--cat-bg-soft:${pal.bgSoft};--cat-border:${pal.border};--cat-bar:${pal.bar};--cat-ink:${pal.ink};--cat-muted:${pal.muted};`;
+    const sorted=(info.rows||[]).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||((Number(b.id)||0)-(Number(a.id)||0)));
+    const detailRows=sorted.map(t=>{
+      const desc=cleanFirebaseDesc(t.description||'Pengeluaran');
+      return `<div class="category-detail-row"><div style="min-width:0"><b>${escapeHtml(desc)}</b><small>${escapeHtml(t.date||'-')}</small></div><b class="num" style="font-size:12px;white-space:nowrap;color:${pal.ink}">${formatRupiah(t.amount)}</b></div>`;
+    }).join('');
+    return `<div class="category-accordion" style="${catStyle}"><div class="category-accordion-head"><div class="category-accordion-title"><b>${escapeHtml(name)}</b><div class="category-accordion-meta"><small>${sorted.length} transaksi</small><small>${pct}% dari total</small></div><div class="progressbar"><span style="width:${Math.min(100,pct)}%"></span></div></div><div class="category-accordion-amount"><b class="num" style="font-size:13px;color:${pal.ink}">${formatRupiah(total)}</b><button class="mini-btn" type="button" style="background:${pal.bgSoft};border-color:${pal.border};color:${pal.ink}" onclick="toggleReportCategoryDetail(${idx})">Detail</button></div></div><div id="report-cat-detail-${idx}" class="category-accordion-detail hidden">${detailRows}</div></div>`;
+  }).join('');
+  const list=$('reportDetailList');
+  if(!rows.length){list.innerHTML='<div class="empty">Belum ada transaksi</div>';return;}
+  list.innerHTML=rows.slice(0,120).map(t=>{
+    const co=isCashOut(t);const desc=co?cleanCashOutDesc(t.description):cleanFirebaseDesc(t.description);
+    const label=t.type==='income'?(isFirebaseUploaded(t)||t.__firebasePreview?'Pendapatan Server Pusat':'Pendapatan Manual'):getExpenseCategoryName(t);
+    const sign=t.type==='income'?'+':'-';const color=t.type==='income'?'var(--green)':(co?'#0369a1':'var(--red)');
+    return `<div class="item"><div class="left"><div class="icon ${t.type==='income'?'in':'out'}">${t.type==='income'?'+':'-'}</div><div class="desc"><b>${escapeHtml(desc||label)}</b><small>${t.date}</small><span class="category-chip ${t.type==='expense'&&!co?'redchip':''}">${escapeHtml(label)}</span></div></div><div class="right"><b class="num" style="color:${color}">${sign}${formatRupiah(t.amount).replace('Rp','')}</b></div></div>`;
+  }).join('')+(rows.length>120?`<div class="empty">Ditampilkan 120 dari ${rows.length} data</div>`:'');
+}
+function downloadCsvReportFromFinancePage(){
+  const p=getFinanceReportPeriod();
+  currentFilter=currentFinanceReportFilter;
+  if($('filterStartDate')&&p.start)$('filterStartDate').value=p.start;
+  if($('filterEndDate')&&p.end)$('filterEndDate').value=p.end;
+  if($('filterStartDateHistory')&&p.start)$('filterStartDateHistory').value=p.start;
+  if($('filterEndDateHistory')&&p.end)$('filterEndDateHistory').value=p.end;
+  updateFilterUI();
+  downloadCsvReport();
+}
+
+// =====================================================
+// DOWNLOAD REKAP BULANAN XLS
+// =====================================================
+function downloadXlsMonth(){
+  return downloadMonthlyFinanceReport();
+}
+
+// =====================================================
+// DOWNLOAD LAPORAN KEUANGAN LENGKAP CSV
+// =====================================================
+function getCsvReportPeriod(){
+  const today=getLocalDateString();
+  const thisMonth=today.slice(0,7);
+  const allDates=(getDashboardTransactions()||[]).map(t=>String(t.date||'')).filter(Boolean).sort();
+  if(currentFilter==='today')return {mode:'today',label:`Hari Ini (${today})`,start:today,end:today};
+  if(currentFilter==='month')return {mode:'month',label:`Bulan Ini (${thisMonth})`,start:`${thisMonth}-01`,end:getMonthEndDate(thisMonth)};
+  if(currentFilter==='range'){
+    const s=$('filterStartDate')?$('filterStartDate').value:'';
+    const e=$('filterEndDate')?$('filterEndDate').value:'';
+    return {mode:'range',label:`Custom (${s||'-'} s.d ${e||'-'})`,start:s,end:e};
+  }
+  return {mode:'all',label:'Semua Data',start:allDates[0]||today,end:allDates[allDates.length-1]||today};
+}
+function getMonthEndDate(monthKey){
+  const parts=String(monthKey||'').split('-');
+  const y=Number(parts[0]||0),m=Number(parts[1]||0);
+  if(!y||!m)return getLocalDateString();
+  const last=new Date(y,m,0).getDate();
+  return `${monthKey}-${String(last).padStart(2,'0')}`;
+}
+function isDateInCsvPeriod(date,period){
+  const d=String(date||'').slice(0,10);
+  if(!d)return false;
+  if(period.mode==='all')return true;
+  if(!period.start||!period.end)return false;
+  return d>=period.start&&d<=period.end;
+}
+function getCsvReportTransactions(period){
+  let rows=(getDashboardTransactions()||[]).filter(t=>isDateInCsvPeriod(t.date,period));
+  const today=getLocalDateString();
+  const todayCovered=isDateInCsvPeriod(today,period);
+  const liveToday=getTodayFirebasePreviewTransaction();
+  if(todayCovered&&liveToday){
+    // Untuk hari berjalan, pakai nilai live Server Pusat agar laporan paling baru dan tidak dobel dengan SERVER LOCK.
+    rows=rows.filter(t=>!(t.date===today&&isFirebaseUploaded(t)));
+    rows.push({...liveToday,description:'[SERVERPUSAT:'+today+'] Omset Server Pusat Hari Ini'});
+  }
+  return rows.slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||(Number(a.id)||0)-(Number(b.id)||0));
+}
+function getCsvTransactionCategory(t){
+  if(t.type==='income')return isFirebaseUploaded(t)?'Pendapatan Server Pusat':'Pendapatan Manual';
+  if(isCashOut(t)){
+    const type=getCashOutType(t);
+    return type==='qris'?'Cash Out QRIS':type==='tabungan'?'Cash Out Tabungan':'Cash Out Lainnya';
+  }
+  if(t.type==='expense')return getExpenseCategoryName(t);
+  return 'Pengeluaran Bisnis';
+}
+function getCsvTransactionDescription(t){
+  if(isCashOut(t))return cleanCashOutDesc(t.description)||getCsvTransactionCategory(t);
+  if(isOpsExpense(t))return String(t.description||'').replace(OPS_PREFIX,'');
+  return cleanFirebaseDesc(t.description);
+}
+function getCsvSourceLabel(t){
+  if(t&&t.__firebasePreview)return 'Server Pusat Hari Ini (Live)';
+  if(isFirebaseUploaded(t))return 'SERVER LOCK';
+  return 'Manual';
+}
+function buildDailyCsvRows(rows){
+  const byDay={};
+  rows.forEach(t=>{
+    const d=String(t.date||'').slice(0,10)||'-';
+    if(!byDay[d])byDay[d]={fbIncome:0,manualIncome:0,businessExpense:0,cashQris:0,cashTabungan:0,cashLainnya:0,opsExpense:0};
+    const amount=Number(t.amount||0);
+    if(t.type==='income'){
+      if(isFirebaseUploaded(t))byDay[d].fbIncome+=amount;
+      else byDay[d].manualIncome+=amount;
+    }else if(isCashOut(t)){
+      const tp=getCashOutType(t);
+      if(tp==='qris')byDay[d].cashQris+=amount;
+      else if(tp==='tabungan')byDay[d].cashTabungan+=amount;
+      else byDay[d].cashLainnya+=amount;
+    }else{
+      byDay[d].businessExpense+=amount;
+      if(isOpsExpense(t))byDay[d].opsExpense+=amount;
+    }
+  });
+  return Object.keys(byDay).sort().map(d=>{
+    const r=byDay[d];
+    const totalIncome=r.fbIncome+r.manualIncome;
+    const totalCashOut=r.cashQris+r.cashTabungan+r.cashLainnya;
+    const saldoBersih=totalIncome-r.businessExpense;
+    const laba20=totalIncome*.2;
+    const labaBersih20=laba20-r.businessExpense;
+    return [d,r.fbIncome,r.manualIncome,totalIncome,r.businessExpense,r.opsExpense,r.cashQris,r.cashTabungan,r.cashLainnya,totalCashOut,saldoBersih,laba20,labaBersih20];
+  });
+}
+function csvCell(value){
+  const s=value===null||value===undefined?'':String(value);
+  return '"'+s.replace(/"/g,'""')+'"';
+}
+function csvFromRows(rows){return '\ufeff'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n')}
+function downloadCsvReport(){
+  const period=getCsvReportPeriod();
+  if((period.mode==='range')&&(!period.start||!period.end)){showToast('Pilih tanggal custom dulu');return;}
+  const rows=getCsvReportTransactions(period);
+  const totalIncome=rows.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount||0),0);
+  const firebaseIncome=rows.filter(t=>t.type==='income'&&isFirebaseUploaded(t)).reduce((s,t)=>s+Number(t.amount||0),0);
+  const manualIncome=rows.filter(t=>t.type==='income'&&!isFirebaseUploaded(t)).reduce((s,t)=>s+Number(t.amount||0),0);
+  const businessExpense=rows.filter(t=>t.type==='expense'&&!isCashOut(t)).reduce((s,t)=>s+Number(t.amount||0),0);
+  const opsExpense=rows.filter(t=>isOpsExpense(t)).reduce((s,t)=>s+Number(t.amount||0),0);
+  const cashQris=rows.filter(t=>isCashOut(t)&&getCashOutType(t)==='qris').reduce((s,t)=>s+Number(t.amount||0),0);
+  const cashTabungan=rows.filter(t=>isCashOut(t)&&getCashOutType(t)==='tabungan').reduce((s,t)=>s+Number(t.amount||0),0);
+  const cashLainnya=rows.filter(t=>isCashOut(t)&&!['qris','tabungan'].includes(getCashOutType(t))).reduce((s,t)=>s+Number(t.amount||0),0);
+  const totalCashOut=cashQris+cashTabungan+cashLainnya;
+  const saldoBersih=totalIncome-businessExpense;
+  const cashSetelahPindah=saldoBersih-totalCashOut;
+  const laba20=totalIncome*.2;
+  const labaBersih20=laba20-businessExpense;
+  const zakatEstimasi=laba20*.025;
+  const printedAt=new Date().toLocaleString('id-ID',{timeZone:'Asia/Jakarta'});
+  const csvRows=[
+    ['LAPORAN KEUANGAN LENGKAP alfajri'],
+    ['Periode',period.label],
+    ['Rentang Tanggal',period.mode==='all'?'Semua tanggal':`${period.start} s.d ${period.end}`],
+    ['Tanggal Export',printedAt],
+    ['Jumlah Transaksi',rows.length],
+    [],
+    ['RINGKASAN UTAMA'],
+    ['Keterangan','Nominal (Rp)'],
+    ['Total Pendapatan',Math.round(totalIncome)],
+    ['Pendapatan Server Pusat',Math.round(firebaseIncome)],
+    ['Pendapatan Manual',Math.round(manualIncome)],
+    ['Pengeluaran Bisnis',Math.round(businessExpense)],
+    ['Pengeluaran Operasional Toko',Math.round(opsExpense)],
+    ['Saldo Bersih Usaha',Math.round(saldoBersih)],
+    ['Laba 20% dari Pendapatan',Math.round(laba20)],
+    ['Laba Bersih 20% Setelah Pengeluaran',Math.round(labaBersih20)],
+    ['Zakat Estimasi 2.5% dari Laba 20%',Math.round(zakatEstimasi)],
+    [],
+    ['RINGKASAN CASH OUT / PINDAH CASH'],
+    ['Keterangan','Nominal (Rp)'],
+    ['Cash Out QRIS',Math.round(cashQris)],
+    ['Cash Out Tabungan',Math.round(cashTabungan)],
+    ['Cash Out Lainnya',Math.round(cashLainnya)],
+    ['Total Cash Out',Math.round(totalCashOut)],
+    ['Cash Setelah QRIS/Tabungan',Math.round(cashSetelahPindah)],
+    [],
+    ['REKAP HARIAN'],
+    ['Tanggal','Pendapatan Server Pusat (Rp)','Pendapatan Manual (Rp)','Total Pendapatan (Rp)','Pengeluaran Bisnis (Rp)','Ops Toko (Rp)','Cash Out QRIS (Rp)','Cash Out Tabungan (Rp)','Cash Out Lainnya (Rp)','Total Cash Out (Rp)','Saldo Bersih Usaha (Rp)','Laba 20% (Rp)','Laba Bersih 20% (Rp)'],
+    ...buildDailyCsvRows(rows).map(r=>r.map(v=>typeof v==='number'?Math.round(v):v)),
+    [],
+    ['DETAIL TRANSAKSI'],
+    ['No','Tanggal','Deskripsi','Jenis','Kategori','Nominal (Rp)','Sumber','Status'],
+    ...rows.map((t,i)=>[
+      i+1,
+      t.date,
+      getCsvTransactionDescription(t),
+      t.type==='income'?'Pemasukan':(isCashOut(t)?'Cash Out / Pindah Cash':'Pengeluaran'),
+      getCsvTransactionCategory(t),
+      Math.round(Number(t.amount||0)),
+      getCsvSourceLabel(t),
+      t.__firebasePreview?'LIVE':(isFirebaseUploaded(t)?'LOCK':(isCashOut(t)?'TIDAK DIHITUNG PENGELUARAN':'MANUAL'))
+    ]),
+    [],
+    ['RIWAYAT ZAKAT DALAM PERIODE'],
+    ['Tanggal','Dari Laba (Rp)','Zakat Dibayar (Rp)','Status','Catatan'],
+  ];
+  const zakatRows=getZakatHistory().filter(z=>isDateInCsvPeriod(String(z.date||'').slice(0,10),period));
+  if(zakatRows.length){
+    zakatRows.forEach(z=>csvRows.push([z.date,Math.round(getPaidProfitFromZakatRow(z)),Math.round(Number(z.zakatPaid||0)),z.cancelled?'Batal':'Lunas',z.note||'']));
+  }else{
+    csvRows.push(['Belum ada riwayat zakat dalam periode','','','','']);
+  }
+  const safeLabel=(period.mode==='all'?'semua':`${period.start}_sd_${period.end}`).replace(/[^0-9A-Za-z_-]/g,'');
+  const filename=`alfajri_laporan_keuangan_${safeLabel}.csv`;
+  const blob=new Blob([csvFromRows(csvRows)],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);
+  showToast(`CSV ${filename} didownload`);
+}
+
+
+// =====================================================
+// DOWNLOAD LAPORAN BULANAN XLS LENGKAP
+// Isi: Ringkasan total, rekap harian, semua transaksi,
+// pendapatan, pengeluaran, cash out, dan zakat bulan terkait.
+// Cash Out QRIS/Tabungan tetap masuk data, tapi tidak dihitung
+// sebagai pengeluaran bisnis sesuai logika aplikasi.
+// =====================================================
+function getMonthlyReportTargetMonth(){
+  const today=getLocalDateString();
+  let targetMonth=today.slice(0,7);
+  if(currentFilter==='range'){
+    const s=$('filterStartDate')?$('filterStartDate').value:'';
+    if(s&&s.length>=7)targetMonth=s.slice(0,7);
+  }
+  return targetMonth;
+}
+function getMonthlyReportMonthLabel(monthKey){
+  const parts=String(monthKey||'').split('-');
+  const y=parts[0]||'';
+  const m=Number(parts[1]||0);
+  const names=['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  return `${names[m]||monthKey} ${y}`.trim();
+}
+function getMonthlyReportRows(monthKey){
+  let rows=(getDashboardTransactions()||[]).filter(t=>String(t.date||'').startsWith(monthKey));
+  const today=getLocalDateString();
+  const liveToday=getTodayFirebasePreviewTransaction();
+  if(liveToday&&String(liveToday.date||'').startsWith(monthKey)){
+    rows=rows.filter(t=>!(t.date===today&&isFirebaseUploaded(t)));
+    rows.push({...liveToday,description:'[SERVERPUSAT:'+today+'] Omset Server Pusat Hari Ini'});
+  }
+  return rows.slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||(Number(a.id)||0)-(Number(b.id)||0));
+}
+function getMonthlyReportCategory(t){
+  if(t.type==='income')return isFirebaseUploaded(t)?(t.__firebasePreview?'Pendapatan Server Pusat Live':'Pendapatan SERVER LOCK'):'Pendapatan Manual';
+  if(isCashOut(t)){
+    const type=getCashOutType(t);
+    if(type==='qris')return 'Cash Out QRIS';
+    if(type==='tabungan')return 'Cash Out Tabungan';
+    return 'Cash Out Lainnya';
+  }
+  if(t.type==='expense')return getExpenseCategoryName(t);
+  return 'Pengeluaran Bisnis';
+}
+function getMonthlyReportDesc(t){
+  if(isCashOut(t))return cleanCashOutDesc(t.description)||getMonthlyReportCategory(t);
+  if(isOpsExpense(t))return String(t.description||'').replace(OPS_PREFIX,'');
+  return cleanFirebaseDesc(t.description);
+}
+function getMonthlyReportSource(t){
+  if(t&&t.__firebasePreview)return 'Server Pusat Hari Ini (Live)';
+  if(isFirebaseUploaded(t))return 'SERVER LOCK / Supabase';
+  return 'Manual';
+}
+function makeSheetFromAoa(data,cols,currencyCols,autoFilterRef){
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  if(cols)ws['!cols']=cols.map(w=>({wch:w}));
+  if(autoFilterRef)ws['!autofilter']={ref:autoFilterRef};
+  if(ws['!ref']){
+    const range=XLSX.utils.decode_range(ws['!ref']);
+    for(let R=range.s.r;R<=range.e.r;R++){
+      for(let C=range.s.c;C<=range.e.c;C++){
+        const addr=XLSX.utils.encode_cell({r:R,c:C});
+        const cell=ws[addr];
+        if(!cell)continue;
+        if(typeof cell.v==='number'){
+          if(currencyCols&&currencyCols.includes(C))cell.z='#,##0';
+          else cell.z='0';
+        }
+      }
+    }
+  }
+  return ws;
+}
+function sumAmount(rows){return rows.reduce((s,t)=>s+Number(t.amount||0),0)}
+function buildMonthlyDailyRows(rows){
+  const byDay={};
+  rows.forEach(t=>{
+    const d=String(t.date||'').slice(0,10)||'-';
+    if(!byDay[d])byDay[d]={fbLock:0,fbLive:0,manualIncome:0,ops:0,expenseOther:0,cashQris:0,cashTabungan:0,cashLainnya:0,count:0};
+    byDay[d].count++;
+    const amount=Number(t.amount||0);
+    if(t.type==='income'){
+      if(t.__firebasePreview)byDay[d].fbLive+=amount;
+      else if(isFirebaseUploaded(t))byDay[d].fbLock+=amount;
+      else byDay[d].manualIncome+=amount;
+    }else if(isCashOut(t)){
+      const type=getCashOutType(t);
+      if(type==='qris')byDay[d].cashQris+=amount;
+      else if(type==='tabungan')byDay[d].cashTabungan+=amount;
+      else byDay[d].cashLainnya+=amount;
+    }else if(isOpsExpense(t)){
+      byDay[d].ops+=amount;
+    }else{
+      byDay[d].expenseOther+=amount;
+    }
+  });
+  return Object.keys(byDay).sort().map(d=>{
+    const r=byDay[d];
+    const totalIncome=r.fbLock+r.fbLive+r.manualIncome;
+    const totalExpense=r.ops+r.expenseOther;
+    const totalCashOut=r.cashQris+r.cashTabungan+r.cashLainnya;
+    const saldoBersih=totalIncome-totalExpense;
+    const cashSetelahPindah=saldoBersih-totalCashOut;
+    const laba20=totalIncome*.2;
+    const labaBersih20=laba20-totalExpense;
+    return [d,r.fbLock,r.fbLive,r.manualIncome,totalIncome,r.ops,r.expenseOther,totalExpense,r.cashQris,r.cashTabungan,r.cashLainnya,totalCashOut,saldoBersih,cashSetelahPindah,laba20,labaBersih20,r.count];
+  });
+}
+function downloadMonthlyFinanceReport(){
+  if(typeof XLSX==='undefined'){showToast('Library XLS belum siap, coba lagi');return;}
+
+  const targetMonth=getMonthlyReportTargetMonth();
+  const monthLabel=getMonthlyReportMonthLabel(targetMonth);
+  const startDate=`${targetMonth}-01`;
+  const endDate=getMonthEndDate(targetMonth);
+  const rows=getMonthlyReportRows(targetMonth);
+
+  const incomeRows=rows.filter(t=>t.type==='income');
+  const firebaseLockIncomeRows=rows.filter(t=>t.type==='income'&&isFirebaseUploaded(t)&&!t.__firebasePreview);
+  const firebaseLiveIncomeRows=rows.filter(t=>t.type==='income'&&t.__firebasePreview);
+  const manualIncomeRows=rows.filter(t=>t.type==='income'&&!isFirebaseUploaded(t));
+  const businessExpenseRows=rows.filter(t=>t.type==='expense'&&!isCashOut(t));
+  const opsRows=rows.filter(t=>isOpsExpense(t));
+  const otherExpenseRows=businessExpenseRows.filter(t=>!isOpsExpense(t));
+  const cashOutRows=rows.filter(t=>isCashOut(t));
+  const cashQrisRows=cashOutRows.filter(t=>getCashOutType(t)==='qris');
+  const cashTabunganRows=cashOutRows.filter(t=>getCashOutType(t)==='tabungan');
+  const cashLainnyaRows=cashOutRows.filter(t=>!['qris','tabungan'].includes(getCashOutType(t)));
+  const zakatRows=getZakatHistory().filter(z=>String(z.date||'').slice(0,7)===targetMonth);
+
+  const totalIncome=sumAmount(incomeRows);
+  const firebaseLockIncome=sumAmount(firebaseLockIncomeRows);
+  const firebaseLiveIncome=sumAmount(firebaseLiveIncomeRows);
+  const manualIncome=sumAmount(manualIncomeRows);
+  const totalExpense=sumAmount(businessExpenseRows);
+  const opsExpense=sumAmount(opsRows);
+  const otherExpense=sumAmount(otherExpenseRows);
+  const cashQris=sumAmount(cashQrisRows);
+  const cashTabungan=sumAmount(cashTabunganRows);
+  const cashLainnya=sumAmount(cashLainnyaRows);
+  const totalCashOut=cashQris+cashTabungan+cashLainnya;
+  const saldoBersih=totalIncome-totalExpense;
+  const cashSetelahPindah=saldoBersih-totalCashOut;
+  const laba20=totalIncome*.2;
+  const labaBersih20=laba20-totalExpense;
+  const zakatEstimasi=laba20*.025;
+  const zakatDibayar=zakatRows.filter(z=>!z.cancelled).reduce((s,z)=>s+Number(z.zakatPaid||0),0);
+  const printedAt=new Date().toLocaleString('id-ID',{timeZone:'Asia/Jakarta'});
+
+  const wb=XLSX.utils.book_new();
+  wb.Props={Title:`Laporan Bulanan alfajri ${monthLabel}`,Subject:'Laporan Keuangan Bulanan',Author:'alfajri Finance',CreatedDate:new Date()};
+
+  const summaryData=[
+    ['LAPORAN KEUANGAN BULANAN ALFAJRI'],
+    ['Bulan',monthLabel],
+    ['Periode',`${startDate} s.d ${endDate}`],
+    ['Tanggal Download',printedAt],
+    ['Total Baris Data',rows.length],
+    [],
+    ['RINGKASAN TOTAL BULANAN'],
+    ['Keterangan','Nominal (Rp)','Catatan'],
+    ['Pendapatan Bulanan',totalIncome,'Server Pusat + manual'],
+    ['Pendapatan SERVER LOCK',firebaseLockIncome,'Data Server Pusat yang sudah sync ke Supabase'],
+    ['Pendapatan Server Pusat Hari Ini Live',firebaseLiveIncome,'Masuk agar omset hari ini tidak kosong / tidak tertinggal'],
+    ['Pendapatan Manual',manualIncome,'Input manual'],
+    ['Pengeluaran Bulanan',totalExpense,'Tidak termasuk Cash Out QRIS/Tabungan'],
+    ['Operasional Toko',opsExpense,'Termasuk di Pengeluaran Bulanan'],
+    ['Pengeluaran Lainnya',otherExpense,'Pengeluaran manual selain operasional'],
+    ['Saldo Bersih Bulanan',saldoBersih,'Pendapatan - Pengeluaran'],
+    ['Laba 20% dari Pendapatan',laba20,'20% × Pendapatan Bulanan'],
+    ['Laba Bersih 20% Setelah Pengeluaran',labaBersih20,'Laba 20% - Pengeluaran Bulanan'],
+    ['Zakat Estimasi',zakatEstimasi,'2.5% × Laba 20%'],
+    ['Zakat Dibayar Bulan Ini',zakatDibayar,'Hanya riwayat zakat yang tidak batal'],
+    [],
+    ['RINGKASAN CASH OUT / PINDAH CASH'],
+    ['Keterangan','Nominal (Rp)','Catatan'],
+    ['Cash Out QRIS',cashQris,'Tidak dihitung sebagai pengeluaran bisnis'],
+    ['Cash Out Tabungan',cashTabungan,'Tidak dihitung sebagai pengeluaran bisnis'],
+    ['Cash Out Lainnya',cashLainnya,'Tidak dihitung sebagai pengeluaran bisnis'],
+    ['Total Cash Out',totalCashOut,'QRIS + Tabungan + Lainnya'],
+    ['Cash Setelah Pindah QRIS/Tabungan',cashSetelahPindah,'Saldo Bersih - Total Cash Out'],
+    [],
+    ['JUMLAH DATA'],
+    ['Jenis Data','Jumlah Baris','Total (Rp)'],
+    ['Pendapatan',incomeRows.length,totalIncome],
+    ['Pengeluaran Bisnis',businessExpenseRows.length,totalExpense],
+    ['Cash Out',cashOutRows.length,totalCashOut],
+    ['Zakat',zakatRows.length,zakatDibayar],
+    ['Semua Transaksi',rows.length,'']
+  ];
+  const wsSummary=makeSheetFromAoa(summaryData,[38,22,48],[1,2],null);
+  wsSummary['!merges']=[{s:{r:0,c:0},e:{r:0,c:2}}];
+  XLSX.utils.book_append_sheet(wb,wsSummary,'Ringkasan');
+
+  const dailyRows=buildMonthlyDailyRows(rows);
+  const dailyHeader=[['Tanggal','SERVER LOCK (Rp)','Server Pusat Live (Rp)','Manual (Rp)','Total Pendapatan (Rp)','Ops Toko (Rp)','Pengeluaran Lainnya (Rp)','Total Pengeluaran (Rp)','QRIS (Rp)','Tabungan (Rp)','Cash Out Lainnya (Rp)','Total Cash Out (Rp)','Saldo Bersih (Rp)','Cash Setelah Pindah (Rp)','Laba 20% (Rp)','Laba Bersih 20% (Rp)','Jumlah Data']];
+  const dailyTotals=['TOTAL'];
+  for(let c=1;c<17;c++)dailyTotals[c]=dailyRows.reduce((ss,r)=>ss+Number(r[c]||0),0);
+  const dailyData=[...dailyHeader,...dailyRows,[],dailyTotals];
+  const wsDaily=makeSheetFromAoa(dailyData,[13,18,18,16,21,16,23,22,14,16,22,19,18,23,17,22,12],[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],'A1:Q1');
+  XLSX.utils.book_append_sheet(wb,wsDaily,'Rekap Harian');
+
+  const detailData=[
+    ['No','Tanggal','Deskripsi','Jenis','Kategori','Sumber','Nominal (Rp)','Status / Catatan'],
+    ...(rows.length?rows.map((t,i)=>[
+      i+1,
+      t.date,
+      getMonthlyReportDesc(t),
+      t.type==='income'?'Pemasukan':(isCashOut(t)?'Cash Out / Pindah Cash':'Pengeluaran'),
+      getMonthlyReportCategory(t),
+      getMonthlyReportSource(t),
+      Math.round(Number(t.amount||0)),
+      t.__firebasePreview?'LIVE SERVER HARI INI':(isFirebaseUploaded(t)?'SERVER LOCK':(isCashOut(t)?'TIDAK DIHITUNG PENGELUARAN BISNIS':'MANUAL'))
+    ]):[['Belum ada data bulan ini','','','','','','','']]),
+    [],
+    ['','','','','','TOTAL PENDAPATAN',totalIncome,''],
+    ['','','','','','TOTAL PENGELUARAN',totalExpense,''],
+    ['','','','','','TOTAL CASH OUT',totalCashOut,''],
+    ['','','','','','SALDO BERSIH',saldoBersih,'']
+  ];
+  const wsDetail=makeSheetFromAoa(detailData,[6,13,42,22,24,24,18,34],[6],'A1:H1');
+  XLSX.utils.book_append_sheet(wb,wsDetail,'Semua Transaksi');
+
+  const pendapatanData=[
+    ['No','Tanggal','Deskripsi','Kategori','Sumber','Nominal (Rp)'],
+    ...(incomeRows.length?incomeRows.map((t,i)=>[i+1,t.date,getMonthlyReportDesc(t),getMonthlyReportCategory(t),getMonthlyReportSource(t),Math.round(Number(t.amount||0))]):[['Belum ada pendapatan bulan ini','','','','','']]),
+    [],
+    ['','','','TOTAL SERVER LOCK','',firebaseLockIncome],
+    ['','','','TOTAL SERVER LIVE','',firebaseLiveIncome],
+    ['','','','TOTAL MANUAL','',manualIncome],
+    ['','','','TOTAL PENDAPATAN','',totalIncome]
+  ];
+  const wsIncome=makeSheetFromAoa(pendapatanData,[6,13,42,26,24,18],[5],'A1:F1');
+  XLSX.utils.book_append_sheet(wb,wsIncome,'Pendapatan');
+
+  const pengeluaranData=[
+    ['No','Tanggal','Deskripsi','Kategori','Sumber','Nominal (Rp)'],
+    ...(businessExpenseRows.length?businessExpenseRows.map((t,i)=>[i+1,t.date,getMonthlyReportDesc(t),getMonthlyReportCategory(t),getMonthlyReportSource(t),Math.round(Number(t.amount||0))]):[['Belum ada pengeluaran bulan ini','','','','','']]),
+    [],
+    ['','','','TOTAL OPERASIONAL TOKO','',opsExpense],
+    ['','','','TOTAL PENGELUARAN LAINNYA','',otherExpense],
+    ['','','','TOTAL PENGELUARAN BULANAN','',totalExpense]
+  ];
+  const wsExpense=makeSheetFromAoa(pengeluaranData,[6,13,42,28,24,18],[5],'A1:F1');
+  XLSX.utils.book_append_sheet(wb,wsExpense,'Pengeluaran');
+
+
+  const expenseByCategory={};
+  businessExpenseRows.forEach(t=>{const nm=getExpenseCategoryName(t);expenseByCategory[nm]=(expenseByCategory[nm]||0)+Number(t.amount||0)});
+  const categoryData=[
+    ['No','Kategori','Total (Rp)','Persentase dari Pengeluaran'],
+    ...Object.entries(expenseByCategory).sort((a,b)=>b[1]-a[1]).map(([name,total],i)=>[i+1,name,Math.round(total),totalExpense?Math.round((total/totalExpense)*100)+'%':'0%']),
+    [],
+    ['','','TOTAL',Math.round(totalExpense)]
+  ];
+  const wsCategory=makeSheetFromAoa(categoryData,[6,30,18,26],[2,3],'A1:D1');
+  XLSX.utils.book_append_sheet(wb,wsCategory,'Kategori Pengeluaran');
+
+  const cashOutData=[
+    ['No','Tanggal','Keterangan','Jenis Cash Out','Sumber','Nominal (Rp)','Catatan'],
+    ...(cashOutRows.length?cashOutRows.map((t,i)=>[i+1,t.date,getMonthlyReportDesc(t),getMonthlyReportCategory(t),getMonthlyReportSource(t),Math.round(Number(t.amount||0)),'Tidak dihitung pengeluaran bisnis']):[['Belum ada cash out bulan ini','','','','','','']]),
+    [],
+    ['','','','TOTAL QRIS','',cashQris,''],
+    ['','','','TOTAL TABUNGAN','',cashTabungan,''],
+    ['','','','TOTAL LAINNYA','',cashLainnya,''],
+    ['','','','TOTAL CASH OUT','',totalCashOut,'']
+  ];
+  const wsCash=makeSheetFromAoa(cashOutData,[6,13,38,24,24,18,34],[5],'A1:G1');
+  XLSX.utils.book_append_sheet(wb,wsCash,'Cash Out');
+
+  const zakatData=[
+    ['No','Tanggal','Dari Laba (Rp)','Zakat Dibayar (Rp)','Status','Catatan'],
+    ...(zakatRows.length?zakatRows.map((z,i)=>[i+1,z.date,Math.round(getPaidProfitFromZakatRow(z)),Math.round(Number(z.zakatPaid||0)),z.cancelled?'Batal':'Lunas',z.note||'']):[['Belum ada riwayat zakat bulan ini','','','','','']]),
+    [],
+    ['','','TOTAL ZAKAT DIBAYAR',zakatDibayar,'',''],
+    ['','','ZAKAT ESTIMASI BULAN INI',zakatEstimasi,'','']
+  ];
+  const wsZakat=makeSheetFromAoa(zakatData,[6,22,20,20,14,48],[2,3],'A1:F1');
+  XLSX.utils.book_append_sheet(wb,wsZakat,'Zakat');
+
+  const safeMonth=targetMonth.replace(/[^0-9A-Za-z_-]/g,'');
+  const filename=`alfajri_laporan_bulanan_${safeMonth}.xlsx`;
+  XLSX.writeFile(wb,filename,{bookType:'xlsx'});
+  showToast(`Laporan XLS ${monthLabel} didownload`);
+}
+
+
+async function initApp(){try{if(!initSupabase())return;
+  // Tampilkan loading saat fetch Supabase
+  const nb=$('netBalance');if(nb){nb.innerText='Memuat...';nb.style.opacity='0.5';}
+  const st=$('statusText'),sb=$('statusBadge');
+  if(st)st.innerText='Koneksi...';
+  if(sb){sb.style.background='#e0f2fe';sb.style.color='#0369a1';}
+  initFirebase();
+  // Tunggu Supabase + Server Pusat keduanya siap sebelum render pertama
+  const SERVER_TIMEOUT=4000; // max tunggu 4 detik
+  await loadTransactions();
+  try{await loadExpenseCategories();await ensureDefaultExpenseCategories();await migrateLegacyExpenseCategories();}catch(e){console.warn('Kategori belum siap:',e)}
+  await loadZakatHistory();
+  if(firebaseDb){
+    startFirebaseWatch(firebaseUploadDate||getLocalDateString());
+    // Tunggu snapshot pertama Server Pusat (dengan timeout fallback)
+    await Promise.race([
+      startTodayFirebaseWatch(),
+      new Promise(r=>setTimeout(r,SERVER_TIMEOUT))
+    ]);
+  }
+  // Semua data siap — render sekali, langsung akurat
+  if(nb)nb.style.opacity='1';
+  if(st)st.innerText='Aman';
+  if(sb){sb.style.background='';sb.style.color='';}
+  render();renderCashFisik();
+  // Supabase Realtime: auto-refresh saat ada perubahan transaksi
+  try{
+    supabaseClient.channel('rh-tx-realtime')
+      .on('postgres_changes',{event:'*',schema:'public',table:'transactions',filter:`owner_id=eq.${OWNER_ID}`},async()=>{
+        await loadTransactions();try{await loadExpenseCategories();}catch(e){}render();renderCashFisik();
+      }).subscribe();
+  }catch(e){console.warn('Realtime tidak aktif:',e);}
+  showToast('Supabase tersambung')}catch(e){console.error(e);showToast('Gagal konek: '+e.message,6000)}}initApp();
+</script>
+</body>
+</html>
