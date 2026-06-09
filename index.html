@@ -1226,6 +1226,8 @@ function closeTransactionModal(){$('transactionModal').classList.add('hidden')}
 
 const DEFAULT_CATEGORY_NAME='Lainnya';
 const OPS_CATEGORY_NAME='Operasional Toko';
+const ZAKAT_CATEGORY_NAME='Zakat';
+const ZAKAT_PREFIX='[ZAKAT:';
 const EMERGENCY_CATEGORY_NAME='Dana Darurat';
 const EMERGENCY_RATE=0.05;
 const EMERGENCY_PREFIX='[DANA_DARURAT:';
@@ -1234,6 +1236,12 @@ function normalizeCategoryRecord(r={}){return {id:Number(r.id)||Date.now(),owner
 function sortExpenseCategories(){expenseCategories=(expenseCategories||[]).filter(c=>c&&c.name).sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0)||String(a.name).localeCompare(String(b.name),'id'))}
 function getCategoryById(id){return (expenseCategories||[]).find(c=>String(c.id)===String(id))||null}
 function getCategoryByName(name){return (expenseCategories||[]).find(c=>String(c.name||'').toLowerCase()===String(name||'').toLowerCase())||null}
+function isZakatExpenseTx(t={}){
+  const desc=String(t&&t.description||'');
+  const cat=String(t&&t.category_name||'');
+  return !!(t&&t.type==='expense'&&(desc.includes(ZAKAT_PREFIX)||cat.toLowerCase()===ZAKAT_CATEGORY_NAME.toLowerCase()||/^Zakat\s+Mal/i.test(desc)));
+}
+function cleanZakatDesc(desc){return String(desc||'Zakat Mal').replace(/\s*\[ZAKAT:[^\]]+\]\s*/g,'').trim()||'Zakat Mal'}
 function getDefaultExpenseCategory(){return getCategoryByName(DEFAULT_CATEGORY_NAME)||expenseCategories[0]||null}
 async function loadExpenseCategories(){
   if(!supabaseClient)return [];
@@ -1252,7 +1260,8 @@ async function ensureDefaultExpenseCategories(){
   try{
     if(!getCategoryByName(DEFAULT_CATEGORY_NAME)){await insertExpenseCategory(DEFAULT_CATEGORY_NAME,1)}
     if(!getCategoryByName(OPS_CATEGORY_NAME)){await insertExpenseCategory(OPS_CATEGORY_NAME,2)}
-    if(!getCategoryByName(EMERGENCY_CATEGORY_NAME)){await insertExpenseCategory(EMERGENCY_CATEGORY_NAME,3)}
+    if(!getCategoryByName(ZAKAT_CATEGORY_NAME)){await insertExpenseCategory(ZAKAT_CATEGORY_NAME,3)}
+    if(!getCategoryByName(EMERGENCY_CATEGORY_NAME)){await insertExpenseCategory(EMERGENCY_CATEGORY_NAME,4)}
     await loadExpenseCategories();
   }catch(e){console.warn('Default kategori gagal:',e);}
 }
@@ -1423,17 +1432,78 @@ function getPaidProfitFromZakatRow(r){return (!r||r.cancelled)?0:getZakatCovered
 function getTotalProfitZakatPaid(){return getZakatHistory().reduce((a,r)=>a+(!r.cancelled?getZakatCoveredProfit(r):0),0)}
 function getUnpaidProfit(){return Math.max(0,roundRp(getTotalProfit()-getTotalProfitZakatPaid()))}
 function getCurrentZakatDue(){return roundRp(getUnpaidProfit()*.025)}
+
+async function getZakatExpenseCategory(){
+  // Bayar zakat harus masuk sebagai pengeluaran agar Saldo Bersih ikut berkurang.
+  // Kalau tabel kategori sedang bermasalah, transaksi tetap disimpan dengan category_name='Zakat'.
+  try{
+    await loadExpenseCategories();
+    let cat=getCategoryByName(ZAKAT_CATEGORY_NAME);
+    if(!cat){
+      try{await insertExpenseCategory(ZAKAT_CATEGORY_NAME,3);}catch(e){console.warn('Auto kategori Zakat gagal:',e)}
+      await loadExpenseCategories();
+      cat=getCategoryByName(ZAKAT_CATEGORY_NAME);
+    }
+    return cat||{id:null,name:ZAKAT_CATEGORY_NAME};
+  }catch(e){
+    console.warn('Kategori Zakat tidak siap, pakai category_name saja:',e);
+    return {id:null,name:ZAKAT_CATEGORY_NAME};
+  }
+}
 function validateAndCancelInvalidZakat(){
   // Jangan auto-batalkan riwayat zakat yang sudah dibayar.
   // Riwayat lama yang sempat auto-batal dipulihkan lewat normalizeZakatRecord().
   return false;
 }
-async function markZakatPaid(){const due=getCurrentZakatDue();if(due<=0){showToast('Zakat sudah lunas');return}const unpaid=getUnpaidProfit();const ds=getWibDateTimeString();const cutoff=getZakatCutoffDate();if(confirm(`Bayar Zakat Mal:
+async function markZakatPaid(){
+  const due=getCurrentZakatDue();
+  if(due<=0){showToast('Zakat sudah lunas');return}
+  const unpaid=getUnpaidProfit();
+  const ds=getWibDateTimeString();
+  const cutoff=getZakatCutoffDate();
+  if(confirm(`Bayar Zakat Mal:
 Data final sampai ${cutoff} (H-1)
 2.5% × ${formatRupiah(unpaid)} (laba belum dizakatkan)
 = ${formatRupiah(due)}
 
-Transaksi hari ini tidak ikut. Lanjutkan?`)){try{await appendZakatHistoryRecord({id:Date.now(),date:ds,profitAtPayment:unpaid,zakatPaid:due,cancelled:false,note:`Zakat 2.5% dari laba ${formatRupiah(unpaid)} sampai ${cutoff}`});render();showToast('Zakat tersimpan sampai '+cutoff)}catch(e){showToast('Gagal simpan zakat: '+e.message)}}}
+Nominal ini akan otomatis masuk Pengeluaran kategori Zakat, jadi Saldo Bersih ikut berkurang.
+Transaksi hari ini tidak ikut. Lanjutkan?`)){
+    const baseId=Date.now();
+    const txId=baseId;
+    let txSaved=false;
+    try{
+      const cat=await getZakatExpenseCategory();
+      const txPayload={
+        id:txId,
+        date:getLocalDateString(),
+        description:`Zakat Mal [ZAKAT:${cutoff}]`,
+        amount:due,
+        type:'expense',
+        category_id:cat&&cat.id?Number(cat.id):null,
+        category_name:ZAKAT_CATEGORY_NAME
+      };
+      await saveTransaction(txPayload);
+      txSaved=true;
+      await appendZakatHistoryRecord({
+        id:baseId+1,
+        date:ds,
+        profitAtPayment:unpaid,
+        zakatPaid:due,
+        cancelled:false,
+        note:`Zakat 2.5% dari laba ${formatRupiah(unpaid)} sampai ${cutoff} · otomatis masuk pengeluaran Zakat · tx:${txId}`
+      });
+      await loadTransactions();
+      renderCategorySelects();
+      render();
+      showToast('Zakat dibayar. Saldo Bersih otomatis berkurang '+formatRupiah(due));
+    }catch(e){
+      if(txSaved){
+        try{await deleteTransactionFromDB(txId);await loadTransactions();render();}catch(rollbackErr){console.warn('Rollback transaksi zakat gagal:',rollbackErr)}
+      }
+      showToast('Gagal bayar zakat: '+(e.message||e));
+    }
+  }
+}
 function showZakatHistoryModal(){const h=getZakatHistory(),box=$('zakatHistoryList');box.innerHTML=h.length?h.slice().reverse().map(r=>`<div class="item ${r.cancelled?'danger-card':''}"><div class="desc"><b>${r.date} ${r.cancelled?'(Batal)':''}</b><small>Dari laba ${formatRupiah(r.profitAtPayment)}</small></div><b class="num ${r.cancelled?'red':'gold'}">${formatRupiah(r.zakatPaid)}</b></div>`).join(''):'<div class="empty">Belum ada riwayat zakat</div>';$('zakatHistoryModal').classList.remove('hidden')}
 function closeZakatHistoryModal(){$('zakatHistoryModal').classList.add('hidden')}
 
@@ -1940,7 +2010,26 @@ async function deleteEmergencyHistoryRowsForTransaction(t={}){
   emergencyFundHistory=[];
   try{localStorage.removeItem(EMERGENCY_LOCAL_BACKUP_KEY);}catch(e){}
 }
-async function deleteTransaction(id){const t=transactions.find(x=>Number(x.id)===Number(id));if(t&&isAutoQrisCashOut(t)){showToast('QRIS otomatis tidak bisa dihapus di sini. Hapus transaksi aslinya dari aplikasi staff.');return}if(t&&isFirebaseUploaded(t)){showToast('Data SERVER LOCK. Gunakan tombol Sync di halaman Server Pusat, bukan hapus manual.');return}openPasswordModal(async()=>{try{await deleteTransactionFromDB(id);if(t&&isEmergencyFundTx(t)){await deleteEmergencyHistoryRowsForTransaction(t).catch(()=>{});}await loadTransactions();validateAndCancelInvalidZakat();render();renderCashFisik();showToast(t&&isEmergencyFundTx(t)?'Transaksi Dana Darurat dihapus, status kembali belum ditabung jika belum ada transaksi lain':'Transaksi dihapus')}catch(e){showToast('Gagal hapus: '+e.message)}})}
+async function deleteTransaction(id){
+  const t=transactions.find(x=>Number(x.id)===Number(id));
+  if(t&&isZakatExpenseTx(t)){
+    showToast('Zakat tidak bisa dihapus dari aplikasi. Jika benar-benar perlu, hapus langsung dari Supabase.');
+    return;
+  }
+  if(t&&isAutoQrisCashOut(t)){showToast('QRIS otomatis tidak bisa dihapus di sini. Hapus transaksi aslinya dari aplikasi staff.');return}
+  if(t&&isFirebaseUploaded(t)){showToast('Data SERVER LOCK. Gunakan tombol Sync di halaman Server Pusat, bukan hapus manual.');return}
+  openPasswordModal(async()=>{
+    try{
+      await deleteTransactionFromDB(id);
+      if(t&&isEmergencyFundTx(t)){await deleteEmergencyHistoryRowsForTransaction(t).catch(()=>{});}
+      await loadTransactions();
+      validateAndCancelInvalidZakat();
+      render();
+      renderCashFisik();
+      showToast(t&&isEmergencyFundTx(t)?'Transaksi Dana Darurat dihapus, status kembali belum ditabung jika belum ada transaksi lain':'Transaksi dihapus');
+    }catch(e){showToast('Gagal hapus: '+e.message)}
+  });
+}
 async function requestClearAll(){
   openPasswordModal(async()=>{
     if(confirm('Hapus semua data manual? Data SERVER LOCK tidak akan dihapus.')){
@@ -2460,23 +2549,24 @@ function render(){
     const co=isCashOut(t);
     const debt=isDebtTx(t);
     const emergency=isEmergencyFundTx(t);
+    const zakat=isZakatExpenseTx(t);
     const tp=co?getCashOutType(t):'';
     const coLabel={qris:'QRIS',tabungan:'Tabungan',lainnya:'Lainnya'}[tp]||'';
     const debtLabel=isDebtIn(t)?'Pinjam Uang':(isDebtPay(t)?'Bayar Hutang':'');
-    const icon=co?'💳':(debt?'H':(emergency?'D':(t.type==='income'?'+':'-')));
+    const icon=co?'💳':(debt?'H':(zakat?'Z':(emergency?'D':(t.type==='income'?'+':'-'))));
     const iconClass=(co||isDebtIn(t))?'in':'out';
-    const iconStyle=co?'background:#e0f2fe;color:#0369a1':(debt?'background:#fffbeb;color:#92400e':(emergency?'background:#dbeafe;color:#1d4ed8':''));
-    const desc=co?cleanCashOutDesc(t.description)||coLabel:(debt?cleanDebtDesc(t.description):(emergency?'Tabungan Dana Darurat':cleanFirebaseDesc(t.description)));
+    const iconStyle=co?'background:#e0f2fe;color:#0369a1':(debt?'background:#fffbeb;color:#92400e':(zakat?'background:#fef3d0;color:#a07820':(emergency?'background:#dbeafe;color:#1d4ed8':'')));
+    const desc=co?cleanCashOutDesc(t.description)||coLabel:(debt?cleanDebtDesc(t.description):(zakat?cleanZakatDesc(t.description):(emergency?'Tabungan Dana Darurat':cleanFirebaseDesc(t.description))));
     const catLine=t.type==='expense'?getExpenseCategoryChip(t):(debt?`<span class="category-chip" style="background:#fef3c7;color:#92400e">${debtLabel}</span>`:'');
-    const amtColor=co?'#0369a1':(isDebtIn(t)?'#92400e':(isDebtPay(t)?'#15803d':(emergency?'#1d4ed8':(t.type==='income'?'var(--green)':'var(--red)'))));
+    const amtColor=co?'#0369a1':(isDebtIn(t)?'#92400e':(isDebtPay(t)?'#15803d':(zakat?'#a07820':(emergency?'#1d4ed8':(t.type==='income'?'var(--green)':'var(--red)')))));
     const amtPrefix=co?'':'';
     const amtSign=(t.type==='income'||isDebtIn(t))?'+':'-';
     const badge=co?`<span class="cashout-badge ${tp}" style="font-size:9px;margin-left:4px">${coLabel}</span>`:
-      (debt?`<span class="cashout-badge tabungan" style="font-size:9px;margin-left:4px;background:#fef3c7;color:#92400e">${debtLabel}</span>`:(emergency?'<span class="lock-badge">DANA DARURAT</span>':(isFirebaseUploaded(t)?'<span class="lock-badge">SERVER LOCK</span>':'')));
+      (debt?`<span class="cashout-badge tabungan" style="font-size:9px;margin-left:4px;background:#fef3c7;color:#92400e">${debtLabel}</span>`:(zakat?'<span class="lock-badge" style="background:#fef3d0;color:#a07820;border-color:#f2df9b">ZAKAT LOCK</span>':(emergency?'<span class="lock-badge">DANA DARURAT</span>':(isFirebaseUploaded(t)?'<span class="lock-badge">SERVER LOCK</span>':''))));
     const ctrl=co
       ? `<div class="small" style="color:#0369a1;font-weight:900;font-size:9px">CASH PINDAH</div>`
-      : (debt?`<div class="small" style="color:#92400e;font-weight:900;font-size:9px">NETRAL</div>`:(emergency?`<div class="small blue" style="font-weight:900;font-size:9px;margin-bottom:2px">TABUNGAN</div><button class="x" onclick="deleteTransaction(${t.id})">×</button>`:(isFirebaseUploaded(t)?`<div class="small blue" style="font-weight:900">${t.__firebasePreview?'PREVIEW':'LOCK'}</div>`:`<button class="x" onclick="deleteTransaction(${t.id})">×</button>`)));
-    return `<div class="item" style="${co?'background:#f0f9ff;border-color:#bfdbfe':(debt?'background:#fffbeb;border-color:#fde68a':(emergency?'background:#eff6ff;border-color:#bfdbfe':''))}"><div class="left"><div class="icon ${iconClass}" style="${iconStyle}">${icon}</div><div class="desc"><b>${escapeHtml(desc)}${badge}</b><small>${t.date}</small>${catLine}</div></div><div class="right"><b class="num" style="color:${amtColor}">${amtSign}${formatRupiah(t.amount).replace('Rp','')}</b>${ctrl}</div></div>`;
+      : (debt?`<div class="small" style="color:#92400e;font-weight:900;font-size:9px">NETRAL</div>`:(zakat?`<div class="small gold" style="font-weight:900;font-size:9px;margin-bottom:2px">ZAKAT</div>`:(emergency?`<div class="small blue" style="font-weight:900;font-size:9px;margin-bottom:2px">TABUNGAN</div><button class="x" onclick="deleteTransaction(${t.id})">×</button>`:(isFirebaseUploaded(t)?`<div class="small blue" style="font-weight:900">${t.__firebasePreview?'PREVIEW':'LOCK'}</div>`:`<button class="x" onclick="deleteTransaction(${t.id})">×</button>`))));
+    return `<div class="item" style="${co?'background:#f0f9ff;border-color:#bfdbfe':(debt?'background:#fffbeb;border-color:#fde68a':(zakat?'background:#fffaf0;border-color:#f2df9b':(emergency?'background:#eff6ff;border-color:#bfdbfe':'')))}"><div class="left"><div class="icon ${iconClass}" style="${iconStyle}">${icon}</div><div class="desc"><b>${escapeHtml(desc)}${badge}</b><small>${t.date}</small>${catLine}</div></div><div class="right"><b class="num" style="color:${amtColor}">${amtSign}${formatRupiah(t.amount).replace('Rp','')}</b>${ctrl}</div></div>`;
   }).join('')+(f.length>80?`<div class="empty">Ditampilkan 80 dari ${f.length} data biar ringan</div>`:'');
   renderFirebaseUploadCard();
 }
