@@ -1841,10 +1841,24 @@ function getFirebaseRecordDateKey(t){
   return '';
 }
 function isFirebaseRecordDeleted(t){return t&&(t.deleted===true||t.deleted==='true'||t.isDeleted===true||t.isDeleted==='true'||t.canceled===true||t.canceled==='true'||t.cancelled===true||t.cancelled==='true'||['deleted','canceled','cancelled'].includes(String(t.status||'').toLowerCase()))}
+function isTruthyServerFlag(value){return value===true||value===1||String(value||'').toLowerCase()==='true'||String(value||'')==='1'}
+function isTrialServerRecord(t){
+  if(!t)return false;
+  const accountType=String(t.accountType||t.account_type||t.mode||'').toLowerCase();
+  return isTruthyServerFlag(t.isDummy)||
+    isTruthyServerFlag(t.is_dummy)||
+    isTruthyServerFlag(t.dummy)||
+    isTruthyServerFlag(t.trialMode)||
+    isTruthyServerFlag(t.trial_mode)||
+    isTruthyServerFlag(t.excludeFromReports)||
+    isTruthyServerFlag(t.exclude_from_reports)||
+    accountType==='dummy'||
+    accountType==='trial';
+}
 function normalizeFirebaseRows(rows){
   return (rows||[])
     .map(t=>({...t,dateKey:getFirebaseRecordDateKey(t),amount:Number(t.amount||0)}))
-    .filter(t=>t.dateKey&&!isFirebaseRecordDeleted(t));
+    .filter(t=>t.dateKey&&!isFirebaseRecordDeleted(t)&&!isTrialServerRecord(t));
 }
 function wibDayStartMs(date){return new Date(`${date}T00:00:00+07:00`).getTime()}
 function wibDayEndMs(date){return new Date(`${date}T23:59:59+07:00`).getTime()}
@@ -1873,7 +1887,7 @@ async function fetchFirebaseRowsByRange(start,end){
   const rows=Object.values(merged);
   return normalizeFirebaseRows(rows).filter(t=>t.dateKey>=start&&t.dateKey<=end);
 }
-function sumFirebaseRows(rows){return (rows||[]).reduce((a,b)=>a+Number(b.amount||0),0)}
+function sumFirebaseRows(rows){return normalizeFirebaseRows(rows||[]).reduce((a,b)=>a+Number(b.amount||0),0)}
 
 // === AUTO CASH OUT QRIS DARI SERVER PUSAT KASIR ===
 // Transaksi kasir yang metode pembayarannya QRIS / Transfer tetap dihitung sebagai omset,
@@ -1942,7 +1956,7 @@ async function syncFirebaseQrisCashOut(rows,opts={}){
   const candidates=[];
   const seen=new Set();
   (rows||[]).forEach(t=>{
-    if(!t||isFirebaseRecordDeleted(t)||!isFirebaseQrisPayment(t))return;
+    if(!t||isFirebaseRecordDeleted(t)||isTrialServerRecord(t)||!isFirebaseQrisPayment(t))return;
     const amount=Number(t.amount||0);
     const date=t.dateKey||getFirebaseRecordDateKey(t);
     if(!date||!amount||amount<=0)return;
