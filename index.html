@@ -74,6 +74,16 @@
     .brand { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
     .brand h1 { font-size: 18px; font-weight: 900; line-height: 1; letter-spacing: -.4px; }
     .brand small { display: block; color: var(--muted); font-size: 11px; margin-top: 2px; font-weight: 500; }
+    .top-actions { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+    .refresh-btn {
+      min-height: 30px; padding: 6px 10px; border-radius: 999px;
+      background: var(--surface); color: var(--green); border: 1px solid rgba(26,122,74,.20);
+      box-shadow: var(--shadow-sm); font-size: 11px; font-weight: 850;
+      display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+      white-space: nowrap; transition: transform .15s, opacity .15s, background .15s;
+    }
+    .refresh-btn:active { transform: scale(.97); }
+    .refresh-btn.is-loading { opacity: .72; pointer-events: none; }
     .pill {
       font-size: 11px; padding: 5px 10px; border-radius: 999px;
       background: var(--green-light); color: var(--green); font-weight: 700;
@@ -803,7 +813,10 @@
           <h1>alfajri</h1>
           <small>Finance &amp; Zakat</small>
         </div>
-        <div id="statusBadge" class="pill"><span id="statusText">Aman</span></div>
+        <div class="top-actions">
+          <button id="kasRefreshBtn" class="refresh-btn" type="button" onclick="refreshKasApp()">Refresh</button>
+          <div id="statusBadge" class="pill"><span id="statusText">Aman</span></div>
+        </div>
       </div>
     </div>
 
@@ -1221,6 +1234,39 @@ function $(id){return document.getElementById(id)}
 function isSupabaseConfigured(){return SUPABASE_URL&&SUPABASE_ANON_KEY&&!SUPABASE_URL.includes('ISI_')&&!SUPABASE_ANON_KEY.includes('ISI_')}
 function initSupabase(){if(!isSupabaseConfigured()){showToast('Supabase belum disetting');return false}supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);return true}
 function goPage(p){currentPage=p;['home','history','laporan','firebase'].forEach(x=>{ const page=$('page'+x[0].toUpperCase()+x.slice(1)); if(page)page.classList.toggle('active',x===p); const nav=$('nav-'+x); if(nav)nav.classList.toggle('active',x===p)}); render(); if(p==='firebase')startFirebaseWatch(firebaseUploadDate||getLocalDateString()); if(p==='laporan')renderFinanceReport()}
+let kasRefreshBusy=false;
+async function refreshKasApp(){
+  if(kasRefreshBusy)return;
+  kasRefreshBusy=true;
+  const btn=$('kasRefreshBtn'),st=$('statusText'),sb=$('statusBadge');
+  const oldBtnText=btn?btn.textContent:'Refresh';
+  if(btn){btn.disabled=true;btn.classList.add('is-loading');btn.textContent='Refresh...';}
+  if(st)st.innerText='Refresh...';
+  if(sb){sb.style.background='#e0f2fe';sb.style.color='#0369a1';}
+  try{
+    await loadTransactions();
+    try{await loadExpenseCategories();}catch(e){console.warn('Refresh kategori gagal:',e)}
+    try{await loadZakatHistory();}catch(e){console.warn('Refresh zakat gagal:',e)}
+    if(firebaseDb){
+      await refreshFirebaseRowsOnce(getLocalDateString(),'today');
+      if(currentPage==='firebase')await refreshFirebaseRowsOnce(firebaseUploadDate||getLocalDateString(),'selected');
+    }
+    render();
+    renderCashFisik();
+    renderFinanceReport();
+    if(st)st.innerText='Aman';
+    if(sb){sb.style.background='';sb.style.color='';}
+    showToast('Data kas direfresh');
+  }catch(e){
+    console.error(e);
+    if(st)st.innerText='Error';
+    if(sb){sb.style.background='var(--red-light)';sb.style.color='var(--red)';}
+    showToast('Gagal refresh: '+(e.message||e),5000);
+  }finally{
+    if(btn){btn.disabled=false;btn.classList.remove('is-loading');btn.textContent=oldBtnText||'Refresh';}
+    kasRefreshBusy=false;
+  }
+}
 function openTransactionModal(){$('inputDate').value=getLocalDateString();renderCategorySelects();updatePlaceholder();$('transactionModal').classList.remove('hidden');setTimeout(()=>$('amount').focus(),80)}
 function closeTransactionModal(){$('transactionModal').classList.add('hidden')}
 
