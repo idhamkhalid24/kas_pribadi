@@ -1274,6 +1274,10 @@ async function deleteTransaction(id){
     showToast('Zakat tidak bisa dihapus dari aplikasi. Jika benar-benar perlu, hapus langsung dari Supabase.');
     return;
   }
+  if(t&&isProtectedServerPusatOmsetTx(t)){
+    showToast('Omset Server Pusat Hari Ini tidak boleh dihapus.');
+    return;
+  }
   if(t&&isAutoQrisCashOut(t)){showToast('QRIS otomatis tidak bisa dihapus di sini. Hapus transaksi aslinya dari aplikasi staff.');return}
   if(t&&isFirebaseUploaded(t)){showToast('Data SERVER LOCK. Gunakan tombol Sync di halaman Server Pusat, bukan hapus manual.');return}
   openPasswordModal(async()=>{
@@ -1831,8 +1835,11 @@ function renderTransactionDetailCard(t={},opts={}){
   const rightClass=action?'right history-action-stack':'right';
   return `<div class="item transaction-detail-card"><div class="left"><div class="icon ${meta.iconClass}">${meta.icon}</div><div class="desc"><b>${escapeHtml(meta.desc)}</b><small>${escapeHtml(t.date||'')}</small><span class="category-chip ${meta.chipClass}">${escapeHtml(meta.label)}</span></div></div><div class="${rightClass}"><b class="num" style="color:${meta.color}">${meta.sign}${formatRupiah(t.amount).replace('Rp','')}</b>${action}</div></div>`;
 }
+function isProtectedServerPusatOmsetTx(t={}){
+  return /Omset Server Pusat Hari Ini/i.test(cleanFirebaseDesc(t&&t.description));
+}
 function renderHistoryTransactionCard(t={}){
-  const action=`<button class="x history-delete-btn" onclick="deleteTransaction(${Number(t.id)})" type="button" title="Hapus transaksi" aria-label="Hapus transaksi">×</button>`;
+  const action=isProtectedServerPusatOmsetTx(t)?'':`<button class="x history-delete-btn" onclick="deleteTransaction(${Number(t.id)})" type="button" title="Hapus transaksi" aria-label="Hapus transaksi">×</button>`;
   return renderTransactionDetailCard(t,{actionHtml:action});
 }
 function normalizeCategoryForBackup(c,i){
