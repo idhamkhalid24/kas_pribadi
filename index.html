@@ -365,6 +365,47 @@
 
       <div class="section-divider"><span>Section Utama</span></div>
 
+      <!-- Cash Fisik Card -->
+      <div id="cashFisikCard" class="cash-fisik-card home-section is-collapsed tone-cash">
+        <div class="cash-fisik-header">
+          <div>
+            <div class="cash-fisik-title">Cash Fisik Hari Ini</div>
+            <div id="cashFisikTotal" class="cash-fisik-amount num" onclick="openCashOutModal()">Rp 0</div>
+            <div id="todayFirebaseIncomeInfo" class="small" style="margin-top:3px">Server Pusat − Ops − QRIS − Tabungan</div>
+          </div>
+          <div class="cash-fisik-actions">
+            <span class="cash-fisik-badge">HARI INI</span>
+            <button class="section-toggle" type="button" onclick="toggleHomeSection('cashFisikCard')">Buka</button>
+            <div class="cash-fisik-btns">
+              <button onclick="openOpsModal()" class="cash-fisik-btn-small" style="background:var(--orange-light);color:var(--orange);border-color:#ffd7a0">+ Ops</button>
+              <button onclick="openCashOutModal()" class="cash-fisik-btn-small" style="background:var(--blue-light);color:var(--blue);border-color:#bfdbfe">+ QRIS</button>
+            </div>
+          </div>
+        </div>
+        <div class="home-section-body">
+        <div class="cash-fisik-breakdown">
+          <div class="breakdown-row">
+            <span class="breakdown-label">Operasional Toko</span>
+            <b id="opsTodayHomeTotal" class="breakdown-val num" style="color:var(--orange)" onclick="openOpsModal()">Rp 0</b>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-label">QRIS</span>
+            <b id="cashOutQrisTotal" class="breakdown-val num" style="color:var(--blue)" onclick="openCashOutModal()">Rp 0</b>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-label">Tabungan</span>
+            <b id="cashOutTabunganTotal" class="breakdown-val num" style="color:#854d0e" onclick="openCashOutModal()">Rp 0</b>
+          </div>
+        </div>
+        </div>
+      </div>
+
+      <!-- Total Dana Darurat Terkumpul -->
+      <div id="emergencyFundTotalCard" class="stat" style="margin-bottom:8px;border-color:#bfdbfe;background:var(--blue-light)">
+        <span>Total Dana Darurat Terkumpul</span>
+        <b id="emergencyFundTotalSavedDisplay" class="num" style="color:var(--blue);font-size:15px">Rp 0</b>
+      </div>
+
       <!-- Harga Emas Real-Time -->
       <div id="goldLiveCard" class="gold-live-card home-section is-collapsed tone-gold">
         <div class="gold-live-head">
@@ -402,46 +443,7 @@
         </div>
       </div>
 
-      <!-- Total Dana Darurat Terkumpul -->
-      <div id="emergencyFundTotalCard" class="stat" style="margin-bottom:8px;border-color:#bfdbfe;background:var(--blue-light)">
-        <span>Total Dana Darurat Terkumpul</span>
-        <b id="emergencyFundTotalSavedDisplay" class="num" style="color:var(--blue);font-size:15px">Rp 0</b>
-      </div>
 
-      <!-- Cash Fisik Card -->
-      <div id="cashFisikCard" class="cash-fisik-card home-section is-collapsed tone-cash">
-        <div class="cash-fisik-header">
-          <div>
-            <div class="cash-fisik-title">Cash Fisik Hari Ini</div>
-            <div id="cashFisikTotal" class="cash-fisik-amount num" onclick="openCashOutModal()">Rp 0</div>
-            <div id="todayFirebaseIncomeInfo" class="small" style="margin-top:3px">Server Pusat − Ops − QRIS − Tabungan</div>
-          </div>
-          <div class="cash-fisik-actions">
-            <span class="cash-fisik-badge">HARI INI</span>
-            <button class="section-toggle" type="button" onclick="toggleHomeSection('cashFisikCard')">Buka</button>
-            <div class="cash-fisik-btns">
-              <button onclick="openOpsModal()" class="cash-fisik-btn-small" style="background:var(--orange-light);color:var(--orange);border-color:#ffd7a0">+ Ops</button>
-              <button onclick="openCashOutModal()" class="cash-fisik-btn-small" style="background:var(--blue-light);color:var(--blue);border-color:#bfdbfe">+ QRIS</button>
-            </div>
-          </div>
-        </div>
-        <div class="home-section-body">
-        <div class="cash-fisik-breakdown">
-          <div class="breakdown-row">
-            <span class="breakdown-label">Operasional Toko</span>
-            <b id="opsTodayHomeTotal" class="breakdown-val num" style="color:var(--orange)" onclick="openOpsModal()">Rp 0</b>
-          </div>
-          <div class="breakdown-row">
-            <span class="breakdown-label">QRIS</span>
-            <b id="cashOutQrisTotal" class="breakdown-val num" style="color:var(--blue)" onclick="openCashOutModal()">Rp 0</b>
-          </div>
-          <div class="breakdown-row">
-            <span class="breakdown-label">Tabungan</span>
-            <b id="cashOutTabunganTotal" class="breakdown-val num" style="color:#854d0e" onclick="openCashOutModal()">Rp 0</b>
-          </div>
-        </div>
-        </div>
-      </div>
       <!-- Hidden elements tetap ada agar JS tidak error -->
       <div id="todayIncomeCard" class="hidden"></div>
       <div id="todayFirebaseIncomeHome" class="hidden"></div>
