@@ -29,6 +29,16 @@ function setGoldHomeTab(tab='buy'){
     if(panel)panel.classList.toggle('active',name===currentGoldHomeTab);
   });
 }
+function bindGoldBuyButton(){
+  const btn=$('goldBuyOpenBtn');
+  if(!btn||btn.dataset.goldBuyBound==='1')return;
+  btn.dataset.goldBuyBound='1';
+  btn.addEventListener('click',function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    openGoldBuyModal();
+  });
+}
 function renderActiveFilterChip(){
   const box=$('activeFilterChips');if(!box)return;
   const label=typeof getPeriodLabel==='function'?getPeriodLabel():'Riwayat';
@@ -433,6 +443,7 @@ function renderGoldSection(){
     if(activePrice&&Number($('goldManualPrice')?.value||0)>0)$('goldBuySource').innerText='Sumber: Harga manual kamu';
     else $('goldBuySource').innerText=state&&state.price?`Sumber: ${state.source||'-'}${state.cached?' (cache terakhir)':''}${state.manual?' (manual)':''}`:'Sumber: -';
   }
+  bindGoldBuyButton();
 }
 function getGoldMinGram(){return 0.01}
 function getGoldPresetValues(){
@@ -526,6 +537,7 @@ function openGoldBuyModal(){
   setTimeout(()=>{if(main)main.focus();},80);
 }
 function closeGoldBuyModal(){$('goldBuyModal').classList.add('hidden')}
+if(typeof window!=='undefined'){window.openGoldBuyModal=openGoldBuyModal;window.closeGoldBuyModal=closeGoldBuyModal;}
 function handleGoldManualPriceInput(){
   const manual=Number($('goldManualPrice')?.value||0)||0;
   if(manual>0){saveManualGoldPrice(manual);goldPriceState=buildGoldState(manual,'Harga Manual','',{manual:true})||goldPriceState;}
@@ -1274,10 +1286,6 @@ async function deleteTransaction(id){
     showToast('Zakat tidak bisa dihapus dari aplikasi. Jika benar-benar perlu, hapus langsung dari Supabase.');
     return;
   }
-  if(t&&isProtectedServerPusatOmsetTx(t)){
-    showToast('Omset Server Pusat Hari Ini tidak boleh dihapus.');
-    return;
-  }
   if(t&&isAutoQrisCashOut(t)){showToast('QRIS otomatis tidak bisa dihapus di sini. Hapus transaksi aslinya dari aplikasi staff.');return}
   if(t&&isFirebaseUploaded(t)){showToast('Data SERVER LOCK. Gunakan tombol Sync di halaman Server Pusat, bukan hapus manual.');return}
   openPasswordModal(async()=>{
@@ -1835,11 +1843,8 @@ function renderTransactionDetailCard(t={},opts={}){
   const rightClass=action?'right history-action-stack':'right';
   return `<div class="item transaction-detail-card"><div class="left"><div class="icon ${meta.iconClass}">${meta.icon}</div><div class="desc"><b>${escapeHtml(meta.desc)}</b><small>${escapeHtml(t.date||'')}</small><span class="category-chip ${meta.chipClass}">${escapeHtml(meta.label)}</span></div></div><div class="${rightClass}"><b class="num" style="color:${meta.color}">${meta.sign}${formatRupiah(t.amount).replace('Rp','')}</b>${action}</div></div>`;
 }
-function isProtectedServerPusatOmsetTx(t={}){
-  return /Omset Server Pusat Hari Ini/i.test(cleanFirebaseDesc(t&&t.description));
-}
 function renderHistoryTransactionCard(t={}){
-  const action=isProtectedServerPusatOmsetTx(t)?'':`<button class="x history-delete-btn" onclick="deleteTransaction(${Number(t.id)})" type="button" title="Hapus transaksi" aria-label="Hapus transaksi">×</button>`;
+  const action=`<button class="x history-delete-btn" onclick="deleteTransaction(${Number(t.id)})" type="button" title="Hapus transaksi" aria-label="Hapus transaksi">🗑</button>`;
   return renderTransactionDetailCard(t,{actionHtml:action});
 }
 function normalizeCategoryForBackup(c,i){
