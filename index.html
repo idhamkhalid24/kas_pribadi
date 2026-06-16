@@ -383,20 +383,20 @@
           </div>
         </div>
         <div class="home-section-body">
-          <div class="cash-fisik-breakdown">
-            <div class="breakdown-row">
-              <span class="breakdown-label">Operasional Toko</span>
-              <b id="opsTodayHomeTotal" class="breakdown-val num" style="color:var(--orange)" onclick="openOpsModal()">Rp 0</b>
-            </div>
-            <div class="breakdown-row">
-              <span class="breakdown-label">QRIS</span>
-              <b id="cashOutQrisTotal" class="breakdown-val num" style="color:var(--blue)" onclick="openCashOutModal()">Rp 0</b>
-            </div>
-            <div class="breakdown-row">
-              <span class="breakdown-label">Tabungan</span>
-              <b id="cashOutTabunganTotal" class="breakdown-val num" style="color:#854d0e" onclick="openCashOutModal()">Rp 0</b>
-            </div>
+        <div class="cash-fisik-breakdown">
+          <div class="breakdown-row">
+            <span class="breakdown-label">Operasional Toko</span>
+            <b id="opsTodayHomeTotal" class="breakdown-val num" style="color:var(--orange)" onclick="openOpsModal()">Rp 0</b>
           </div>
+          <div class="breakdown-row">
+            <span class="breakdown-label">QRIS</span>
+            <b id="cashOutQrisTotal" class="breakdown-val num" style="color:var(--blue)" onclick="openCashOutModal()">Rp 0</b>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-label">Tabungan</span>
+            <b id="cashOutTabunganTotal" class="breakdown-val num" style="color:#854d0e" onclick="openCashOutModal()">Rp 0</b>
+          </div>
+        </div>
         </div>
       </div>
 
@@ -416,10 +416,6 @@
           </div>
           <div class="gold-live-actions">
             <span id="goldPriceStatus" class="gold-live-badge">LIVE</span>
-            <div class="gold-live-btns">
-              <button class="gold-live-mini-btn" onclick="refreshGoldPrice(true)" type="button">Refresh</button>
-              <button class="gold-live-mini-btn buy" onclick="openGoldBuyModal()" type="button">Beli</button>
-            </div>
             <button class="section-toggle" type="button" onclick="toggleHomeSection('goldLiveCard')">Buka</button>
           </div>
         </div>
@@ -432,20 +428,21 @@
           <div id="goldPanel-buy" class="gold-home-panel active">
             <div class="panel-action-row">
               <button class="gold-live-mini-btn" onclick="refreshGoldPrice(true)" type="button">Refresh Harga</button>
-              <button class="gold-live-mini-btn buy" onclick="openGoldBuyModal()" type="button">Beli Emas</button>
+              <button id="goldBuyOpenBtn" class="gold-live-mini-btn buy" onclick="openGoldBuyModal();return false;" type="button">Beli Emas</button>
             </div>
           </div>
-          <div id="goldPanel-history" class="gold-live-breakdown gold-home-panel">
-            <div class="gold-live-box"><span>Total Beli Emas</span><b id="goldTotalAmount">Rp 0</b></div>
-            <div class="gold-live-box"><span>Gram Tercatat</span><b id="goldTotalGram">0 gr</b></div>
-            <div class="gold-live-box"><span>Total Terpotong</span><b id="goldTotalPaid">Rp 0</b></div>
-          </div>
+        <div id="goldPanel-history" class="gold-live-breakdown gold-home-panel">
+          <div class="gold-live-box"><span>Total Beli Emas</span><b id="goldTotalAmount">Rp 0</b></div>
+          <div class="gold-live-box"><span>Gram Tercatat</span><b id="goldTotalGram">0 gr</b></div>
+          <div class="gold-live-box"><span>Total Terpotong</span><b id="goldTotalPaid">Rp 0</b></div>
+        </div>
           <div id="goldPanel-calc" class="gold-home-panel">
             <div class="gold-live-box spotlight"><span>Gram Saat Ini</span><b id="goldCurrentGram">0 gr</b></div>
-            <div id="goldGramCalcInfo" class="small" style="margin-top:8px;color:#8a5b00;font-weight:800">Gram Saat Ini = Total Beli Emas ÷ harga emas sekarang.</div>
+        <div id="goldGramCalcInfo" class="small" style="margin-top:8px;color:#8a5b00;font-weight:800">Gram Saat Ini = Total Beli Emas ÷ harga emas sekarang.</div>
           </div>
         </div>
       </div>
+
 
       <!-- Hidden elements tetap ada agar JS tidak error -->
       <div id="todayIncomeCard" class="hidden"></div>
