@@ -1252,3 +1252,15 @@ textarea::placeholder { color: #595959 !important; opacity: 1 !important; }
   margin-top: 0 !important;
   font-size: 15px !important;
 }
+
+/* Fix teks tanggal custom di Ringkasan Laba agar tetap terlihat di atas input terang. */
+.profit-summary-card .ps-range-row input,
+.profit-summary-card .ps-range-row input[type="date"] {
+  color: #111 !important;
+  -webkit-text-fill-color: #111 !important;
+  caret-color: #111 !important;
+}
+.profit-summary-card .ps-range-row input::-webkit-calendar-picker-indicator {
+  filter: none !important;
+  opacity: 1 !important;
+}
