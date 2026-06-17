@@ -72,6 +72,70 @@ async function refreshKasApp(){
     kasRefreshBusy=false;
   }
 }
+
+let transactionKeyboardFixReady=false,transactionKeyboardTimer=null;
+function bindTransactionKeyboardFix(){
+  if(transactionKeyboardFixReady)return;
+  transactionKeyboardFixReady=true;
+  const schedule=()=>{
+    if(transactionKeyboardTimer)clearTimeout(transactionKeyboardTimer);
+    if(window.requestAnimationFrame)requestAnimationFrame(adjustTransactionModalForKeyboard);
+    transactionKeyboardTimer=setTimeout(adjustTransactionModalForKeyboard,60);
+  };
+  try{window.addEventListener('resize',schedule,{passive:true});}catch(e){window.addEventListener('resize',schedule);}
+  try{window.addEventListener('orientationchange',schedule,{passive:true});}catch(e){window.addEventListener('orientationchange',schedule);}
+  if(window.visualViewport){
+    try{window.visualViewport.addEventListener('resize',schedule,{passive:true});}catch(e){window.visualViewport.addEventListener('resize',schedule);}
+    try{window.visualViewport.addEventListener('scroll',schedule,{passive:true});}catch(e){window.visualViewport.addEventListener('scroll',schedule);}
+  }
+  document.addEventListener('focusin',e=>{const m=$('transactionModal');if(m&&m.contains(e.target))schedule();},true);
+  document.addEventListener('focusout',e=>{const m=$('transactionModal');if(m&&m.contains(e.target))setTimeout(adjustTransactionModalForKeyboard,180);},true);
+}
+function resetTransactionModalKeyboardPosition(){
+  const modal=$('transactionModal');if(!modal)return;
+  modal.classList.remove('keyboard-open');
+  modal.style.removeProperty('--modal-vvh');
+  modal.style.removeProperty('--modal-vvo');
+  modal.style.removeProperty('--modal-keyboard');
+  modal.style.removeProperty('height');
+  modal.style.removeProperty('top');
+  modal.style.removeProperty('bottom');
+}
+function adjustTransactionModalForKeyboard(){
+  const modal=$('transactionModal');
+  if(!modal||modal.classList.contains('hidden'))return;
+  const vv=window.visualViewport;
+  const layoutH=window.innerHeight||document.documentElement.clientHeight||screen.height||0;
+  const visibleH=Math.max(280,Math.floor(vv&&vv.height?vv.height:layoutH));
+  const offsetTop=Math.max(0,Math.floor(vv&&typeof vv.offsetTop==='number'?vv.offsetTop:0));
+  const hiddenByKeyboard=Math.max(0,Math.floor(layoutH-visibleH-offsetTop));
+  const activeInModal=modal.contains(document.activeElement);
+  const mustLift=modal.classList.contains('fab-full-mode')||activeInModal||hiddenByKeyboard>70;
+  modal.style.setProperty('--modal-vvh',visibleH+'px');
+  modal.style.setProperty('--modal-vvo',offsetTop+'px');
+  modal.style.setProperty('--modal-keyboard',hiddenByKeyboard+'px');
+  if(mustLift){
+    modal.classList.add('keyboard-open');
+    // Android WebView kadang tidak mengecilkan fixed element saat keyboard tampil.
+    // Tinggi dan top dipaksa mengikuti visualViewport agar modal tidak ketutup keyboard.
+    modal.style.height=visibleH+'px';
+    modal.style.top=offsetTop+'px';
+    modal.style.bottom='auto';
+  }else{
+    modal.classList.remove('keyboard-open');
+    modal.style.removeProperty('height');
+    modal.style.removeProperty('top');
+    modal.style.removeProperty('bottom');
+  }
+}
+function prepareTransactionModalForKeyboard(){
+  bindTransactionKeyboardFix();
+  adjustTransactionModalForKeyboard();
+  setTimeout(adjustTransactionModalForKeyboard,80);
+  setTimeout(adjustTransactionModalForKeyboard,260);
+  setTimeout(adjustTransactionModalForKeyboard,520);
+}
+
 function focusTransactionAmountInput(opts={}){
   const amount=$('amount');
   if(!amount)return;
@@ -80,7 +144,9 @@ function focusTransactionAmountInput(opts={}){
   const doFocus=()=>{
     const adv=$('transactionAdvanced');
     if(adv&&!keepAdvancedOpen)adv.open=false;
+    try{adjustTransactionModalForKeyboard();}catch(e){}
     try{amount.focus({preventScroll:true});}catch(e){try{amount.focus();}catch(_){}}
+    try{adjustTransactionModalForKeyboard();}catch(e){}
     try{amount.scrollIntoView({block:'center',inline:'nearest'});}catch(e){}
     try{
       const len=String(amount.value||'').length;
@@ -106,11 +172,13 @@ function openTransactionModal(opts={}){
   if(modal){
     modal.classList.remove('hidden');
     modal.classList.toggle('fab-full-mode',isFab);
+    try{const box=modal.querySelector('.box');if(isFab&&box)box.scrollTop=0;}catch(e){}
   }
+  prepareTransactionModalForKeyboard();
   focusTransactionAmountInput({keepAdvancedOpen:isFab});
 }
 function openFabTransactionModal(){openTransactionModal({fromFab:true})}
-function closeTransactionModal(){const modal=$('transactionModal');if(modal){modal.classList.add('hidden');modal.classList.remove('fab-full-mode')}}
+function closeTransactionModal(){const modal=$('transactionModal');if(modal){modal.classList.add('hidden');modal.classList.remove('fab-full-mode');resetTransactionModalKeyboardPosition()}}
 
 const DEFAULT_CATEGORY_NAME='Lainnya';
 const OPS_CATEGORY_NAME='Operasional Toko';
