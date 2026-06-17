@@ -312,7 +312,7 @@
         </div>
       </div>
       <div class="field amount-wrap">
-        <input type="number" id="amount" placeholder="Nominal" oninput="handleSmartAmount(this)">
+        <input type="number" inputmode="decimal" enterkeyhint="done" id="amount" placeholder="Nominal" oninput="handleSmartAmount(this)">
         <span id="liveAmountPreview" class="preview"></span>
       </div>
       <details id="transactionAdvanced" class="advanced-fields">
@@ -798,7 +798,7 @@
     </section>
   </main>
 
-  <button class="fab" onclick="openTransactionModal()" aria-label="Input transaksi">+</button>
+  <button class="fab" onclick="openFabTransactionModal()" aria-label="Input transaksi">+</button>
 
   <nav class="nav">
     <button id="nav-home" class="active" onclick="goPage('home')">🏠 Home</button>
