@@ -1264,3 +1264,48 @@ textarea::placeholder { color: #595959 !important; opacity: 1 !important; }
   filter: none !important;
   opacity: 1 !important;
 }
+
+
+/* === FIX FAB TRANSAKSI + KEYBOARD ANDROID ===
+   Saat FAB + Transaksi ditekan, modal langsung naik ke atas dan tinggi modal
+   mengikuti area layar yang masih kelihatan saat keyboard Android muncul. */
+#transactionModal.fab-full-mode,
+#transactionModal.keyboard-open {
+  align-items: flex-start !important;
+  justify-content: center !important;
+  padding-top: calc(6px + env(safe-area-inset-top)) !important;
+  padding-bottom: 0 !important;
+  overflow: hidden !important;
+}
+#transactionModal.keyboard-open {
+  top: var(--modal-vvo, 0px) !important;
+  bottom: auto !important;
+  height: var(--modal-vvh, 100dvh) !important;
+}
+#transactionModal.fab-full-mode .box,
+#transactionModal.keyboard-open .box {
+  width: 100% !important;
+  max-width: 420px !important;
+  max-height: calc(var(--modal-vvh, 100dvh) - 10px) !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
+  margin-top: 0 !important;
+  scroll-padding-bottom: 90px !important;
+  padding-bottom: calc(18px + env(safe-area-inset-bottom)) !important;
+}
+#transactionModal.fab-full-mode .amount-wrap {
+  scroll-margin-top: 12px !important;
+  scroll-margin-bottom: 120px !important;
+}
+@supports (height: 100dvh) {
+  #transactionModal.fab-full-mode:not(.keyboard-open) .box {
+    max-height: calc(100dvh - 10px) !important;
+  }
+}
+@media (max-width: 430px) {
+  #transactionModal.fab-full-mode .box,
+  #transactionModal.keyboard-open .box {
+    border-radius: 18px 18px 0 0 !important;
+  }
+}
