@@ -72,8 +72,45 @@ async function refreshKasApp(){
     kasRefreshBusy=false;
   }
 }
-function openTransactionModal(){$('inputDate').value=getLocalDateString();const adv=$('transactionAdvanced');if(adv)adv.open=false;renderCategorySelects();updatePlaceholder();$('transactionModal').classList.remove('hidden');setTimeout(()=>$('amount').focus(),80)}
-function closeTransactionModal(){$('transactionModal').classList.add('hidden')}
+function focusTransactionAmountInput(opts={}){
+  const amount=$('amount');
+  if(!amount)return;
+  const keepAdvancedOpen=!!(opts&&opts.keepAdvancedOpen);
+  try{amount.blur();}catch(e){}
+  const doFocus=()=>{
+    const adv=$('transactionAdvanced');
+    if(adv&&!keepAdvancedOpen)adv.open=false;
+    try{amount.focus({preventScroll:true});}catch(e){try{amount.focus();}catch(_){}}
+    try{amount.scrollIntoView({block:'center',inline:'nearest'});}catch(e){}
+    try{
+      const len=String(amount.value||'').length;
+      amount.setSelectionRange(len,len);
+    }catch(e){}
+  };
+  if(window.requestAnimationFrame)requestAnimationFrame(doFocus);
+  setTimeout(doFocus,80);
+}
+function openTransactionModal(opts={}){
+  const isFab=!!(opts&&opts.fromFab);
+  const inputDate=$('inputDate'),type=$('type'),adv=$('transactionAdvanced'),modal=$('transactionModal'),desc=$('description');
+  if(inputDate)inputDate.value=getLocalDateString();
+  // Khusus tombol FAB + Transaksi: langsung terbuka penuh seperti gambar pertama.
+  // Detail lanjutan otomatis tampil, tipe otomatis Pengeluaran, kategori langsung muncul,
+  // jadi tidak perlu klik Detail lanjutan dulu.
+  if(isFab&&type)type.value='expense';
+  if(adv)adv.open=!!isFab;
+  if(desc)try{desc.blur();}catch(e){}
+  renderCategorySelects();
+  updatePlaceholder();
+  if(adv)adv.open=!!isFab;
+  if(modal){
+    modal.classList.remove('hidden');
+    modal.classList.toggle('fab-full-mode',isFab);
+  }
+  focusTransactionAmountInput({keepAdvancedOpen:isFab});
+}
+function openFabTransactionModal(){openTransactionModal({fromFab:true})}
+function closeTransactionModal(){const modal=$('transactionModal');if(modal){modal.classList.add('hidden');modal.classList.remove('fab-full-mode')}}
 
 const DEFAULT_CATEGORY_NAME='Lainnya';
 const OPS_CATEGORY_NAME='Operasional Toko';
