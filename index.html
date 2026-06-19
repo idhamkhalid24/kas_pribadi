@@ -8,7 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/style.css?v=cash-drawer-page-v3-20260619">
 </head>
 <body>
   <!-- ====== MODALS ====== -->
@@ -131,6 +131,48 @@
       </div>
       <div id="cashOutTodayList" style="max-height:40vh;overflow-y:auto"></div>
       <button class="btn secondary" onclick="closeCashOutModal()" style="margin-top:14px">Tutup</button>
+    </div>
+  </div>
+
+  <!-- Modal Cek Laci Cash -->
+  <div id="cashDrawerAuditModal" class="modal hidden">
+    <div class="box" style="max-width:420px;width:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px">
+        <div>
+          <h3 id="cashDrawerModalTitle">Cek Laci Cash</h3>
+          <small class="small" style="color:var(--blue);font-weight:700;display:block;margin-top:2px">Bandingkan cash aplikasi dengan uang nyata di laci.</small>
+        </div>
+        <button class="x" style="font-size:24px" onclick="closeCashDrawerAuditModal()">&times;</button>
+      </div>
+
+      <div class="cash-drawer-summary">
+        <div>
+          <span>Patokan aplikasi</span>
+          <b id="cashDrawerExpectedAmount" class="num">Rp 0</b>
+        </div>
+        <div>
+          <span>Cash tampil sekarang</span>
+          <b id="cashDrawerBaseAmount" class="num">Rp 0</b>
+        </div>
+        <div>
+          <span>Penyesuaian aktif</span>
+          <b id="cashDrawerCurrentAdjustment" class="num">Rp 0</b>
+        </div>
+      </div>
+
+      <div class="field amount-wrap">
+        <input type="number" min="0" inputmode="decimal" id="cashDrawerActualAmount" placeholder="Uang nyata di laci" oninput="handleCashDrawerActualPreview(this)">
+        <span id="cashDrawerActualPreview" class="preview"></span>
+      </div>
+      <div class="small" style="margin:-5px 0 10px;color:var(--muted);font-weight:700">Contoh: isi 80 untuk Rp 80.000.</div>
+      <div class="field"><input type="text" id="cashDrawerNote" placeholder="Catatan (opsional)"></div>
+      <div id="cashDrawerStatusPreview" class="cash-drawer-preview empty">Isi uang nyata di laci.</div>
+
+      <div class="row" style="margin-bottom:14px">
+        <button class="btn secondary" onclick="closeCashDrawerAuditModal()">Batal</button>
+        <button id="cashDrawerSaveBtn" class="btn" style="background:var(--blue)" onclick="saveCashDrawerAudit()">Simpan &amp; Kirim Notif</button>
+      </div>
+      <button class="btn secondary" onclick="closeCashDrawerAuditModal()" style="margin-top:14px">Tutup</button>
     </div>
   </div>
 
@@ -379,10 +421,15 @@
             <div class="cash-fisik-btns">
               <button onclick="openOpsModal()" class="cash-fisik-btn-small" style="background:var(--orange-light);color:var(--orange);border-color:#ffd7a0">+ Ops</button>
               <button onclick="openCashOutModal()" class="cash-fisik-btn-small" style="background:var(--blue-light);color:var(--blue);border-color:#bfdbfe">+ QRIS</button>
+              <button onclick="openCashDrawerAuditModal()" class="cash-fisik-btn-small" style="background:#eef2ff;color:#4338ca;border-color:#c7d2fe">Cek Laci</button>
             </div>
           </div>
         </div>
         <div class="home-section-body">
+        <div class="cash-drawer-home">
+          <div id="cashDrawerStatusLine" class="cash-drawer-status empty">Belum dicek hari ini</div>
+          <div id="cashDrawerLatestNote" class="cash-drawer-note">Input uang nyata di laci untuk tahu minus, pas, atau lebih.</div>
+        </div>
         <div class="cash-fisik-breakdown">
           <div class="breakdown-row">
             <span class="breakdown-label">Operasional Toko</span>
@@ -395,6 +442,10 @@
           <div class="breakdown-row">
             <span class="breakdown-label">Tabungan</span>
             <b id="cashOutTabunganTotal" class="breakdown-val num" style="color:#854d0e" onclick="openCashOutModal()">Rp 0</b>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-label">Penyesuaian Laci</span>
+            <b id="cashDrawerAdjustmentTotal" class="breakdown-val num" style="color:var(--muted)" onclick="openCashDrawerAuditModal()">Rp 0</b>
           </div>
         </div>
         </div>
@@ -649,7 +700,7 @@
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px">
           <div>
             <b style="color:var(--red);font-size:13px;font-weight:800">Hapus Semua Data Full</b>
-            <div class="small" style="margin-top:3px">Hapus semua transaksi manual, Server Pusat sync/LOCK, cash out, ops, dan zakat.</div>
+            <div class="small" style="margin-top:3px">Hapus semua transaksi manual, Server Pusat sync/LOCK, cash out, ops, zakat, dan audit laci.</div>
           </div>
           <span class="lock-badge" style="background:var(--red-light);color:var(--red);border-color:#ffd7d0">PIN</span>
         </div>
@@ -664,6 +715,41 @@
         </div>
         <div id="transactionList" class="list"></div>
         <div id="transactionListMore"></div>
+      </div>
+    </section>
+
+    <!-- ====== LACI PAGE ====== -->
+    <section id="pageLaci" class="page">
+      <div class="card cash-drawer-page-head" style="background:#f8fbff;border-color:#bfdbfe;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <div>
+            <div class="section-title" style="color:var(--blue)">Riwayat Cek Laci</div>
+            <b style="font-size:14px;font-weight:800">Audit Cash Fisik</b>
+            <div class="small" style="margin-top:3px">Status dibandingkan ke patokan aplikasi sebelum koreksi laci.</div>
+          </div>
+          <button class="mini-btn" onclick="openCashDrawerAuditModal()">+ Cek</button>
+        </div>
+      </div>
+
+      <div class="grid2" style="margin-bottom:10px">
+        <div class="report-kpi"><span>Patokan Hari Ini</span><b id="cashDrawerPageBase" class="num blue">Rp 0</b></div>
+        <div class="report-kpi"><span>Cash Tampil</span><b id="cashDrawerPageCurrent" class="num green">Rp 0</b></div>
+        <div class="report-kpi"><span>Adjustment Aktif</span><b id="cashDrawerPageAdjustment" class="num">Rp 0</b></div>
+        <div class="report-kpi"><span>Status Terakhir</span><b id="cashDrawerPageStatus" class="cash-drawer-status empty">Belum dicek</b></div>
+      </div>
+
+      <div class="tabs">
+        <button onclick="setCashDrawerFilter('today')" id="drawer-filter-today" class="tab active">Hari Ini</button>
+        <button onclick="setCashDrawerFilter('month')" id="drawer-filter-month" class="tab">Bulan Ini</button>
+        <button onclick="setCashDrawerFilter('all')" id="drawer-filter-all" class="tab">Semua</button>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px">
+          <b style="font-size:13px;font-weight:800">Data Cek Laci</b>
+          <span id="cashDrawerHistoryCount" class="small" style="font-weight:800;color:var(--blue)">0 data</span>
+        </div>
+        <div id="cashDrawerHistoryList"></div>
       </div>
     </section>
 
@@ -801,12 +887,13 @@
   <button class="fab" onclick="openFabTransactionModal()" aria-label="Input transaksi">+</button>
 
   <nav class="nav">
+    <button id="nav-laci" onclick="goPage('laci')">Laci</button>
     <button id="nav-home" class="active" onclick="goPage('home')">🏠 Home</button>
     <button id="nav-history" onclick="goPage('history')">📋 Riwayat</button>
     <button id="nav-laporan" onclick="goPage('laporan')">📊 Laporan</button>
     <button id="nav-firebase" onclick="goPage('firebase')">🌐 Server</button>
   </nav>
 
-<script src="assets/js/app.js?v=pegadaian-proxyfix-v2-20260619"></script>
+<script src="assets/js/app.js?v=cash-drawer-page-v3-20260619"></script>
 </body>
 </html>
