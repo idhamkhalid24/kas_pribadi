@@ -1339,3 +1339,92 @@ textarea::placeholder { color: #595959 !important; opacity: 1 !important; }
     border-radius: 18px 18px 0 0 !important;
   }
 }
+
+/* === FIX TAMPILAN CASH FISIK: tombol +Ops / QRIS / Laci dibuat ringkas ===
+   Fokus UI saja. Tidak menyentuh function / onclick / logika data. */
+.cash-fisik-header {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: start !important;
+  gap: 8px !important;
+  margin-bottom: 7px !important;
+}
+.cash-fisik-header > div:first-child {
+  min-width: 0 !important;
+}
+.cash-fisik-amount {
+  line-height: 1.08 !important;
+}
+#todayFirebaseIncomeInfo {
+  line-height: 1.35 !important;
+}
+.cash-fisik-actions {
+  display: grid !important;
+  grid-template-columns: auto auto !important;
+  align-items: center !important;
+  justify-content: end !important;
+  gap: 5px !important;
+  min-width: max-content !important;
+}
+.cash-fisik-badge,
+.cash-fisik-actions .section-toggle {
+  min-height: 24px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+}
+.cash-fisik-badge {
+  padding: 3px 7px !important;
+  font-size: 8.5px !important;
+  border: 2px solid #111 !important;
+  box-shadow: 2px 2px 0 #111 !important;
+}
+.cash-fisik-actions .section-toggle {
+  padding: 3px 8px !important;
+  font-size: 9px !important;
+  border-width: 2px !important;
+  box-shadow: 2px 2px 0 #111 !important;
+}
+.cash-fisik-btns {
+  grid-column: 1 / -1 !important;
+  display: grid !important;
+  grid-template-columns: repeat(3, max-content) !important;
+  justify-content: end !important;
+  gap: 4px !important;
+  width: 100% !important;
+}
+.home-section.is-collapsed .cash-fisik-btns {
+  display: none !important;
+}
+.cash-fisik-btn-small {
+  min-height: 24px !important;
+  padding: 3px 7px !important;
+  font-size: 9px !important;
+  line-height: 1 !important;
+  border-width: 2px !important;
+  box-shadow: 2px 2px 0 #111 !important;
+}
+.cash-fisik-btn-small:active,
+.cash-fisik-actions .section-toggle:active {
+  transform: translate(1px, 1px) !important;
+  box-shadow: 1px 1px 0 #111 !important;
+}
+@media (max-width: 370px) {
+  .cash-fisik-header {
+    grid-template-columns: 1fr !important;
+  }
+  .cash-fisik-actions {
+    width: 100% !important;
+    min-width: 0 !important;
+    grid-template-columns: auto auto !important;
+    justify-content: space-between !important;
+  }
+  .cash-fisik-btns {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+  .cash-fisik-btn-small {
+    padding: 3px 4px !important;
+    font-size: 8.5px !important;
+  }
+}
