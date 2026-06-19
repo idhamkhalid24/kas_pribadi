@@ -1,6 +1,6 @@
 const SUPABASE_URL='https://myxrvipyodadnldtomzs.supabase.co';
 const SUPABASE_ANON_KEY='sb_publishable_aG-kyasJNCEk2U9fN5T4qg_GfY0FpPH';
-const OWNER_ID='rocky-hijab'; const APP_PIN='170845';
+const OWNER_ID='rocky-hijab'; const APP_PIN='123';
 
 // === SERVER PUSAT SUPABASE SOURCE ===
 // Kas Pribadi tetap menyimpan data finance di Supabase pribadi di atas,
@@ -194,9 +194,20 @@ const GOLD_TROY_OUNCE_GRAM=31.1034768;
 const GOLD_PRICE_CACHE_KEY='kas_gold_price_cache_v2';
 const GOLD_MANUAL_PRICE_KEY='kas_gold_manual_price_v1';
 // Endpoint proxy Vercel kamu untuk harga Tabungan Emas Pegadaian.
+// Kalau proxy lama / data Pegadaian sedang kosong, aplikasi otomatis pindah ke sumber cadangan
+// supaya card harga emas tetap tampil dan fitur beli emas tetap bisa menghitung.
 const PEGADAIAN_GOLD_API='https://pegadaian-proxy.vercel.app/api/harga-emas';
+const LOGAM_MULIA_API_BASE='https://logam-mulia-api.iamutaki.workers.dev/api/prices';
 const GOLD_PRICE_ENDPOINTS=[
-  {kind:'pegadaian_proxy',url:PEGADAIAN_GOLD_API,label:'Pegadaian'}
+  {kind:'pegadaian_proxy',url:PEGADAIAN_GOLD_API,label:'Pegadaian'},
+  {kind:'logam_mulia_api',url:LOGAM_MULIA_API_BASE+'/pegadaian',label:'Pegadaian'},
+  {kind:'logam_mulia_api',url:LOGAM_MULIA_API_BASE+'/hargaemas-net',label:'Harga Emas.net'},
+  {kind:'logam_mulia_api',url:LOGAM_MULIA_API_BASE+'/bankbsi',label:'Bank BSI'},
+  {kind:'logam_mulia_api',url:LOGAM_MULIA_API_BASE+'/treasury',label:'Treasury'},
+  {kind:'logam_mulia_api',url:LOGAM_MULIA_API_BASE+'/anekalogam',label:'Aneka Logam'},
+  {kind:'logam_mulia_api',url:LOGAM_MULIA_API_BASE+'/galeri24',label:'Galeri24'},
+  {kind:'logam_mulia_api',url:LOGAM_MULIA_API_BASE+'/hargaemas-org',label:'HargaEmas.org'},
+  {kind:'coingecko',url:'https://api.coingecko.com/api/v3/simple/price?ids=pax-gold,tether-gold&vs_currencies=idr&include_last_updated_at=true',label:'CoinGecko PAXG/XAUT'}
 ];
 let goldPriceState={price:0,buyback:0,source:'',recordedDate:'',updatedAt:'',cached:false,manual:false,url:''};
 let goldPriceBusy=false;
@@ -382,14 +393,34 @@ function buildGoldState(price,source,url='',extra={}){
   if(!Number.isFinite(p)||p<=0)return null;
   return {price:p,buyback:Number(extra.buyback||0)||0,source:source||'Harga Emas',recordedDate:extra.recordedDate||'',updatedAt:new Date().toISOString(),cached:false,manual:!!extra.manual,url:url||''};
 }
+function parseGoldNumber(value){
+  if(typeof value==='number')return Number.isFinite(value)?value:0;
+  const raw=String(value??'').trim();
+  if(!raw)return 0;
+  const multiplier=/juta/i.test(raw)?1000000:(/ribu/i.test(raw)?1000:1);
+  // Format Indonesia kadang Rp 2.700.000, 2,700,000, atau 2,7 juta.
+  const cleaned=raw.replace(/,/g,'.').replace(/[^0-9.-]/g,'');
+  if(!cleaned)return 0;
+  const dots=(cleaned.match(/\./g)||[]).length;
+  const normalized=(dots>1&&!/juta|ribu/i.test(raw))?cleaned.replace(/\./g,''):cleaned;
+  const n=Number(normalized);
+  return Number.isFinite(n)?n*multiplier:0;
+}
 function normalizeGoldPriceItem(item={},fallbackLabel='',url=''){
   const weight=Number(item.weight||item.berat||item.gram||1)||1;
-  const sellRaw=item.sellPrice??item.price??item.hargaJual??item.harga_jual??item.harga??0;
-  const buybackRaw=item.buybackPrice??item.buyPrice??item.hargaBeli??item.buyback??0;
-  const sell=Number(String(sellRaw).replace(/[^0-9.-]/g,''));
-  const buyback=Number(String(buybackRaw).replace(/[^0-9.-]/g,''));
+  const sellRaw=item.sellPrice??item.price??item.hargaJual??item.harga_jual??item.harga??item.beli_per_gram??0;
+  const buybackRaw=item.buybackPrice??item.buyPrice??item.hargaBeli??item.harga_beli??item.buyback??item.jual_per_gram??0;
+  const sell=parseGoldNumber(sellRaw);
+  const buyback=parseGoldNumber(buybackRaw);
   if(!Number.isFinite(sell)||sell<=0)return null;
-  return buildGoldState(weight>0?sell/weight:sell,item.displayName||item.source||fallbackLabel||'Harga Emas',url,{buyback:Number.isFinite(buyback)&&buyback>0?Math.round(buyback/(weight||1)):0,recordedDate:item.recordedDate||item.date||item.updatedAt||''});
+  return buildGoldState(weight>0?sell/weight:sell,item.displayName||item.source||fallbackLabel||'Harga Emas',url,{buyback:Number.isFinite(buyback)&&buyback>0?Math.round(buyback/(weight||1)):0,recordedDate:item.recordedDate||item.date||item.updatedAt||item.timestamp||''});
+}
+function fetchGoldUrl(url,timeoutMs=8000){
+  const opt={cache:'no-store'};
+  if(typeof AbortController==='undefined')return fetch(url,opt);
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),timeoutMs);
+  return fetch(url,{...opt,signal:controller.signal}).finally(()=>clearTimeout(timer));
 }
 function parseCoinGeckoGold(json={},url=''){
   const rows=[];
@@ -403,8 +434,8 @@ function parseCoinGeckoGold(json={},url=''){
 }
 async function parseBinanceGold(ep){
   const [paxgRes,fxRes]=await Promise.all([
-    fetch(ep.url,{cache:'no-store'}),
-    fetch(ep.fxUrl,{cache:'no-store'})
+    fetchGoldUrl(ep.url),
+    fetchGoldUrl(ep.fxUrl)
   ]);
   if(!paxgRes.ok)throw new Error('Binance HTTP '+paxgRes.status);
   if(!fxRes.ok)throw new Error('Kurs USD/IDR HTTP '+fxRes.status);
@@ -436,14 +467,17 @@ function pickGoldPriceFromResponse(json={},fallbackLabel='',url='',kind=''){
   if(kind==='pegadaian_proxy')return parsePegadaianProxyGold(json,url);
   if(kind==='coingecko')return parseCoinGeckoGold(json,url);
   if(kind==='goldprice_org')return parseGoldPriceOrg(json,url);
-  const data=Array.isArray(json.data)?json.data:(Array.isArray(json)?json:[]);
+  const data=Array.isArray(json.data)?json.data:(Array.isArray(json.prices)?json.prices:(Array.isArray(json)?json:[]));
   const goldRows=data.filter(x=>{
     const material=String(x.material||x.type||'gold').toLowerCase();
-    const sell=x.sellPrice??x.price??x.hargaJual??x.harga_jual??x.harga;
-    return (!material||material.includes('gold')||material.includes('emas'))&&Number(String(sell||'').replace(/[^0-9.-]/g,''))>0;
+    const sell=x.sellPrice??x.price??x.hargaJual??x.harga_jual??x.harga??x.beli_per_gram;
+    return (!material||material.includes('gold')||material.includes('emas'))&&parseGoldNumber(sell)>0;
   });
-  const exactOne=goldRows.find(x=>Number(x.weight||x.berat||x.gram)===1);
-  const antam=goldRows.find(x=>/antam|logam/i.test(String(x.materialType||x.displayName||x.source||'')));
+  if(!goldRows.length)return null;
+  const exactRows=goldRows.filter(x=>Number(x.weight||x.berat||x.gram||1)===1);
+  const preferredExact=exactRows.find(x=>/antam|logam|pegadaian|galeri/i.test(String(x.materialType||x.displayName||x.source||'')));
+  const exactOne=preferredExact||exactRows[0];
+  const antam=goldRows.find(x=>/antam|logam|pegadaian|galeri/i.test(String(x.materialType||x.displayName||x.source||'')));
   return normalizeGoldPriceItem(exactOne||antam||goldRows[0]||{},fallbackLabel,url);
 }
 function restoreGoldPriceCache(){
@@ -473,9 +507,11 @@ async function fetchGoldPrice(){
       if(ep.kind==='binance_paxg_usdt'){
         picked=await parseBinanceGold(ep);
       }else{
-        const res=await fetch(ep.url,{cache:'no-store'});
+        const res=await fetchGoldUrl(ep.url);
         if(!res.ok)throw new Error('HTTP '+res.status);
-        const json=await res.json();
+        const text=await res.text();
+        let json=null;
+        try{json=JSON.parse(text)}catch(err){throw new Error('Format respon bukan JSON')}
         picked=pickGoldPriceFromResponse(json,ep.label,ep.url,ep.kind);
       }
       if(picked&&picked.price>0){goldPriceState=picked;saveGoldPriceCache();return picked;}
@@ -493,11 +529,11 @@ async function refreshGoldPrice(showMsg=false){
   try{
     await fetchGoldPrice();
     renderGoldSection();
-    if(showMsg)showToast('Harga emas Pegadaian berhasil direfresh');
+    if(showMsg)showToast('Harga emas berhasil direfresh');
   }catch(e){
     restoreGoldPriceCache();
     renderGoldSection();
-    if(showMsg)showToast('Harga emas Pegadaian gagal. Isi harga manual di tombol Beli. Detail: '+(e.message||e),6000);
+    if(showMsg)showToast('Harga emas gagal. Isi harga manual di tombol Beli. Detail: '+(e.message||e),6000);
   }finally{goldPriceBusy=false;}
 }
 function getGoldSummary(){
