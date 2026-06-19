@@ -311,12 +311,12 @@
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       border-top: 1px solid var(--line);
-      display: grid; grid-template-columns: repeat(4,1fr);
+      display: grid; grid-template-columns: repeat(5,minmax(0,1fr));
       padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
       z-index: 40;
       gap: 4px;
     }
-    .nav button { border-radius: var(--r-sm); background: transparent; color: var(--muted); font-size: 11px; font-weight: 700; padding: 8px 4px; transition: all .15s; }
+    .nav button { min-width: 0; border-radius: var(--r-sm); background: transparent; color: var(--muted); font-size: 10.5px; font-weight: 700; padding: 8px 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: all .15s; }
     .nav button.active { background: var(--green-light); color: var(--green); }
 
     /* === FAB === */
@@ -563,7 +563,7 @@
     .cash-fisik-amount { font-size: 22px; color: var(--blue); cursor: pointer; font-family: var(--mono); font-weight: 500; }
     .cash-fisik-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
     .cash-fisik-badge { font-size: 9px; background: #dbeafe; color: var(--blue); border: 1px solid #bfdbfe; border-radius: 999px; padding: 2px 7px; font-weight: 700; }
-    .cash-fisik-btns { display: flex; gap: 4px; }
+    .cash-fisik-btns { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
     .cash-fisik-btn-small {
       font-size: 10px; padding: 4px 8px; border-radius: 999px;
       font-weight: 700; border: 1px solid; cursor: pointer; white-space: nowrap;
@@ -572,6 +572,36 @@
     .breakdown-row { display: flex; justify-content: space-between; align-items: center; }
     .breakdown-label { font-size: 10px; color: var(--muted); font-weight: 700; }
     .breakdown-val { font-size: 12px; font-family: var(--mono); font-weight: 500; cursor: pointer; }
+    .cash-drawer-home { margin: 0 0 8px; padding: 8px 9px; border: 1px solid #dbeafe; background: #f8fbff; border-radius: var(--r); }
+    .cash-drawer-status { display: inline-flex; align-items: center; max-width: 100%; border-radius: 999px; padding: 3px 8px; font-size: 10px; font-weight: 900; border: 1px solid #d1d5db; background: #f9fafb; color: #374151; }
+    .cash-drawer-status.minus, .cash-drawer-preview.minus, .cash-drawer-list-item.minus { background: #fff1f2; border-color: #fecdd3; color: #be123c; }
+    .cash-drawer-status.pas, .cash-drawer-preview.pas, .cash-drawer-list-item.pas { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+    .cash-drawer-status.lebih, .cash-drawer-preview.lebih, .cash-drawer-list-item.lebih { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+    .cash-drawer-status.empty, .cash-drawer-preview.empty { background: #f8fafc; border-color: #e5e7eb; color: var(--muted); }
+    .cash-drawer-note { margin-top: 5px; font-size: 10px; color: var(--muted); font-weight: 700; line-height: 1.35; }
+    .cash-drawer-summary { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 10px; }
+    .cash-drawer-summary > div { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 9px 10px; background: var(--blue-light); border: 1px solid #bfdbfe; border-radius: var(--r); }
+    .cash-drawer-summary span { font-size: 10px; color: var(--blue); font-weight: 800; text-transform: uppercase; letter-spacing: .3px; }
+    .cash-drawer-summary b { font-size: 13px; color: var(--blue); font-weight: 700; }
+    .cash-drawer-preview { border: 1px solid #e5e7eb; border-radius: var(--r); padding: 10px 12px; margin: -2px 0 12px; font-size: 12px; font-weight: 800; line-height: 1.35; }
+    .cash-drawer-list-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 10px; border: 1px solid #e5e7eb; border-radius: var(--r); margin-bottom: 7px; }
+    .cash-drawer-list-item b { display: block; font-size: 12px; font-weight: 900; }
+    .cash-drawer-list-item small { display: block; margin-top: 2px; font-size: 10px; color: inherit; opacity: .78; font-weight: 700; line-height: 1.35; }
+    .cash-drawer-list-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .cash-drawer-active-badge { display: inline-flex; align-items: center; border-radius: 999px; padding: 2px 6px; background: #111827; color: white; font-size: 8px; font-weight: 900; letter-spacing: .3px; }
+    .cash-drawer-row-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .cash-drawer-row-actions .mini-btn { min-width: auto; padding: 5px 8px; font-size: 10px; }
+    .cash-drawer-row-actions .x { color: var(--red); font-size: 18px; padding: 4px 7px; }
+    .cash-drawer-page-head .mini-btn { background: var(--blue-light); color: var(--blue); border-color: #bfdbfe; }
+    #nav-home { order: 1; }
+    #nav-history { order: 2; }
+    #nav-laci { order: 3; }
+    #nav-laporan { order: 4; }
+    #nav-firebase { order: 5; }
+    @media (max-width: 390px) {
+      .cash-drawer-list-item { align-items: flex-start; flex-direction: column; }
+      .cash-drawer-row-actions { width: 100%; justify-content: flex-end; }
+    }
 
     /* === HUTANG CARD === */
     .debt-card {
