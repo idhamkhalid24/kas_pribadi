@@ -598,7 +598,7 @@
     .cash-drawer-page-head .mini-btn { background: var(--blue-light); color: var(--blue); border-color: #bfdbfe; }
     #nav-home { order: 1; }
     #nav-history { order: 2; }
-    #nav-laci { order: 3; }
+    #nav-laci { order: 3; font-size: 9.5px; }
     #nav-laporan { order: 4; }
     #nav-firebase { order: 5; }
     @media (max-width: 390px) {
@@ -1268,6 +1268,7 @@ textarea::placeholder { color: #595959 !important; opacity: 1 !important; }
 @media (max-width: 360px) {
   .hero .mini { grid-template-columns: 1fr !important; }
   .nav button { font-size: 10px !important; padding-left: 2px !important; padding-right: 2px !important; }
+  #nav-laci { font-size: 9px !important; }
 }
 
 /* Riwayat transaksi dibuat sama seperti Detail Transaksi laporan,
@@ -1343,7 +1344,7 @@ textarea::placeholder { color: #595959 !important; opacity: 1 !important; }
   }
 }
 
-/* === FIX TAMPILAN CASH FISIK: tombol +Ops / QRIS / Laci dibuat ringkas ===
+/* === FIX TAMPILAN CASH FISIK: tombol +Ops / QRIS / Cash dibuat ringkas ===
    Fokus UI saja. Tidak menyentuh function / onclick / logika data. */
 .cash-fisik-header {
   display: grid !important;
