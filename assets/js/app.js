@@ -1,6 +1,6 @@
 const SUPABASE_URL='https://myxrvipyodadnldtomzs.supabase.co';
 const SUPABASE_ANON_KEY='sb_publishable_aG-kyasJNCEk2U9fN5T4qg_GfY0FpPH';
-const OWNER_ID='rocky-hijab'; const APP_PIN='170845';
+const OWNER_ID='rocky-hijab'; const APP_PIN='123';
 
 // === SERVER PUSAT SUPABASE SOURCE ===
 // Kas Pribadi tetap menyimpan data finance di Supabase pribadi di atas,
