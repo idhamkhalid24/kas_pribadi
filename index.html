@@ -8,7 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <link rel="stylesheet" href="assets/css/style.css?v=cek-cash-fisik-hari-ini-20260620">
+  <link rel="stylesheet" href="assets/css/style.css?v=modern-banking-fix11-20260622">
 </head>
 <body>
   <!-- ====== MODALS ====== -->
@@ -412,22 +412,24 @@
         <div class="cash-fisik-header">
           <div>
             <div class="cash-fisik-title">Cash Fisik Hari Ini</div>
-            <div id="cashFisikTotal" class="cash-fisik-amount num" onclick="openCashOutModal()">Rp 0</div>
-            <div id="todayFirebaseIncomeInfo" class="small" style="margin-top:3px">Server Pusat − Ops − QRIS − Tabungan</div>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 4px;">
+              <div id="cashFisikTotal" class="cash-fisik-amount num" style="margin:0;" onclick="openCashOutModal()">Rp 0</div>
+              <div class="cash-fisik-btns" style="display: flex; gap: 6px;">
+                <button onclick="openOpsModal()" class="cash-fisik-btn-small" style="background:var(--orange-light);color:var(--orange);border-color:#ffd7a0">+ Ops</button>
+                <button onclick="openCashOutModal()" class="cash-fisik-btn-small" style="background:var(--blue-light);color:var(--blue);border-color:#bfdbfe">+ QRIS</button>
+                <button onclick="openCashDrawerAuditModal()" class="cash-fisik-btn-small" style="background:#eef2ff;color:#4338ca;border-color:#c7d2fe">Cek Cash</button>
+              </div>
+            </div>
+            <div id="todayFirebaseIncomeInfo" class="small" style="margin-top:6px">Server Pusat − Ops − QRIS − Tabungan</div>
           </div>
           <div class="cash-fisik-actions">
             <span class="cash-fisik-badge">HARI INI</span>
             <button class="section-toggle" type="button" onclick="toggleHomeSection('cashFisikCard')">Buka</button>
-            <div class="cash-fisik-btns">
-              <button onclick="openOpsModal()" class="cash-fisik-btn-small" style="background:var(--orange-light);color:var(--orange);border-color:#ffd7a0">+ Ops</button>
-              <button onclick="openCashOutModal()" class="cash-fisik-btn-small" style="background:var(--blue-light);color:var(--blue);border-color:#bfdbfe">+ QRIS</button>
-              <button onclick="openCashDrawerAuditModal()" class="cash-fisik-btn-small" style="background:#eef2ff;color:#4338ca;border-color:#c7d2fe">Cek Cash</button>
-            </div>
           </div>
         </div>
         <div class="home-section-body">
-        <div class="cash-drawer-home">
-          <div id="cashDrawerStatusLine" class="cash-drawer-status empty">Belum dicek hari ini</div>
+          <div class="cash-drawer-home">
+            <div id="cashDrawerStatusLine" class="cash-drawer-status empty">Belum dicek hari ini</div>
           <div id="cashDrawerLatestNote" class="cash-drawer-note">Input cash fisik hari ini untuk tahu minus, pas, atau lebih.</div>
         </div>
         <div class="cash-fisik-breakdown">
