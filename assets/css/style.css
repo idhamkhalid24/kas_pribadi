@@ -710,46 +710,43 @@
     .gold-live-breakdown.gold-home-panel.active { display: grid !important; }
 
 /* =========================================================
-   NEUMORPHISM UI OVERRIDE
+   MODERN BANKING UI OVERRIDE
    Fokus: UI saja. Logika JS dan struktur HTML tidak diubah.
    ========================================================= */
 :root {
-  --bg: #efece5;
-  --surface: #efece5;
-  --surface2: #e8e5dc;
-  --ink: #3b433d;
-  --ink2: #4a5247;
-  --muted: #8b958c;
-  --line: transparent;
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --surface2: #f8fafc;
+  --ink: #1e293b;
+  --ink2: #475569;
+  --muted: #64748b;
+  --line: #e2e8f0;
   
-  --green: #0d4a3e; /* Dark teal for buttons */
-  --green-light: #d8e5e1;
-  --green-dark: #072a23;
+  --green: #0f52ba; /* Override all default greens to Royal Blue */
+  --green-light: #e0e7ff;
+  --green-dark: #093b8c;
   
-  --gold: #a07820;
-  --gold-light: #eedfb8;
+  --gold: #f59e0b;
+  --gold-light: #fef3c7;
   
-  --red: #a13023;
-  --red-light: #eec5c1;
+  --red: #ef4444;
+  --red-light: #fee2e2;
   
-  --blue: #1d4ed8;
-  --blue-light: #cdd8f6;
+  --blue: #0f52ba;
+  --blue-light: #e0e7ff;
   
-  --orange: #b05c00;
-  --orange-light: #eedcc9;
+  --orange: #f97316;
+  --orange-light: #ffedd5;
 
-  --shadow-light: #ffffff;
-  --shadow-dark: #d5d0c4;
-  
-  --shadow-sm: 3px 3px 6px var(--shadow-dark), -3px -3px 6px var(--shadow-light);
-  --shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
-  --shadow-lg: 10px 10px 20px var(--shadow-dark), -10px -10px 20px var(--shadow-light);
-  --shadow-pressed: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -1px rgba(0,0,0,0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
+  --shadow-pressed: none;
 
-  --r-sm: 8px;
-  --r: 12px;
-  --r-lg: 16px;
-  --r-xl: 24px;
+  --r-sm: 6px;
+  --r: 10px;
+  --r-lg: 14px;
+  --r-xl: 16px;
 }
 
 html, body {
@@ -759,194 +756,216 @@ html, body {
 
 body::before { display: none !important; }
 
-.app { padding-top: 14px !important; }
+.app { padding: 14px 14px 80px !important; }
 
 /* Top bar */
 .top {
   background: var(--surface) !important;
-  border-bottom: none !important;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.03) !important;
-  margin: -14px -12px 14px !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 24px !important; /* Melengkung di semua sudut */
+  box-shadow: var(--shadow-sm) !important;
+  margin: 0 0 14px 0 !important; /* Margin normal, tidak menempel ke tepi */
+  padding: 20px 16px 16px 16px !important;
 }
-.brand h1 { color: var(--ink) !important; text-shadow: none !important; letter-spacing: -.5px !important; }
+.brand h1 { color: var(--blue) !important; text-shadow: none !important; letter-spacing: -.5px !important; }
 .brand small { color: var(--muted) !important; }
 .top-actions .refresh-btn, .top-actions .pill {
-  background: var(--surface) !important;
-  border: none !important;
-  box-shadow: var(--shadow-sm) !important;
-  color: var(--ink) !important;
+  background: var(--surface2) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: none !important;
+  color: var(--blue) !important;
 }
-.top-actions .refresh-btn:active { box-shadow: var(--shadow-pressed) !important; }
 
-/* Core Layout Shapes */
-.card, .stat, .hero, .gold-live-card, .cash-fisik-card, .debt-card, .zakat-card, .summary-net-card, .category-accordion, .profit-summary-card, .ops-status-card {
-  background: var(--surface) !important;
+/* Hero Section (Standalone Card) */
+.hero { 
+  background: var(--blue) !important; 
+  color: white !important; 
   border: none !important;
   border-radius: var(--r-xl) !important;
+  margin-bottom: 14px !important;
   box-shadow: var(--shadow) !important;
-  margin-bottom: 16px !important;
-  padding: 16px !important;
+  padding: 24px 16px !important;
 }
+.hero .label { color: rgba(255,255,255,0.8) !important; }
+.hero .value { color: white !important; font-size: 28px !important; }
+.hero .mini span { background: rgba(255,255,255,0.15) !important; box-shadow: none !important; color: white !important; border: none !important; }
+
+/* Core Layout Shapes */
+.card, .stat, .gold-live-card, .cash-fisik-card, .debt-card, .zakat-card, .summary-net-card, .category-accordion, .profit-summary-card, .ops-status-card {
+  background: var(--surface) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--r-lg) !important;
+  box-shadow: var(--shadow-sm) !important;
+  margin-bottom: 12px !important;
+  padding: 14px !important;
+}
+
+/* Gold card override to look like "Rumah Impian" */
+.gold-live-card {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
+  border: 1px solid #fcd34d !important;
+}
+.gold-live-card .gold-live-title { color: #b45309 !important; }
+.gold-live-card .gold-live-price { color: #92400e !important; }
+.gold-live-card .gold-live-badge { background: white !important; color: #d97706 !important; border: none !important; }
+.gold-live-card .gold-live-box { background: rgba(255,255,255,0.7) !important; border: none !important; }
+.gold-preview-card { background: var(--surface) !important; border: 1px solid var(--line) !important; }
 
 /* Modals */
 .box {
-  background: var(--bg) !important;
+  background: var(--surface) !important;
   box-shadow: 0 -10px 30px rgba(0,0,0,0.1) !important;
-  border-radius: 30px 30px 0 0 !important;
+  border-radius: 20px 20px 0 0 !important;
 }
-.modal { background: rgba(14,20,17,0.5) !important; }
+.modal { background: rgba(15,23,42,0.6) !important; }
 
 /* Inputs and Forms */
 input, select, textarea {
   background: var(--surface) !important;
-  border: none !important;
-  border-radius: var(--r) !important;
-  box-shadow: var(--shadow-pressed) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--r-sm) !important;
+  box-shadow: none !important;
   color: var(--ink) !important;
-  padding: 14px 16px !important;
-  min-height: 48px !important;
+  padding: 12px 14px !important;
+  min-height: 44px !important;
 }
 input:focus, select:focus, textarea:focus {
   outline: none !important;
-  box-shadow: inset 6px 6px 10px var(--shadow-dark), inset -6px -6px 10px var(--shadow-light) !important;
+  border-color: var(--blue) !important;
+  box-shadow: 0 0 0 3px var(--blue-light) !important;
 }
 
 /* Buttons */
 .btn {
-  background: var(--green) !important;
+  background: var(--blue) !important;
   color: white !important;
   border: none !important;
-  border-radius: var(--r-lg) !important;
-  box-shadow: 4px 4px 8px rgba(13,74,62,0.3) !important;
-  min-height: 50px !important;
-  font-weight: 800 !important;
-}
-.btn:active {
-  box-shadow: inset 3px 3px 6px rgba(0,0,0,0.2) !important;
-  transform: none !important;
+  border-radius: 999px !important; /* Pill shape like screenshot */
+  box-shadow: none !important;
+  min-height: 48px !important;
+  font-weight: 700 !important;
+  letter-spacing: .2px !important;
 }
 .btn.secondary {
-  background: var(--surface) !important;
-  color: var(--ink) !important;
-  box-shadow: var(--shadow-sm) !important;
-  border: none !important;
-}
-.btn.secondary:active {
-  box-shadow: var(--shadow-pressed) !important;
+  background: transparent !important;
+  color: var(--blue) !important;
+  box-shadow: none !important;
+  border: 1.5px solid var(--blue) !important;
 }
 
 /* Toggles & Tabs */
-.tabs { padding: 6px !important; gap: 12px !important; }
+.tabs { padding: 4px !important; gap: 8px !important; }
 .tab {
   background: var(--surface) !important;
-  border: none !important;
-  box-shadow: var(--shadow-sm) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: none !important;
   border-radius: 999px !important;
   color: var(--muted) !important;
-  padding: 10px 18px !important;
+  padding: 8px 16px !important;
 }
 .tab.active {
-  background: var(--surface) !important;
-  box-shadow: var(--shadow-pressed) !important;
-  color: var(--green) !important;
+  background: var(--blue) !important;
+  color: white !important;
+  border-color: var(--blue) !important;
 }
 .cashout-type-btn {
   background: var(--surface) !important;
-  border: none !important;
-  box-shadow: var(--shadow-sm) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: none !important;
   color: var(--muted) !important;
-  border-radius: var(--r) !important;
+  border-radius: var(--r-sm) !important;
 }
 .cashout-type-btn.active {
-  box-shadow: var(--shadow-pressed) !important;
-  color: var(--green) !important;
+  background: var(--blue-light) !important;
+  border-color: var(--blue) !important;
+  color: var(--blue) !important;
 }
 
 /* Gold Home Tabs */
 .gold-home-tabs {
   background: var(--surface) !important;
-  border: none !important;
-  box-shadow: var(--shadow-pressed) !important;
-  padding: 6px !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: none !important;
+  padding: 4px !important;
   border-radius: 999px !important;
 }
 .gold-home-tabs button { color: var(--muted) !important; }
 .gold-home-tabs button.active {
-  background: var(--surface) !important;
-  box-shadow: var(--shadow-sm) !important;
-  color: var(--green) !important;
+  background: var(--blue) !important;
+  color: white !important;
 }
 
 /* Items in Lists */
 .item, .cash-drawer-list-item, .debt-list-item, .category-detail-row, .category-manage-row, .pending-upload-row, .cashout-list-item, .ops-list-item {
   background: var(--surface) !important;
-  border: none !important;
-  border-radius: var(--r-lg) !important;
-  box-shadow: var(--shadow-sm) !important;
-  margin-bottom: 12px !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--r-sm) !important;
+  box-shadow: none !important;
+  margin-bottom: 8px !important;
   padding: 12px 14px !important;
 }
 
 /* Nav Bar */
 .nav {
   background: var(--surface) !important;
-  border-top: none !important;
-  box-shadow: 0 -8px 20px rgba(0,0,0,0.04) !important;
-  border-radius: 24px 24px 0 0 !important;
+  border-top: 1px solid var(--line) !important;
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.08) !important; /* Memberi efek bayangan melayang ke atas */
+  border-radius: 0 !important;
 }
-.nav button { color: var(--muted) !important; }
+.nav button { color: var(--muted) !important; padding: 10px 4px !important; }
 .nav button.active {
-  background: transparent !important;
-  box-shadow: var(--shadow-pressed) !important;
-  color: var(--green) !important;
-  border-radius: var(--r-sm) !important;
+  background: var(--blue-light) !important;
+  color: var(--blue) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
 }
 
 /* FAB */
 .fab {
-  background: var(--green) !important;
-  box-shadow: 4px 4px 10px rgba(13,74,62,0.3) !important;
-  border-radius: 20px !important;
-  width: 60px !important; height: 60px !important;
+  background: var(--blue) !important;
+  box-shadow: 0 4px 12px rgba(15,82,186,0.3) !important;
+  border-radius: 16px !important;
 }
-.fab:active { box-shadow: inset 3px 3px 6px rgba(0,0,0,0.2) !important; }
-
-/* Special Hero Overrides (Reset colors) */
-.hero { color: var(--ink) !important; }
-.hero .label { color: var(--muted) !important; }
-.hero .value { color: var(--green) !important; }
-.hero .mini span { background: var(--surface) !important; box-shadow: var(--shadow-pressed) !important; color: var(--ink) !important; border-radius: var(--r-sm) !important; }
 
 /* Profit Summary */
-.profit-summary-card { color: var(--ink) !important; }
-.profit-summary-card .ps-box { background: var(--surface) !important; box-shadow: var(--shadow-pressed) !important; }
+.profit-summary-card { background: var(--surface) !important; color: var(--ink) !important; border: 1px solid var(--line) !important; box-shadow: var(--shadow-sm) !important; }
+.profit-summary-card .ps-box { background: var(--surface2) !important; box-shadow: none !important; border: 1px solid var(--line) !important; }
 .profit-summary-card .ps-value, .profit-summary-card .ps-title { color: var(--ink) !important; }
 .profit-summary-card .ps-desc { color: var(--muted) !important; }
-.profit-summary-card .ps-tab { background: var(--surface) !important; color: var(--muted) !important; box-shadow: var(--shadow-sm) !important; }
-.profit-summary-card .ps-tab.active { box-shadow: var(--shadow-pressed) !important; color: var(--green) !important; }
+.profit-summary-card .ps-tab { background: var(--surface2) !important; color: var(--muted) !important; box-shadow: none !important; border: 1px solid var(--line) !important; }
+.profit-summary-card .ps-tab.active { background: var(--blue) !important; color: white !important; border-color: var(--blue) !important; }
+/* Override inline green color */
+.profit-summary-card .ps-box b { color: var(--ink) !important; }
 
 /* Advanced Details */
-.advanced-fields { border: none !important; box-shadow: var(--shadow-pressed) !important; background: var(--surface) !important; padding: 12px !important; }
+.advanced-fields { border: 1px dashed var(--line) !important; box-shadow: none !important; background: var(--surface2) !important; padding: 12px !important; border-radius: var(--r-sm) !important; }
 
 /* Badges */
-.chip, .cashout-badge, .cash-fisik-badge, .lock-badge, .cash-drawer-status, .audit-ok, .audit-warn, .audit-bad {
-  background: var(--surface) !important;
-  border: none !important;
-  box-shadow: var(--shadow-sm) !important;
+.chip, .cashout-badge, .cash-fisik-badge, .lock-badge {
+  background: var(--surface2) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: none !important;
+  white-space: nowrap !important;
 }
+.cash-drawer-status, .audit-ok, .audit-warn, .audit-bad {
+  background: var(--surface2) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: none !important;
+  /* Tidak ada nowrap agar text panjang bisa turun ke bawah */
+}
+.cashout-badge.qris { background: var(--blue-light) !important; border-color: var(--blue-light) !important; color: var(--blue) !important; }
 
 /* Section Toggle / Pills */
 .section-toggle, .pill {
   background: var(--surface) !important;
-  border: none !important;
+  border: 1px solid var(--line) !important;
   box-shadow: var(--shadow-sm) !important;
   color: var(--ink2) !important;
 }
-.section-toggle:active { box-shadow: var(--shadow-pressed) !important; }
 
 /* Typography fix */
 .section-title { margin: 10px 0 14px !important; }
 
-/* Removing old pseudo borders from neo-brutalism if any */
-* { border: none !important; outline: none !important; }
-.gold-main-input { border-bottom: 2px solid var(--shadow-dark) !important; }
+/* Removing old pseudo borders */
+* { outline: none !important; }
+.gold-main-input { border-bottom: 2px solid var(--line) !important; }
