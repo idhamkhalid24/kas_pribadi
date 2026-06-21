@@ -3871,3 +3871,66 @@ async function initApp(){try{if(!initSupabase())return;
       }).subscribe();
   }catch(e){console.warn('Realtime tidak aktif:',e);}
   showToast('Supabase tersambung')}catch(e){console.error(e);showToast('Gagal konek: '+e.message,6000)}}initApp();
+
+// ============================================================
+// GLOBAL MODAL KEYBOARD FIX (addition, tidak mengubah logic lama)
+// Tujuan: semua popup/modal (bukan cuma transactionModal) ikut
+// menyesuaikan posisi & tinggi saat keyboard Android muncul,
+// supaya input yang sedang difokus tidak ketutup keyboard.
+// ============================================================
+let globalKeyboardFixReady=false,globalKeyboardTimer=null;
+function getOpenModalEl(){
+  const modals=document.querySelectorAll('.modal');
+  for(const m of modals){ if(!m.classList.contains('hidden')) return m; }
+  return null;
+}
+function adjustAnyModalForKeyboard(){
+  const modal=getOpenModalEl();
+  if(!modal) return;
+  // Modal transactionModal sudah punya handler khusus sendiri.
+  if(modal.id==='transactionModal') return;
+  const vv=window.visualViewport;
+  const layoutH=window.innerHeight||document.documentElement.clientHeight||screen.height||0;
+  const visibleH=Math.max(280,Math.floor(vv&&vv.height?vv.height:layoutH));
+  const offsetTop=Math.max(0,Math.floor(vv&&typeof vv.offsetTop==='number'?vv.offsetTop:0));
+  const hiddenByKeyboard=Math.max(0,Math.floor(layoutH-visibleH-offsetTop));
+  const activeInModal=modal.contains(document.activeElement);
+  const mustLift=activeInModal&&hiddenByKeyboard>70;
+  if(mustLift){
+    modal.style.height=visibleH+'px';
+    modal.style.top=offsetTop+'px';
+    modal.style.bottom='auto';
+    modal.style.alignItems='flex-start';
+    const box=modal.querySelector('.box');
+    if(box){ box.style.maxHeight=(visibleH-16)+'px'; box.style.marginTop='8px'; }
+    const active=document.activeElement;
+    if(active&&modal.contains(active)){
+      setTimeout(()=>{try{active.scrollIntoView({block:'center',inline:'nearest'});}catch(e){}},60);
+    }
+  }else{
+    modal.style.removeProperty('height');
+    modal.style.removeProperty('top');
+    modal.style.removeProperty('bottom');
+    modal.style.removeProperty('align-items');
+    const box=modal.querySelector('.box');
+    if(box){ box.style.removeProperty('max-height'); box.style.removeProperty('margin-top'); }
+  }
+}
+function bindGlobalKeyboardFix(){
+  if(globalKeyboardFixReady) return;
+  globalKeyboardFixReady=true;
+  const schedule=()=>{
+    if(globalKeyboardTimer) clearTimeout(globalKeyboardTimer);
+    if(window.requestAnimationFrame) requestAnimationFrame(adjustAnyModalForKeyboard);
+    globalKeyboardTimer=setTimeout(adjustAnyModalForKeyboard,60);
+  };
+  try{window.addEventListener('resize',schedule,{passive:true});}catch(e){window.addEventListener('resize',schedule);}
+  try{window.addEventListener('orientationchange',schedule,{passive:true});}catch(e){window.addEventListener('orientationchange',schedule);}
+  if(window.visualViewport){
+    try{window.visualViewport.addEventListener('resize',schedule,{passive:true});}catch(e){window.visualViewport.addEventListener('resize',schedule);}
+    try{window.visualViewport.addEventListener('scroll',schedule,{passive:true});}catch(e){window.visualViewport.addEventListener('scroll',schedule);}
+  }
+  document.addEventListener('focusin',e=>{ if(e.target.closest&&e.target.closest('.modal')) schedule(); },true);
+  document.addEventListener('focusout',e=>{ if(e.target.closest&&e.target.closest('.modal')) setTimeout(adjustAnyModalForKeyboard,180); },true);
+}
+bindGlobalKeyboardFix();
