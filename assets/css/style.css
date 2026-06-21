@@ -710,725 +710,243 @@
     .gold-live-breakdown.gold-home-panel.active { display: grid !important; }
 
 /* =========================================================
-   NEO BRUTALISM UI OVERRIDE
-   Referensi visual: neo-brutalism-ui-library.vercel.app
+   NEUMORPHISM UI OVERRIDE
    Fokus: UI saja. Logika JS dan struktur HTML tidak diubah.
    ========================================================= */
 :root {
-  --bg: #fff3c4;
-  --surface: #fffef7;
-  --surface2: #fff8db;
-  --ink: #111111;
-  --ink2: #242424;
-  --muted: #575757;
-  --line: #111111;
-  --green: #22c55e;
-  --green-light: #a7f3d0;
-  --green-dark: #111111;
-  --gold: #facc15;
-  --gold-light: #fde68a;
-  --red: #ff4d4d;
-  --red-light: #ffd1d1;
-  --blue: #3b82f6;
-  --blue-light: #bfdbfe;
-  --purple: #a855f7;
-  --purple-light: #ead5ff;
-  --orange: #fb923c;
-  --orange-light: #fed7aa;
-  --shadow-sm: 4px 4px 0 #111111;
-  --shadow: 5px 5px 0 #111111;
-  --shadow-lg: 7px 7px 0 #111111;
+  --bg: #efece5;
+  --surface: #efece5;
+  --surface2: #e8e5dc;
+  --ink: #3b433d;
+  --ink2: #4a5247;
+  --muted: #8b958c;
+  --line: transparent;
+  
+  --green: #0d4a3e; /* Dark teal for buttons */
+  --green-light: #d8e5e1;
+  --green-dark: #072a23;
+  
+  --gold: #a07820;
+  --gold-light: #eedfb8;
+  
+  --red: #a13023;
+  --red-light: #eec5c1;
+  
+  --blue: #1d4ed8;
+  --blue-light: #cdd8f6;
+  
+  --orange: #b05c00;
+  --orange-light: #eedcc9;
+
+  --shadow-light: #ffffff;
+  --shadow-dark: #d5d0c4;
+  
+  --shadow-sm: 3px 3px 6px var(--shadow-dark), -3px -3px 6px var(--shadow-light);
+  --shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
+  --shadow-lg: 10px 10px 20px var(--shadow-dark), -10px -10px 20px var(--shadow-light);
+  --shadow-pressed: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+
   --r-sm: 8px;
-  --r: 10px;
-  --r-lg: 12px;
-  --r-xl: 14px;
+  --r: 12px;
+  --r-lg: 16px;
+  --r-xl: 24px;
 }
 
-html,
-body {
+html, body {
   background: var(--bg) !important;
   color: var(--ink) !important;
 }
 
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: -1;
-  background-image:
-    linear-gradient(rgba(17,17,17,.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(17,17,17,.06) 1px, transparent 1px);
-  background-size: 22px 22px;
-}
+body::before { display: none !important; }
 
-.app {
-  padding-top: 14px !important;
-}
+.app { padding-top: 14px !important; }
 
 /* Top bar */
 .top {
-  background: #ffdd3d !important;
-  border-bottom: 3px solid #111 !important;
-  box-shadow: 0 4px 0 #111 !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+  background: var(--surface) !important;
+  border-bottom: none !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.03) !important;
+  margin: -14px -12px 14px !important;
 }
-
-.brand h1 {
-  color: #111 !important;
-  text-transform: uppercase;
-  letter-spacing: -.8px !important;
-  text-shadow: 1px 1px 0 #fff;
-}
-.brand small { color: #111 !important; font-weight: 900 !important; }
-.top-actions { gap: 8px !important; }
-
-/* Core brutal block style */
-.card,
-.stat,
-.hero,
-.gold-live-card,
-.cash-fisik-card,
-.debt-card,
-.zakat-card,
-.summary-net-card,
-.profit-summary-card,
-.report-kpi,
-.month-valid-card,
-.category-form-card,
-.firebase-upload-card,
-.ops-status-card,
-.gold-preview-card,
-.gold-buy-shell,
-.gold-buy-input-card,
-.gold-total-pay,
-.gold-fee-row,
-.gold-live-box,
-.summary-net-box,
-.ps-box,
-.audit-box,
-.pending-upload-row,
-.item {
-  border: 3px solid #111 !important;
-  border-radius: var(--r-lg) !important;
+.brand h1 { color: var(--ink) !important; text-shadow: none !important; letter-spacing: -.5px !important; }
+.brand small { color: var(--muted) !important; }
+.top-actions .refresh-btn, .top-actions .pill {
+  background: var(--surface) !important;
+  border: none !important;
   box-shadow: var(--shadow-sm) !important;
-  color: #111 !important;
+  color: var(--ink) !important;
 }
+.top-actions .refresh-btn:active { box-shadow: var(--shadow-pressed) !important; }
 
-.card,
-.stat,
-.summary-net-card,
-.report-kpi,
-.category-form-card,
-.pending-upload-row,
-.item {
-  background: #fffef7 !important;
-}
-
-.card,
-.gold-live-card,
-.cash-fisik-card,
-.debt-card,
-.zakat-card,
-.summary-net-card,
-.profit-summary-card,
-.month-valid-card,
-.firebase-upload-card,
-.ops-status-card {
-  margin-bottom: 12px !important;
-}
-
-.card:active,
-.stat:active,
-.gold-live-card:active,
-.cash-fisik-card:active,
-.debt-card:active,
-.zakat-card:active,
-.summary-net-card:active,
-.profit-summary-card:active,
-.report-kpi:active,
-.item:active,
-.btn:active,
-.tab:active,
-.mini-btn:active,
-.refresh-btn:active,
-.section-toggle:active,
-.gold-live-mini-btn:active,
-.cash-fisik-btn-small:active,
-.debt-mini-btn:active,
-.fab:active {
-  transform: translate(2px, 2px) !important;
-  box-shadow: 2px 2px 0 #111 !important;
-}
-
-/* Hero */
-.hero {
-  background: #48f08a !important;
-  color: #111 !important;
+/* Core Layout Shapes */
+.card, .stat, .hero, .gold-live-card, .cash-fisik-card, .debt-card, .zakat-card, .summary-net-card, .category-accordion, .profit-summary-card, .ops-status-card {
+  background: var(--surface) !important;
+  border: none !important;
+  border-radius: var(--r-xl) !important;
+  box-shadow: var(--shadow) !important;
+  margin-bottom: 16px !important;
   padding: 16px !important;
-  overflow: visible !important;
 }
-.hero .label,
-.hero .mini { opacity: 1 !important; color: #111 !important; }
-.hero .value {
-  color: #111 !important;
-  font-size: 25px !important;
-  text-shadow: none !important;
+
+/* Modals */
+.box {
+  background: var(--bg) !important;
+  box-shadow: 0 -10px 30px rgba(0,0,0,0.1) !important;
+  border-radius: 30px 30px 0 0 !important;
 }
-.hero .mini span {
-  background: #fffef7 !important;
-  border: 2px solid #111 !important;
+.modal { background: rgba(14,20,17,0.5) !important; }
+
+/* Inputs and Forms */
+input, select, textarea {
+  background: var(--surface) !important;
+  border: none !important;
   border-radius: var(--r) !important;
-  box-shadow: 2px 2px 0 #111 !important;
+  box-shadow: var(--shadow-pressed) !important;
+  color: var(--ink) !important;
+  padding: 14px 16px !important;
+  min-height: 48px !important;
 }
-
-/* Color-tone cards */
-.tone-gold,
-.gold-live-card,
-.gold-preview-card,
-.gold-fee-row,
-.month-valid-card.warn,
-.audit-warn {
-  background: #ffe66d !important;
-  border-color: #111 !important;
-}
-.tone-cash,
-.cash-fisik-card,
-.firebase-upload-card,
-.month-valid-card.idle {
-  background: #9ed8ff !important;
-  border-color: #111 !important;
-}
-.tone-zakat,
-.zakat-card {
-  background: #d7b5ff !important;
-  border-color: #111 !important;
-}
-.tone-emergency,
-#emergencyFundTotalCard {
-  background: #bfdbfe !important;
-  border-color: #111 !important;
-}
-.tone-debt,
-.debt-card {
-  background: #ffd166 !important;
-  border-color: #111 !important;
-}
-.danger-card,
-.ops-status-card.danger,
-.audit-bad,
-.month-valid-card.bad {
-  background: #ffb3b3 !important;
-  border-color: #111 !important;
-}
-.safe-card,
-.ops-status-card.safe,
-.audit-ok,
-.month-valid-card.ok {
-  background: #b7f7c8 !important;
-  border-color: #111 !important;
-}
-.profit-summary-card {
-  background: #111 !important;
-  color: #fffef7 !important;
-}
-.profit-summary-card * { color: inherit !important; }
-.ps-box {
-  background: #fffef7 !important;
-  color: #111 !important;
-}
-
-/* Section divider */
-.section-divider {
-  color: #111 !important;
-  letter-spacing: .8px !important;
-}
-.section-divider span {
-  background: #fffef7;
-  border: 2px solid #111;
-  border-radius: 999px;
-  padding: 5px 10px;
-  box-shadow: 3px 3px 0 #111;
-}
-.section-divider::after {
-  height: 3px !important;
-  background: #111 !important;
-}
-.section-title,
-.cash-fisik-title,
-.debt-title,
-.gold-live-title,
-.firebase-label,
-.summary-net-box span,
-.report-kpi span,
-.stat span,
-.gold-total-pay span,
-.gold-live-box span {
-  color: #111 !important;
-  font-weight: 950 !important;
-}
-.small,
-.month-valid-desc,
-.desc small,
-.summary-net-head small,
-.breakdown-label {
-  color: #333 !important;
-  font-weight: 800 !important;
+input:focus, select:focus, textarea:focus {
+  outline: none !important;
+  box-shadow: inset 6px 6px 10px var(--shadow-dark), inset -6px -6px 10px var(--shadow-light) !important;
 }
 
 /* Buttons */
-.btn,
-.refresh-btn,
-.tab,
-.mini-btn,
-.load-more-btn,
-.section-toggle,
-.gold-live-mini-btn,
-.cash-fisik-btn-small,
-.debt-mini-btn,
-.gold-preset-btn,
-.cashout-type-btn,
-.ps-tab,
-.active-filter-chip,
-.active-filter-chip button,
-.x {
-  border: 3px solid #111 !important;
-  border-radius: var(--r) !important;
-  box-shadow: 3px 3px 0 #111 !important;
-  font-weight: 950 !important;
-  color: #111 !important;
-  transition: transform .08s ease, box-shadow .08s ease, background .12s ease !important;
-}
-
-.btn,
-.refresh-btn,
-.mini-btn,
-.load-more-btn,
-.section-toggle,
-.gold-live-mini-btn.buy,
-.cash-fisik-btn-small,
-.debt-mini-btn,
-.ps-tab.active {
-  background: #48f08a !important;
-}
-.btn.secondary,
-.tab,
-.gold-live-mini-btn,
-.gold-preset-btn,
-.cashout-type-btn,
-.ps-tab,
-.x {
-  background: #fffef7 !important;
-}
-.btn.gold {
-  background: #ffd447 !important;
-  color: #111 !important;
-}
-.btn.red {
-  background: #ff6b6b !important;
-  color: #111 !important;
-}
-.btn.whatsapp {
-  background: #25d366 !important;
-  color: #111 !important;
-}
-.btn[style*="background:var(--blue)"],
-.btn[style*="background: var(--blue)"],
-.btn[style*="background:#a16207"],
-.btn[style*="background:var(--orange)"],
-.btn[style*="background: var(--orange)"] {
-  background: #48f08a !important;
-  color: #111 !important;
-}
-.tab.active,
-.gold-home-tabs button.active,
-.gold-mode-toggle button.active,
-.cashout-type-btn.active,
-.gold-preset-btn.active,
-.nav button.active,
-.ps-tab.active {
-  background: #ffdd3d !important;
-  color: #111 !important;
-  border-color: #111 !important;
-  box-shadow: 3px 3px 0 #111 !important;
-}
-
-/* Inputs */
-input,
-select,
-textarea {
-  background: #fffef7 !important;
-  border: 3px solid #111 !important;
-  border-radius: var(--r) !important;
-  color: #111 !important;
-  box-shadow: 3px 3px 0 #111 !important;
-  font-weight: 850 !important;
-}
-input:focus,
-select:focus,
-textarea:focus {
-  background: #ffffff !important;
-  outline: 3px solid #ffdd3d !important;
-  outline-offset: 0 !important;
-}
-input::placeholder,
-textarea::placeholder { color: #595959 !important; opacity: 1 !important; }
-.advanced-fields,
-.gold-manual-details summary {
-  border: 3px dashed #111 !important;
-  background: #fff6b8 !important;
+.btn {
+  background: var(--green) !important;
+  color: white !important;
+  border: none !important;
   border-radius: var(--r-lg) !important;
+  box-shadow: 4px 4px 8px rgba(13,74,62,0.3) !important;
+  min-height: 50px !important;
+  font-weight: 800 !important;
 }
-.advanced-fields summary { color: #111 !important; font-weight: 950 !important; }
-.advanced-fields[open] summary { border-bottom: 3px solid #111 !important; }
-.preview { color: #111 !important; font-weight: 950 !important; }
+.btn:active {
+  box-shadow: inset 3px 3px 6px rgba(0,0,0,0.2) !important;
+  transform: none !important;
+}
+.btn.secondary {
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  box-shadow: var(--shadow-sm) !important;
+  border: none !important;
+}
+.btn.secondary:active {
+  box-shadow: var(--shadow-pressed) !important;
+}
 
-/* Badges/chips */
-.pill,
-.lock-badge,
-.firebase-status,
-.gold-live-badge,
-.cash-fisik-badge,
-.chip,
-.active-filter-chip {
-  background: #fffef7 !important;
-  color: #111 !important;
-  border: 3px solid #111 !important;
+/* Toggles & Tabs */
+.tabs { padding: 6px !important; gap: 12px !important; }
+.tab {
+  background: var(--surface) !important;
+  border: none !important;
+  box-shadow: var(--shadow-sm) !important;
   border-radius: 999px !important;
-  box-shadow: 3px 3px 0 #111 !important;
-  font-weight: 950 !important;
+  color: var(--muted) !important;
+  padding: 10px 18px !important;
 }
-.st-uploaded { background: #b7f7c8 !important; }
-.st-pending { background: #ffe66d !important; }
-.st-update { background: #ffb3b3 !important; }
-
-/* Lists */
-.list { gap: 8px !important; }
-.item {
-  padding: 10px 12px !important;
-  align-items: flex-start !important;
+.tab.active {
+  background: var(--surface) !important;
+  box-shadow: var(--shadow-pressed) !important;
+  color: var(--green) !important;
 }
-.icon {
-  border: 2px solid #111 !important;
-  border-radius: var(--r-sm) !important;
-  box-shadow: 2px 2px 0 #111 !important;
-  color: #111 !important;
-}
-.icon.in { background: #b7f7c8 !important; }
-.icon.out { background: #ffb3b3 !important; }
-.desc b,
-.right b { color: #111 !important; font-weight: 950 !important; }
-.x {
-  width: 32px !important;
-  min-width: 32px !important;
-  height: 32px !important;
-  padding: 0 !important;
-  display: inline-grid !important;
-  place-items: center !important;
-  background: #ff6b6b !important;
-  line-height: 1 !important;
-}
-
-/* Gold buy */
-.gold-buy-shell,
-.gold-total-pay {
-  background: #ffef99 !important;
-}
-.gold-buy-input-card,
-.gold-live-box,
-.summary-net-box {
-  background: #fffef7 !important;
-}
-.gold-main-input {
-  border: 3px solid #111 !important;
+.cashout-type-btn {
+  background: var(--surface) !important;
+  border: none !important;
+  box-shadow: var(--shadow-sm) !important;
+  color: var(--muted) !important;
   border-radius: var(--r) !important;
-  padding: 10px 12px !important;
-  box-shadow: 3px 3px 0 #111 !important;
 }
-.gold-mode-toggle,
+.cashout-type-btn.active {
+  box-shadow: var(--shadow-pressed) !important;
+  color: var(--green) !important;
+}
+
+/* Gold Home Tabs */
 .gold-home-tabs {
-  background: #fffef7 !important;
-  border: 3px solid #111 !important;
+  background: var(--surface) !important;
+  border: none !important;
+  box-shadow: var(--shadow-pressed) !important;
+  padding: 6px !important;
+  border-radius: 999px !important;
+}
+.gold-home-tabs button { color: var(--muted) !important; }
+.gold-home-tabs button.active {
+  background: var(--surface) !important;
+  box-shadow: var(--shadow-sm) !important;
+  color: var(--green) !important;
+}
+
+/* Items in Lists */
+.item, .cash-drawer-list-item, .debt-list-item, .category-detail-row, .category-manage-row, .pending-upload-row, .cashout-list-item, .ops-list-item {
+  background: var(--surface) !important;
+  border: none !important;
   border-radius: var(--r-lg) !important;
-  padding: 5px !important;
-  box-shadow: 3px 3px 0 #111 !important;
-}
-.gold-mode-toggle button,
-.gold-home-tabs button {
-  border-radius: var(--r-sm) !important;
-  color: #111 !important;
-  font-weight: 950 !important;
-}
-.gold-live-price,
-.cash-fisik-amount,
-.debt-amount,
-.gold-total-pay b,
-.gold-live-box b,
-.summary-net-box b,
-.report-kpi b,
-.stat b,
-.breakdown-val {
-  color: #111 !important;
-  font-weight: 950 !important;
+  box-shadow: var(--shadow-sm) !important;
+  margin-bottom: 12px !important;
+  padding: 12px 14px !important;
 }
 
-/* Tabs/filter */
-.tabs {
-  gap: 8px !important;
-  padding-bottom: 8px !important;
-}
-.history-filter-panel {
-  background: #fff3c4 !important;
-  border-bottom: 3px solid #111 !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
-.report-filter-row { gap: 8px !important; }
-
-/* Bottom nav & FAB */
+/* Nav Bar */
 .nav {
-  background: #fffef7 !important;
-  border: 3px solid #111 !important;
-  border-bottom: 0 !important;
-  border-radius: 18px 18px 0 0 !important;
-  box-shadow: 0 -5px 0 #111 !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  gap: 7px !important;
+  background: var(--surface) !important;
+  border-top: none !important;
+  box-shadow: 0 -8px 20px rgba(0,0,0,0.04) !important;
+  border-radius: 24px 24px 0 0 !important;
 }
-.nav button {
-  border: 3px solid transparent !important;
-  border-radius: var(--r) !important;
-  color: #111 !important;
-  font-weight: 950 !important;
-}
+.nav button { color: var(--muted) !important; }
 .nav button.active {
-  border-color: #111 !important;
+  background: transparent !important;
+  box-shadow: var(--shadow-pressed) !important;
+  color: var(--green) !important;
+  border-radius: var(--r-sm) !important;
 }
+
+/* FAB */
 .fab {
-  background: #ff4d9d !important;
-  color: #111 !important;
-  border: 3px solid #111 !important;
-  border-radius: 16px !important;
-  box-shadow: 5px 5px 0 #111 !important;
+  background: var(--green) !important;
+  box-shadow: 4px 4px 10px rgba(13,74,62,0.3) !important;
+  border-radius: 20px !important;
+  width: 60px !important; height: 60px !important;
+}
+.fab:active { box-shadow: inset 3px 3px 6px rgba(0,0,0,0.2) !important; }
+
+/* Special Hero Overrides (Reset colors) */
+.hero { color: var(--ink) !important; }
+.hero .label { color: var(--muted) !important; }
+.hero .value { color: var(--green) !important; }
+.hero .mini span { background: var(--surface) !important; box-shadow: var(--shadow-pressed) !important; color: var(--ink) !important; border-radius: var(--r-sm) !important; }
+
+/* Profit Summary */
+.profit-summary-card { color: var(--ink) !important; }
+.profit-summary-card .ps-box { background: var(--surface) !important; box-shadow: var(--shadow-pressed) !important; }
+.profit-summary-card .ps-value, .profit-summary-card .ps-title { color: var(--ink) !important; }
+.profit-summary-card .ps-desc { color: var(--muted) !important; }
+.profit-summary-card .ps-tab { background: var(--surface) !important; color: var(--muted) !important; box-shadow: var(--shadow-sm) !important; }
+.profit-summary-card .ps-tab.active { box-shadow: var(--shadow-pressed) !important; color: var(--green) !important; }
+
+/* Advanced Details */
+.advanced-fields { border: none !important; box-shadow: var(--shadow-pressed) !important; background: var(--surface) !important; padding: 12px !important; }
+
+/* Badges */
+.chip, .cashout-badge, .cash-fisik-badge, .lock-badge, .cash-drawer-status, .audit-ok, .audit-warn, .audit-bad {
+  background: var(--surface) !important;
+  border: none !important;
+  box-shadow: var(--shadow-sm) !important;
 }
 
-/* Modal */
-.modal {
-  background: rgba(17,17,17,.55) !important;
-  align-items: flex-end !important;
+/* Section Toggle / Pills */
+.section-toggle, .pill {
+  background: var(--surface) !important;
+  border: none !important;
+  box-shadow: var(--shadow-sm) !important;
+  color: var(--ink2) !important;
 }
-.box {
-  background: #fffef7 !important;
-  border: 4px solid #111 !important;
-  border-bottom: 0 !important;
-  border-radius: 18px 18px 0 0 !important;
-  box-shadow: 0 -7px 0 #111 !important;
-  color: #111 !important;
-}
-.box h3 {
-  color: #111 !important;
-  font-weight: 950 !important;
-  letter-spacing: -.5px !important;
-}
-.toast {
-  background: #111 !important;
-  color: #fffef7 !important;
-  border: 3px solid #fffef7 !important;
-  border-radius: var(--r-lg) !important;
-  box-shadow: var(--shadow-lg) !important;
-  font-weight: 950 !important;
-}
+.section-toggle:active { box-shadow: var(--shadow-pressed) !important; }
 
-/* Layout polish */
-.grid2 { gap: 10px !important; }
-.row { gap: 10px !important; }
-.compact-actions { gap: 10px !important; }
-.cash-fisik-breakdown,
-.gold-live-breakdown {
-  border-top: 3px solid #111 !important;
-  gap: 8px !important;
-}
-.breakdown-row,
-.debt-list-item {
-  border-bottom-color: #111 !important;
-}
-.empty {
-  color: #111 !important;
-  font-weight: 850 !important;
-}
-.green,
-.red,
-.gold,
-.blue {
-  color: #111 !important;
-}
+/* Typography fix */
+.section-title { margin: 10px 0 14px !important; }
 
-@media (max-width: 360px) {
-  .hero .mini { grid-template-columns: 1fr !important; }
-  .nav button { font-size: 10px !important; padding-left: 2px !important; padding-right: 2px !important; }
-  #nav-laci { font-size: 9px !important; }
-}
-
-/* Riwayat transaksi dibuat sama seperti Detail Transaksi laporan,
-   bedanya punya tombol hapus tepat di bawah nominal. */
-.transaction-detail-card .right.history-action-stack {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: flex-end !important;
-  justify-content: flex-start !important;
-  gap: 6px !important;
-  white-space: normal !important;
-  min-width: 74px !important;
-}
-.history-delete-btn {
-  margin-top: 0 !important;
-  font-size: 15px !important;
-}
-
-/* Fix teks tanggal custom di Ringkasan Laba agar tetap terlihat di atas input terang. */
-.profit-summary-card .ps-range-row input,
-.profit-summary-card .ps-range-row input[type="date"] {
-  color: #111 !important;
-  -webkit-text-fill-color: #111 !important;
-  caret-color: #111 !important;
-}
-.profit-summary-card .ps-range-row input::-webkit-calendar-picker-indicator {
-  filter: none !important;
-  opacity: 1 !important;
-}
-
-
-/* === FIX FAB TRANSAKSI + KEYBOARD ANDROID ===
-   Saat FAB + Transaksi ditekan, modal langsung naik ke atas dan tinggi modal
-   mengikuti area layar yang masih kelihatan saat keyboard Android muncul. */
-#transactionModal.fab-full-mode,
-#transactionModal.keyboard-open {
-  align-items: flex-start !important;
-  justify-content: center !important;
-  padding-top: calc(6px + env(safe-area-inset-top)) !important;
-  padding-bottom: 0 !important;
-  overflow: hidden !important;
-}
-#transactionModal.keyboard-open {
-  top: var(--modal-vvo, 0px) !important;
-  bottom: auto !important;
-  height: var(--modal-vvh, 100dvh) !important;
-}
-#transactionModal.fab-full-mode .box,
-#transactionModal.keyboard-open .box {
-  width: 100% !important;
-  max-width: 420px !important;
-  max-height: calc(var(--modal-vvh, 100dvh) - 10px) !important;
-  overflow-y: auto !important;
-  -webkit-overflow-scrolling: touch !important;
-  overscroll-behavior: contain !important;
-  margin-top: 0 !important;
-  scroll-padding-bottom: 90px !important;
-  padding-bottom: calc(18px + env(safe-area-inset-bottom)) !important;
-}
-#transactionModal.fab-full-mode .amount-wrap {
-  scroll-margin-top: 12px !important;
-  scroll-margin-bottom: 120px !important;
-}
-@supports (height: 100dvh) {
-  #transactionModal.fab-full-mode:not(.keyboard-open) .box {
-    max-height: calc(100dvh - 10px) !important;
-  }
-}
-@media (max-width: 430px) {
-  #transactionModal.fab-full-mode .box,
-  #transactionModal.keyboard-open .box {
-    border-radius: 18px 18px 0 0 !important;
-  }
-}
-
-/* === FIX TAMPILAN CASH FISIK: tombol +Ops / QRIS / Cash dibuat ringkas ===
-   Fokus UI saja. Tidak menyentuh function / onclick / logika data. */
-.cash-fisik-header {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) auto !important;
-  align-items: start !important;
-  gap: 8px !important;
-  margin-bottom: 7px !important;
-}
-.cash-fisik-header > div:first-child {
-  min-width: 0 !important;
-}
-.cash-fisik-amount {
-  line-height: 1.08 !important;
-}
-#todayFirebaseIncomeInfo {
-  line-height: 1.35 !important;
-}
-.cash-fisik-actions {
-  display: grid !important;
-  grid-template-columns: auto auto !important;
-  align-items: center !important;
-  justify-content: end !important;
-  gap: 5px !important;
-  min-width: max-content !important;
-}
-.cash-fisik-badge,
-.cash-fisik-actions .section-toggle {
-  min-height: 24px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  line-height: 1 !important;
-}
-.cash-fisik-badge {
-  padding: 3px 7px !important;
-  font-size: 8.5px !important;
-  border: 2px solid #111 !important;
-  box-shadow: 2px 2px 0 #111 !important;
-}
-.cash-fisik-actions .section-toggle {
-  padding: 3px 8px !important;
-  font-size: 9px !important;
-  border-width: 2px !important;
-  box-shadow: 2px 2px 0 #111 !important;
-}
-.cash-fisik-btns {
-  grid-column: 1 / -1 !important;
-  display: grid !important;
-  grid-template-columns: repeat(3, max-content) !important;
-  justify-content: end !important;
-  gap: 4px !important;
-  width: 100% !important;
-}
-.home-section.is-collapsed .cash-fisik-btns {
-  display: none !important;
-}
-.cash-fisik-btn-small {
-  min-height: 24px !important;
-  padding: 3px 7px !important;
-  font-size: 9px !important;
-  line-height: 1 !important;
-  border-width: 2px !important;
-  box-shadow: 2px 2px 0 #111 !important;
-}
-.cash-fisik-btn-small:active,
-.cash-fisik-actions .section-toggle:active {
-  transform: translate(1px, 1px) !important;
-  box-shadow: 1px 1px 0 #111 !important;
-}
-@media (max-width: 370px) {
-  .cash-fisik-header {
-    grid-template-columns: 1fr !important;
-  }
-  .cash-fisik-actions {
-    width: 100% !important;
-    min-width: 0 !important;
-    grid-template-columns: auto auto !important;
-    justify-content: space-between !important;
-  }
-  .cash-fisik-btns {
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  }
-  .cash-fisik-btn-small {
-    padding: 3px 4px !important;
-    font-size: 8.5px !important;
-  }
-}
+/* Removing old pseudo borders from neo-brutalism if any */
+* { border: none !important; outline: none !important; }
+.gold-main-input { border-bottom: 2px solid var(--shadow-dark) !important; }
