@@ -258,3 +258,65 @@ input:focus, select:focus, textarea:focus {
 /* Removing old pseudo borders */
 * { outline: none !important; }
 .gold-main-input { border-bottom: 2px solid var(--line) !important; }
+
+/* ============================================================
+   HOME MINIMAL MODE
+   - Sembunyikan header brand card (alfajri / Refresh / Aman)
+   - Rapatkan jarak antar section di Home agar tidak terlalu penuh
+   - JS tidak diubah, elemen tetap ada di DOM (display:none saja)
+   ============================================================ */
+.top { display: none !important; }
+.app { padding-top: 14px !important; }
+
+/* Card "Total Dana Darurat Terkumpul" tetap tampil tapi diperkecil */
+#emergencyFundTotalCard {
+  padding: 8px 10px !important;
+  margin-bottom: 8px !important;
+}
+#emergencyFundTotalCard span { font-size: 10px !important; }
+#emergencyFundTotalCard b { font-size: 13px !important; }
+
+/* Rapatkan spacing umum di Home agar terasa lebih ringkas */
+#pageHome .hero { margin-bottom: 8px !important; padding: 14px !important; }
+#pageHome .section-divider { margin: 10px 0 !important; }
+#pageHome .home-section,
+#pageHome .stat,
+#pageHome .grid2,
+#pageHome .profit-summary-card,
+#pageHome .ops-status-card,
+#pageHome .zakat-card,
+#pageHome .gold-live-card,
+#pageHome .cash-fisik-card {
+  margin-bottom: 8px !important;
+}
+#pageHome .cash-fisik-card,
+#pageHome .gold-live-card,
+#pageHome .zakat-card {
+  padding: 12px !important;
+}
+#pageHome .profit-summary-card { padding: 11px !important; }
+#pageHome .ps-grid { gap: 4px !important; }
+#pageHome .ops-status-card { padding: 10px 12px !important; }
+#pageHome .home-section .home-section-body { padding-top: 8px !important; }
+
+/* Rapikan tombol Bayar/Nabung + Buka di Zakat Mal & Dana Darurat
+   agar tidak terlalu lebar/besar dan tidak kaku (bentuk pill) */
+.zakat-header { gap: 8px !important; align-items: center !important; }
+.section-action-stack { gap: 4px !important; }
+.zakat-card #payZakatBtn,
+.zakat-card #payEmergencyFundBtn {
+  min-height: 28px !important;
+  height: 28px !important;
+  min-width: 0 !important;
+  width: auto !important;
+  padding: 0 14px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  border-radius: 999px !important;
+  line-height: 28px !important;
+}
+.zakat-header .section-toggle {
+  padding: 3px 10px !important;
+  font-size: 10px !important;
+  min-height: 0 !important;
+}
