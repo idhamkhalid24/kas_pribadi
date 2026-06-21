@@ -923,6 +923,10 @@ function isEmergencyFundTx(t={}){
   const cat=String(t&&t.category_name||'');
   return desc.startsWith(EMERGENCY_PREFIX) || cat.toLowerCase()===EMERGENCY_CATEGORY_NAME.toLowerCase();
 }
+function isAutoEmergencyFundTx(t={}){
+  const desc=String(t&&t.description||'');
+  return !!(t&&t.type==='expense'&&desc.startsWith(EMERGENCY_PREFIX));
+}
 function getEmergencyFundHistory(){return Array.isArray(emergencyFundHistory)?emergencyFundHistory:[]}
 function normalizeEmergencyFundRecord(r={}){
   const amount=roundRp(r.amountSaved??r.amount_saved??r.amount??0);
@@ -1042,15 +1046,20 @@ function getEmergencyFundTransactions(monthKey){
     .filter(t=>t&&t.type==='expense'&&isEmergencyFundTx(t))
     .filter(t=>!monthKey||parseEmergencyMonthFromTransaction(t)===monthKey);
 }
+function getAutoEmergencyFundTransactions(monthKey){
+  return (transactions||[])
+    .filter(t=>isAutoEmergencyFundTx(t))
+    .filter(t=>!monthKey||parseEmergencyMonthFromTransaction(t)===monthKey);
+}
 function getEmergencySavedAmountFromTransactions(monthKey){
-  return roundRp(getEmergencyFundTransactions(monthKey).reduce((sum,t)=>sum+Number(t.amount||0),0));
+  return roundRp(getAutoEmergencyFundTransactions(monthKey).reduce((sum,t)=>sum+Number(t.amount||0),0));
 }
 function getEmergencySavedCoveredIncomeFromTransactions(monthKey){
-  return roundRp(getEmergencyFundTransactions(monthKey).reduce((sum,t)=>sum+(Number(t.amount||0)/EMERGENCY_RATE),0));
+  return roundRp(getAutoEmergencyFundTransactions(monthKey).reduce((sum,t)=>sum+(Number(t.amount||0)/EMERGENCY_RATE),0));
 }
 function getEmergencyFundTotalSavedAll(){
   // Sumber kebenaran Total Dana Darurat Terkumpul = transaksi yang benar-benar masih ada.
-  return getEmergencySavedAmountFromTransactions();
+  return roundRp(getEmergencyFundTransactions().reduce((sum,t)=>sum+Number(t.amount||0),0));
 }
 function emergencyRecordStillHasTransaction(row={}){
   return !!findEmergencyFundTransactionForRecord(row);
@@ -1066,12 +1075,12 @@ function getEmergencyCoveredIncome(r={}){
   return Math.max(income,fromAmount);
 }
 function getEmergencySavedCoveredIncome(monthKey=getEmergencyMonthKey()){
-  // Jangan pakai dana_darurat_history untuk menentukan sudah/belum ditabung.
-  // Kalau transaksi Dana Darurat di Riwayat Transaksi sudah dihapus, maka otomatis terbaca belum ditabung lagi.
+  // Hitungan wajib 5% hanya dikurangi transaksi dari tombol Nabung.
+  // Input manual kategori Dana Darurat tetap masuk total terkumpul, tapi tidak mematikan tombol Nabung.
   return getEmergencySavedCoveredIncomeFromTransactions(monthKey);
 }
 function getEmergencySavedAmount(monthKey=getEmergencyMonthKey()){
-  // Sumber utama nominal terkumpul bulan ini = transaksi expense Dana Darurat yang masih ada.
+  // Nominal yang sudah memenuhi target 5% bulanan hanya dari tombol Nabung.
   return getEmergencySavedAmountFromTransactions(monthKey);
 }
 function getUnpaidEmergencyIncome(monthKey=getEmergencyMonthKey()){
@@ -1115,12 +1124,12 @@ Nominal ini akan masuk sebagai Pengeluaran kategori "Dana Darurat". Lanjutkan?`)
 
 function renderEmergencyFundSection(){
   const monthKey=getEmergencyMonthKey(),cutoff=getEmergencyCutoffDate();
-  const income=getEmergencyServerIncome(monthKey),unpaid=getUnpaidEmergencyIncome(monthKey),due=getCurrentEmergencyFundDue(monthKey),saved=getEmergencySavedAmount(monthKey);
-  if($('emergencyFundTotalSavedDisplay'))$('emergencyFundTotalSavedDisplay').innerText=formatRupiah(getEmergencyFundTotalSavedAll());
+  const income=getEmergencyServerIncome(monthKey),unpaid=getUnpaidEmergencyIncome(monthKey),due=getCurrentEmergencyFundDue(monthKey),saved=getEmergencySavedAmount(monthKey),totalSaved=getEmergencyFundTotalSavedAll();
+  if($('emergencyFundTotalSavedDisplay'))$('emergencyFundTotalSavedDisplay').innerText=formatRupiah(totalSaved);
   if($('emergencyFundAmountLarge'))$('emergencyFundAmountLarge').innerText=formatRupiah(due);
   if($('emergencyFundIncomeDisplay'))$('emergencyFundIncomeDisplay').innerText=formatRupiah(income);
   if($('emergencyFundUnpaidDisplay'))$('emergencyFundUnpaidDisplay').innerText=formatRupiah(unpaid);
-  if($('emergencyFundBasisInfo'))$('emergencyFundBasisInfo').innerText=`Dana Darurat = 5% × Cash Fisik bulan ${monthKey} sampai ${cutoff} (H-1). Sudah ditabung bulan ini: ${formatRupiah(saved)}. Riwayatnya cukup dari Riwayat Transaksi.`;
+  if($('emergencyFundBasisInfo'))$('emergencyFundBasisInfo').innerText=`Dana Darurat = 5% × Cash Fisik bulan ${monthKey} sampai ${cutoff} (H-1). Sudah via tombol Nabung: ${formatRupiah(saved)}. Total termasuk input manual: ${formatRupiah(totalSaved)}.`;
   const btn=$('payEmergencyFundBtn'),st=$('emergencyFundStatusText');
   if(btn&&income<=0){btn.disabled=true;btn.style.opacity=.55;if(st)st.innerText=`Belum ada Cash Fisik final bulan ${monthKey} sampai ${cutoff}`;}
   else if(btn&&due<=0){btn.disabled=true;btn.style.opacity=.55;if(st)st.innerText=`Dana Darurat bulan ${monthKey} sudah aman ✓`;}
@@ -1546,12 +1555,12 @@ async function deleteTransaction(id){
   openPasswordModal(async()=>{
     try{
       await deleteTransactionFromDB(id);
-      if(t&&isEmergencyFundTx(t)){await deleteEmergencyHistoryRowsForTransaction(t).catch(()=>{});}
+      if(t&&isAutoEmergencyFundTx(t)){await deleteEmergencyHistoryRowsForTransaction(t).catch(()=>{});}
       await loadTransactions();
       validateAndCancelInvalidZakat();
       render();
       renderCashFisik();
-      showToast(t&&isEmergencyFundTx(t)?'Transaksi Dana Darurat dihapus, status kembali belum ditabung jika belum ada transaksi lain':'Transaksi dihapus');
+      showToast(t&&isAutoEmergencyFundTx(t)?'Transaksi Dana Darurat dihapus, status kembali belum ditabung jika belum ada transaksi lain':'Transaksi dihapus');
     }catch(e){showToast('Gagal hapus: '+e.message)}
   });
 }
