@@ -1,0 +1,241 @@
+/* =========================================================
+   NEUMORPHISM UI OVERRIDE
+   Fokus: UI saja. Logika JS dan struktur HTML tidak diubah.
+   ========================================================= */
+:root {
+  --bg: #efece5;
+  --surface: #efece5;
+  --surface2: #e8e5dc;
+  --ink: #3b433d;
+  --ink2: #4a5247;
+  --muted: #8b958c;
+  --line: transparent;
+  
+  --green: #0d4a3e; /* Dark teal for buttons */
+  --green-light: #d8e5e1;
+  --green-dark: #072a23;
+  
+  --gold: #a07820;
+  --gold-light: #eedfb8;
+  
+  --red: #a13023;
+  --red-light: #eec5c1;
+  
+  --blue: #1d4ed8;
+  --blue-light: #cdd8f6;
+  
+  --orange: #b05c00;
+  --orange-light: #eedcc9;
+
+  --shadow-light: #ffffff;
+  --shadow-dark: #d5d0c4;
+  
+  --shadow-sm: 3px 3px 6px var(--shadow-dark), -3px -3px 6px var(--shadow-light);
+  --shadow: 6px 6px 12px var(--shadow-dark), -6px -6px 12px var(--shadow-light);
+  --shadow-lg: 10px 10px 20px var(--shadow-dark), -10px -10px 20px var(--shadow-light);
+  --shadow-pressed: inset 4px 4px 8px var(--shadow-dark), inset -4px -4px 8px var(--shadow-light);
+
+  --r-sm: 8px;
+  --r: 12px;
+  --r-lg: 16px;
+  --r-xl: 24px;
+}
+
+html, body {
+  background: var(--bg) !important;
+  color: var(--ink) !important;
+}
+
+body::before { display: none !important; }
+
+.app { padding-top: 14px !important; }
+
+/* Top bar */
+.top {
+  background: var(--surface) !important;
+  border-bottom: none !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.03) !important;
+  margin: -14px -12px 14px !important;
+}
+.brand h1 { color: var(--ink) !important; text-shadow: none !important; letter-spacing: -.5px !important; }
+.brand small { color: var(--muted) !important; }
+.top-actions .refresh-btn, .top-actions .pill {
+  background: var(--surface) !important;
+  border: none !important;
+  box-shadow: var(--shadow-sm) !important;
+  color: var(--ink) !important;
+}
+.top-actions .refresh-btn:active { box-shadow: var(--shadow-pressed) !important; }
+
+/* Core Layout Shapes */
+.card, .stat, .hero, .gold-live-card, .cash-fisik-card, .debt-card, .zakat-card, .summary-net-card, .category-accordion, .profit-summary-card, .ops-status-card {
+  background: var(--surface) !important;
+  border: none !important;
+  border-radius: var(--r-xl) !important;
+  box-shadow: var(--shadow) !important;
+  margin-bottom: 16px !important;
+  padding: 16px !important;
+}
+
+/* Modals */
+.box {
+  background: var(--bg) !important;
+  box-shadow: 0 -10px 30px rgba(0,0,0,0.1) !important;
+  border-radius: 30px 30px 0 0 !important;
+}
+.modal { background: rgba(14,20,17,0.5) !important; }
+
+/* Inputs and Forms */
+input, select, textarea {
+  background: var(--surface) !important;
+  border: none !important;
+  border-radius: var(--r) !important;
+  box-shadow: var(--shadow-pressed) !important;
+  color: var(--ink) !important;
+  padding: 14px 16px !important;
+  min-height: 48px !important;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none !important;
+  box-shadow: inset 6px 6px 10px var(--shadow-dark), inset -6px -6px 10px var(--shadow-light) !important;
+}
+
+/* Buttons */
+.btn {
+  background: var(--green) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: var(--r-lg) !important;
+  box-shadow: 4px 4px 8px rgba(13,74,62,0.3) !important;
+  min-height: 50px !important;
+  font-weight: 800 !important;
+}
+.btn:active {
+  box-shadow: inset 3px 3px 6px rgba(0,0,0,0.2) !important;
+  transform: none !important;
+}
+.btn.secondary {
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  box-shadow: var(--shadow-sm) !important;
+  border: none !important;
+}
+.btn.secondary:active {
+  box-shadow: var(--shadow-pressed) !important;
+}
+
+/* Toggles & Tabs */
+.tabs { padding: 6px !important; gap: 12px !important; }
+.tab {
+  background: var(--surface) !important;
+  border: none !important;
+  box-shadow: var(--shadow-sm) !important;
+  border-radius: 999px !important;
+  color: var(--muted) !important;
+  padding: 10px 18px !important;
+}
+.tab.active {
+  background: var(--surface) !important;
+  box-shadow: var(--shadow-pressed) !important;
+  color: var(--green) !important;
+}
+.cashout-type-btn {
+  background: var(--surface) !important;
+  border: none !important;
+  box-shadow: var(--shadow-sm) !important;
+  color: var(--muted) !important;
+  border-radius: var(--r) !important;
+}
+.cashout-type-btn.active {
+  box-shadow: var(--shadow-pressed) !important;
+  color: var(--green) !important;
+}
+
+/* Gold Home Tabs */
+.gold-home-tabs {
+  background: var(--surface) !important;
+  border: none !important;
+  box-shadow: var(--shadow-pressed) !important;
+  padding: 6px !important;
+  border-radius: 999px !important;
+}
+.gold-home-tabs button { color: var(--muted) !important; }
+.gold-home-tabs button.active {
+  background: var(--surface) !important;
+  box-shadow: var(--shadow-sm) !important;
+  color: var(--green) !important;
+}
+
+/* Items in Lists */
+.item, .cash-drawer-list-item, .debt-list-item, .category-detail-row, .category-manage-row, .pending-upload-row, .cashout-list-item, .ops-list-item {
+  background: var(--surface) !important;
+  border: none !important;
+  border-radius: var(--r-lg) !important;
+  box-shadow: var(--shadow-sm) !important;
+  margin-bottom: 12px !important;
+  padding: 12px 14px !important;
+}
+
+/* Nav Bar */
+.nav {
+  background: var(--surface) !important;
+  border-top: none !important;
+  box-shadow: 0 -8px 20px rgba(0,0,0,0.04) !important;
+  border-radius: 24px 24px 0 0 !important;
+}
+.nav button { color: var(--muted) !important; }
+.nav button.active {
+  background: transparent !important;
+  box-shadow: var(--shadow-pressed) !important;
+  color: var(--green) !important;
+  border-radius: var(--r-sm) !important;
+}
+
+/* FAB */
+.fab {
+  background: var(--green) !important;
+  box-shadow: 4px 4px 10px rgba(13,74,62,0.3) !important;
+  border-radius: 20px !important;
+  width: 60px !important; height: 60px !important;
+}
+.fab:active { box-shadow: inset 3px 3px 6px rgba(0,0,0,0.2) !important; }
+
+/* Special Hero Overrides (Reset colors) */
+.hero { color: var(--ink) !important; }
+.hero .label { color: var(--muted) !important; }
+.hero .value { color: var(--green) !important; }
+.hero .mini span { background: var(--surface) !important; box-shadow: var(--shadow-pressed) !important; color: var(--ink) !important; border-radius: var(--r-sm) !important; }
+
+/* Profit Summary */
+.profit-summary-card { color: var(--ink) !important; }
+.profit-summary-card .ps-box { background: var(--surface) !important; box-shadow: var(--shadow-pressed) !important; }
+.profit-summary-card .ps-value, .profit-summary-card .ps-title { color: var(--ink) !important; }
+.profit-summary-card .ps-desc { color: var(--muted) !important; }
+.profit-summary-card .ps-tab { background: var(--surface) !important; color: var(--muted) !important; box-shadow: var(--shadow-sm) !important; }
+.profit-summary-card .ps-tab.active { box-shadow: var(--shadow-pressed) !important; color: var(--green) !important; }
+
+/* Advanced Details */
+.advanced-fields { border: none !important; box-shadow: var(--shadow-pressed) !important; background: var(--surface) !important; padding: 12px !important; }
+
+/* Badges */
+.chip, .cashout-badge, .cash-fisik-badge, .lock-badge, .cash-drawer-status, .audit-ok, .audit-warn, .audit-bad {
+  background: var(--surface) !important;
+  border: none !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* Section Toggle / Pills */
+.section-toggle, .pill {
+  background: var(--surface) !important;
+  border: none !important;
+  box-shadow: var(--shadow-sm) !important;
+  color: var(--ink2) !important;
+}
+.section-toggle:active { box-shadow: var(--shadow-pressed) !important; }
+
+/* Typography fix */
+.section-title { margin: 10px 0 14px !important; }
+
+/* Removing old pseudo borders from neo-brutalism if any */
+* { border: none !important; outline: none !important; }
+.gold-main-input { border-bottom: 2px solid var(--shadow-dark) !important; }
