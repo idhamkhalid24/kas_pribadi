@@ -271,6 +271,25 @@
     </div>
   </div>
 
+  <!-- Modal Pendapatan Luar Server -->
+  <div id="manualIncomeListModal" class="modal hidden">
+    <div class="box" style="max-width:420px;width:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px">
+        <div>
+          <h3>Pendapatan Luar Server</h3>
+          <small id="manualIncomeListSubtitle" class="small" style="display:block;margin-top:2px"></small>
+        </div>
+        <button class="x" onclick="closeManualIncomeListModal()">×</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#f0fdf4;border-radius:var(--r);margin-bottom:12px;border:1px solid #bbf7d0">
+        <span style="font-size:12px;font-weight:800;color:#166534">Total</span>
+        <b id="manualIncomeListTotal" class="num" style="font-size:16px;color:#166534">Rp 0</b>
+      </div>
+      <div id="manualIncomeListContent" class="list" style="max-height:55vh;overflow-y:auto"></div>
+      <button class="btn secondary" onclick="closeManualIncomeListModal()" style="margin-top:14px">Tutup</button>
+    </div>
+  </div>
+
   <!-- Modal Beli Emas -->
   <div id="goldBuyModal" class="modal hidden">
     <div class="box" style="max-width:420px;width:100%">
@@ -453,6 +472,8 @@
         </div>
         </div>
       </div>
+
+
 
       <!-- Total Dana Darurat Terkumpul -->
       <div id="emergencyFundTotalCard" class="stat" style="margin-bottom:8px;border-color:#bfdbfe;background:var(--blue-light)">
@@ -824,6 +845,12 @@
           </div>
           <span class="pill" style="background:#dbeafe;color:var(--blue)">READ ONLY</span>
         </div>
+      </div>
+
+      <!-- Total Pendapatan Manual -->
+      <div id="manualIncomeTotalCard" class="stat" style="margin-bottom:12px;border-color:#bbf7d0;background:#f0fdf4;cursor:pointer" onclick="showManualIncomeListModalFiltered()">
+        <span>Total Pendapatan (Luar Server)</span>
+        <b id="manualIncomeTotalDisplay" class="num" style="color:#166534;font-size:15px">Rp 0</b>
       </div>
 
       <div id="monthValidityCard" class="month-valid-card idle">

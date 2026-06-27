@@ -1172,26 +1172,40 @@ async function deleteEmergencyFundRecord(id){
 
 
 async function loadTransactions(){
-  // Hapus cache lama yang mungkin corrupt/dobel — Supabase adalah satu-satunya sumber kebenaran
   try{localStorage.removeItem('rh_tx_cache');}catch(e){}
-  const{data,error}=await supabaseClient.from('transactions').select('*').eq('owner_id',OWNER_ID).order('date',{ascending:false}).order('id',{ascending:false});
-  if(error)throw error;
-  transactions=(data||[]).map(r=>({id:Number(r.id),date:r.date,description:r.description,amount:Number(r.amount||0),type:r.type,category_id:r.category_id||null,category_name:r.category_name||''}));
+  const [res1, res2] = await Promise.all([
+    supabaseClient.from('transactions').select('*').eq('owner_id',OWNER_ID),
+    supabaseClient.from('manual_incomes').select('*').eq('owner_id',OWNER_ID)
+  ]);
+  if(res1.error) throw res1.error;
+  if(res2.error) throw res2.error;
+  const allData = [...(res1.data||[]), ...(res2.data||[])];
+  allData.sort((a,b) => {
+    if(a.date !== b.date) return b.date.localeCompare(a.date);
+    return b.id - a.id;
+  });
+  transactions=allData.map(r=>({id:Number(r.id),date:r.date,description:r.description,amount:Number(r.amount||0),type:r.type,category_id:r.category_id||null,category_name:r.category_name||''}));
   return transactions;
 }
 async function saveTransaction(t){
-  const{error}=await supabaseClient.from('transactions').insert({...t,owner_id:OWNER_ID});
+  const isManualIncome = (t.type === 'income' && !isFirebaseUploaded(t) && !t.__firebasePreview && !isCashDrawerAdjustmentTx(t));
+  const table = isManualIncome ? 'manual_incomes' : 'transactions';
+  const{error}=await supabaseClient.from(table).insert({...t,owner_id:OWNER_ID});
   if(error)throw error;
 }
 async function deleteTransactionFromDB(id){
-  const{error}=await supabaseClient.from('transactions').delete().eq('owner_id',OWNER_ID).eq('id',id);
+  const t = transactions.find(x => x.id === id);
+  const isManualIncome = t && (t.type === 'income' && !isFirebaseUploaded(t) && !t.__firebasePreview && !isCashDrawerAdjustmentTx(t));
+  const table = isManualIncome ? 'manual_incomes' : 'transactions';
+  const{error}=await supabaseClient.from(table).delete().eq('owner_id',OWNER_ID).eq('id',id);
   if(error)throw error;
 }
 async function clearManualTransactions(){
-  // Proteksi: data hasil upload Server Pusat tetap LOCK dan tidak ikut dihapus massal.
   const manualRows=transactions.filter(t=>!isFirebaseUploaded(t)&&!isAutoQrisCashOut(t));
   for(const t of manualRows){
-    const{error}=await supabaseClient.from('transactions').delete().eq('owner_id',OWNER_ID).eq('id',t.id);
+    const isManualIncome = (t.type === 'income' && !isFirebaseUploaded(t) && !t.__firebasePreview && !isCashDrawerAdjustmentTx(t));
+    const table = isManualIncome ? 'manual_incomes' : 'transactions';
+    const{error}=await supabaseClient.from(table).delete().eq('owner_id',OWNER_ID).eq('id',t.id);
     if(error)throw error;
   }
 }
@@ -1287,9 +1301,17 @@ async function fetchFirebaseRowsByRange(start,end){
   const addRows=(rows=[])=>rows.forEach(r=>{merged[String(r.id)]={id:r.id,_docId:r.id,...((r&&r.data&&typeof r.data==='object')?r.data:{})}});
   const rangeQuery=async(field,from,to)=>{
     const path=`data->>${field}`;
-    const {data,error}=await serverPusatClient.from('transactions').select('id,data').gte(path,String(from)).lte(path,String(to)).limit(SERVER_PUSAT_RANGE_LIMIT);
-    if(error)throw error;
-    addRows(data||[]);
+    let allData=[];
+    let startRange=0;
+    const step=1000;
+    while(true){
+      const {data,error}=await serverPusatClient.from('transactions').select('id,data').gte(path,String(from)).lte(path,String(to)).range(startRange,startRange+step-1);
+      if(error)throw error;
+      if(data)allData.push(...data);
+      if(!data||data.length<step)break;
+      startRange+=step;
+    }
+    addRows(allData);
   };
   const errors=[];
   await Promise.allSettled([
@@ -1765,13 +1787,13 @@ async function checkMonthValidity(){
   monthValidityBusy=true;
   setMonthValidityUI('idle','Mengecek Bulan...',`Sedang cek ${r.start} s.d ${r.end}`);
   try{
-    const firebaseRows=await fetchFirebaseRowsByRange(r.start,r.end);
+    const firebaseRows=normalizeFirebaseRows(await fetchFirebaseRowsByRange(r.start,r.end));
     const grouped={};
     firebaseRows.forEach(t=>{
-      const date=getFirebaseRecordDateKey(t);
+      const date=t.dateKey;
       if(!date)return;
       if(!grouped[date])grouped[date]={firebaseTotal:0,count:0};
-      grouped[date].firebaseTotal+=Number(t.amount||0);
+      grouped[date].firebaseTotal+=t.amount;
       grouped[date].count+=1;
     });
     const dates=Object.keys(grouped).sort();
@@ -1865,13 +1887,13 @@ async function scanPendingFirebaseUploads(){
   if(sum){sum.className='audit-box audit-warn';sum.innerText='Sedang scan Server Pusat dan membandingkan dengan Kas Pribadi...'}
   if(box)box.innerHTML='';
   try{
-    const firebaseRows=await fetchFirebaseRowsByRange(start,end);
+    const firebaseRows=normalizeFirebaseRows(await fetchFirebaseRowsByRange(start,end));
     const grouped={};
     firebaseRows.forEach(t=>{
-      const date=getFirebaseRecordDateKey(t);
+      const date=t.dateKey;
       if(!date)return;
       if(!grouped[date])grouped[date]={date,firebaseTotal:0,count:0};
-      grouped[date].firebaseTotal+=Number(t.amount||0);
+      grouped[date].firebaseTotal+=t.amount;
       grouped[date].count+=1;
     });
     pendingFirebaseUploads=Object.values(grouped).map(row=>{
@@ -1894,7 +1916,7 @@ async function uploadPendingFirebaseDate(date){
   const item=(pendingFirebaseUploads||[]).find(x=>x.date===date);
   if(!item)return showToast('Data tidak ditemukan, scan ulang dulu');
   try{
-    const freshRows=await fetchFirebaseRowsByRange(item.date,item.date);
+    const freshRows=normalizeFirebaseRows(await fetchFirebaseRowsByRange(item.date,item.date));
     const freshTotal=sumFirebaseRows(freshRows.filter(t=>t.dateKey===item.date));
     await uploadFirebaseIncomeForDate(item.date,freshTotal,true);
     pendingFirebaseUploads=pendingFirebaseUploads.filter(x=>x.date!==date);
@@ -2040,6 +2062,8 @@ function render(){
   // Sebelumnya card ini memakai semua data/kumulatif, sedangkan Ringkasan Laba memakai filter
   // today/month/year/custom. Akibatnya angka sisa operasional bisa terlihat berbeda.
   const opDataForCard=getProfitSummaryData(currentProfitFilter);
+  const manualIn=opDataForCard?Number(opDataForCard.manualIncome||0):0;
+  if($('manualIncomeTotalDisplay'))$('manualIncomeTotalDisplay').innerText=formatRupiah(manualIn);
   const opProfit=opDataForCard?Number(opDataForCard.laba||0):profit;
   const opSpent=opDataForCard?Number(opDataForCard.totalExpense||0):totalOut;
   const remainingOps=opProfit-opSpent;
@@ -3128,10 +3152,11 @@ function getProfitSummaryData(filter){
   let fbExtra=0;
   if(todayCovered&&fbToday>0&&!uploadedTodayTx)fbExtra=fbToday;
   const totalIncome=incomeRows.reduce((sum,t)=>sum+Number(t.amount||0),0)+fbExtra;
+  const manualIncome=incomeRows.filter(t=>!isFirebaseUploaded(t)&&!t.__firebasePreview&&!isCashDrawerAdjustmentTx(t)).reduce((sum,t)=>sum+Number(t.amount||0),0);
   const totalExpense=expenseRows.reduce((sum,t)=>sum+Number(t.amount||0),0);
   const laba=Math.round(totalIncome*.2);
   const sisaOperasional=Math.round(laba-totalExpense);
-  return {totalIncome,totalExpense,laba,laba20:laba,sisaOperasional,labaBersih:Math.max(0,sisaOperasional)};
+  return {totalIncome,manualIncome,totalExpense,laba,laba20:laba,sisaOperasional,labaBersih:Math.max(0,sisaOperasional)};
 }
 function renderProfitSummary(){
   const data=getProfitSummaryData(currentProfitFilter);
@@ -3164,6 +3189,37 @@ function showExpenseListTodayModal(){
   else{c.innerHTML=expenses.slice(0,100).map(t=>`<div class="item"><div class="left"><div class="icon out">-</div><div class="desc"><b>${escapeHtml(cleanFirebaseDesc(t.description))}</b><small>${t.date}</small>${getExpenseCategoryChip(t)}</div></div><div class="right"><b class="num red">-${formatRupiah(t.amount).replace('Rp','')}</b></div></div>`).join('')}
   $('expenseListModal').classList.remove('hidden');
 }
+function showManualIncomeListModalFiltered(){
+  const today=getLocalDateString(), thisMonth=today.slice(0,7);
+  let incomes=getDashboardTransactions().filter(t=>t.type==='income'&&!isFirebaseUploaded(t));
+  let subtitle='';
+  if(currentProfitFilter==='today'){
+    incomes=incomes.filter(t=>t.date===today);
+    subtitle='Pendapatan hari ini';
+  } else if(currentProfitFilter==='month'){
+    incomes=incomes.filter(t=>String(t.date||'').startsWith(thisMonth));
+    subtitle='Pendapatan bulan ini';
+  } else if(currentProfitFilter==='year'){
+    incomes=incomes.filter(t=>String(t.date||'').startsWith(today.slice(0,4)));
+    subtitle='Pendapatan tahun ini';
+  } else if(currentProfitFilter==='custom'){
+    const s=$('profitFilterStartDate')?$('profitFilterStartDate').value:'';
+    const e=$('profitFilterEndDate')?$('profitFilterEndDate').value:'';
+    if(s&&e){
+      incomes=incomes.filter(t=>t.date>=s&&t.date<=e);
+      subtitle=`${s} s/d ${e}`;
+    }
+  }
+  incomes.sort((a,b)=>b.id-a.id);
+  const total=incomes.reduce((sum,t)=>sum+Number(t.amount||0),0);
+  $('manualIncomeListTotal').innerText=formatRupiah(total);
+  $('manualIncomeListSubtitle').innerText=`${incomes.length} transaksi · ${subtitle}`;
+  const c=$('manualIncomeListContent');
+  if(!incomes.length){c.innerHTML='<div class="empty">Belum ada pendapatan luar server</div>';}
+  else{c.innerHTML=incomes.slice(0,200).map(t=>`<div class="item"><div class="left"><div class="icon in">+</div><div class="desc"><b>${escapeHtml(cleanFirebaseDesc(t.description))}</b><small>${t.date}</small></div></div><div class="right"><b class="num green">+${formatRupiah(t.amount).replace('Rp','')}</b></div></div>`).join('');}
+  $('manualIncomeListModal').classList.remove('hidden');
+}
+function closeManualIncomeListModal(){$('manualIncomeListModal').classList.add('hidden');}
 function showExpenseListModalFiltered(){
   const today=getLocalDateString(), thisMonth=today.slice(0,7);
   const s=$('filterStartDate')?$('filterStartDate').value:'', e=$('filterEndDate')?$('filterEndDate').value:'';
