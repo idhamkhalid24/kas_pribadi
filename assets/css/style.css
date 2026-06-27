@@ -249,7 +249,6 @@
     }
     .tab.active { background: var(--green); color: white; border-color: var(--green); }
     .history-filter-panel {
-      position: sticky; top: 51px; z-index: 9;
       margin: 0 -2px 10px; padding: 8px 2px;
       background: rgba(240,242,236,.94);
       backdrop-filter: blur(14px);
