@@ -1,0 +1,322 @@
+/* =========================================================
+   MODERN BANKING UI OVERRIDE
+   Fokus: UI saja. Logika JS dan struktur HTML tidak diubah.
+   ========================================================= */
+:root {
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --surface2: #f8fafc;
+  --ink: #1e293b;
+  --ink2: #475569;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  
+  --green: #0f52ba; /* Override all default greens to Royal Blue */
+  --green-light: #e0e7ff;
+  --green-dark: #093b8c;
+  
+  --gold: #f59e0b;
+  --gold-light: #fef3c7;
+  
+  --red: #ef4444;
+  --red-light: #fee2e2;
+  
+  --blue: #0f52ba;
+  --blue-light: #e0e7ff;
+  
+  --orange: #f97316;
+  --orange-light: #ffedd5;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -1px rgba(0,0,0,0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
+  --shadow-pressed: none;
+
+  --r-sm: 6px;
+  --r: 10px;
+  --r-lg: 14px;
+  --r-xl: 16px;
+}
+
+html, body {
+  background: var(--bg) !important;
+  color: var(--ink) !important;
+}
+
+body::before { display: none !important; }
+
+.app { padding: 14px 14px 80px !important; }
+
+/* Top bar */
+.top {
+  background: var(--surface) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 24px !important; /* Melengkung di semua sudut */
+  box-shadow: var(--shadow-sm) !important;
+  margin: 0 0 14px 0 !important; /* Margin normal, tidak menempel ke tepi */
+  padding: 20px 16px 16px 16px !important;
+}
+.brand h1 { color: var(--blue) !important; text-shadow: none !important; letter-spacing: -.5px !important; }
+.brand small { color: var(--muted) !important; }
+.top-actions .refresh-btn, .top-actions .pill {
+  background: var(--surface2) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: none !important;
+  color: var(--blue) !important;
+}
+
+/* Hero Section (Standalone Card) */
+.hero { 
+  background: var(--blue) !important; 
+  color: white !important; 
+  border: none !important;
+  border-radius: var(--r-xl) !important;
+  margin-bottom: 14px !important;
+  box-shadow: var(--shadow) !important;
+  padding: 24px 16px !important;
+}
+.hero .label { color: rgba(255,255,255,0.8) !important; }
+.hero .value { color: white !important; font-size: 28px !important; }
+.hero .mini span { background: rgba(255,255,255,0.15) !important; box-shadow: none !important; color: white !important; border: none !important; }
+
+/* Core Layout Shapes */
+.card, .stat, .gold-live-card, .cash-fisik-card, .debt-card, .zakat-card, .summary-net-card, .category-accordion, .profit-summary-card, .ops-status-card {
+  background: var(--surface) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--r-lg) !important;
+  box-shadow: var(--shadow-sm) !important;
+  margin-bottom: 12px !important;
+  padding: 14px !important;
+}
+
+/* Gold card override to look like "Rumah Impian" */
+.gold-live-card {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%) !important;
+  border: 1px solid #fcd34d !important;
+}
+.gold-live-card .gold-live-title { color: #b45309 !important; }
+.gold-live-card .gold-live-price { color: #92400e !important; }
+.gold-live-card .gold-live-badge { background: white !important; color: #d97706 !important; border: none !important; }
+.gold-live-card .gold-live-box { background: rgba(255,255,255,0.7) !important; border: none !important; }
+.gold-preview-card { background: var(--surface) !important; border: 1px solid var(--line) !important; }
+
+/* Modals */
+.box {
+  background: var(--surface) !important;
+  box-shadow: 0 -10px 30px rgba(0,0,0,0.1) !important;
+  border-radius: 20px 20px 0 0 !important;
+}
+.modal { background: rgba(15,23,42,0.6) !important; }
+
+/* Inputs and Forms */
+input, select, textarea {
+  background: var(--surface) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--r-sm) !important;
+  box-shadow: none !important;
+  color: var(--ink) !important;
+  padding: 12px 14px !important;
+  min-height: 44px !important;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none !important;
+  border-color: var(--blue) !important;
+  box-shadow: 0 0 0 3px var(--blue-light) !important;
+}
+
+/* Buttons */
+.btn {
+  background: var(--blue) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 999px !important; /* Pill shape like screenshot */
+  box-shadow: none !important;
+  min-height: 48px !important;
+  font-weight: 700 !important;
+  letter-spacing: .2px !important;
+}
+.btn.secondary {
+  background: transparent !important;
+  color: var(--blue) !important;
+  box-shadow: none !important;
+  border: 1.5px solid var(--blue) !important;
+}
+
+/* Toggles & Tabs */
+.tabs { padding: 4px !important; gap: 8px !important; }
+.tab {
+  background: var(--surface) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: none !important;
+  border-radius: 999px !important;
+  color: var(--muted) !important;
+  padding: 8px 16px !important;
+}
+.tab.active {
+  background: var(--blue) !important;
+  color: white !important;
+  border-color: var(--blue) !important;
+}
+.cashout-type-btn {
+  background: var(--surface) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: none !important;
+  color: var(--muted) !important;
+  border-radius: var(--r-sm) !important;
+}
+.cashout-type-btn.active {
+  background: var(--blue-light) !important;
+  border-color: var(--blue) !important;
+  color: var(--blue) !important;
+}
+
+/* Gold Home Tabs */
+.gold-home-tabs {
+  background: var(--surface) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: none !important;
+  padding: 4px !important;
+  border-radius: 999px !important;
+}
+.gold-home-tabs button { color: var(--muted) !important; }
+.gold-home-tabs button.active {
+  background: var(--blue) !important;
+  color: white !important;
+}
+
+/* Items in Lists */
+.item, .cash-drawer-list-item, .debt-list-item, .category-detail-row, .category-manage-row, .pending-upload-row, .cashout-list-item, .ops-list-item {
+  background: var(--surface) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--r-sm) !important;
+  box-shadow: none !important;
+  margin-bottom: 8px !important;
+  padding: 12px 14px !important;
+}
+
+/* Nav Bar */
+.nav {
+  background: var(--surface) !important;
+  border-top: 1px solid var(--line) !important;
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.08) !important; /* Memberi efek bayangan melayang ke atas */
+  border-radius: 0 !important;
+}
+.nav button { color: var(--muted) !important; padding: 10px 4px !important; }
+.nav button.active {
+  background: var(--blue-light) !important;
+  color: var(--blue) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+
+/* FAB */
+.fab {
+  background: var(--blue) !important;
+  box-shadow: 0 4px 12px rgba(15,82,186,0.3) !important;
+  border-radius: 16px !important;
+}
+
+/* Profit Summary */
+.profit-summary-card { background: var(--surface) !important; color: var(--ink) !important; border: 1px solid var(--line) !important; box-shadow: var(--shadow-sm) !important; }
+.profit-summary-card .ps-box { background: var(--surface2) !important; box-shadow: none !important; border: 1px solid var(--line) !important; }
+.profit-summary-card .ps-value, .profit-summary-card .ps-title { color: var(--ink) !important; }
+.profit-summary-card .ps-desc { color: var(--muted) !important; }
+.profit-summary-card .ps-tab { background: var(--surface2) !important; color: var(--muted) !important; box-shadow: none !important; border: 1px solid var(--line) !important; }
+.profit-summary-card .ps-tab.active { background: var(--blue) !important; color: white !important; border-color: var(--blue) !important; }
+/* Override inline green color */
+.profit-summary-card .ps-box b { color: var(--ink) !important; }
+
+/* Advanced Details */
+.advanced-fields { border: 1px dashed var(--line) !important; box-shadow: none !important; background: var(--surface2) !important; padding: 12px !important; border-radius: var(--r-sm) !important; }
+
+/* Badges */
+.chip, .cashout-badge, .cash-fisik-badge, .lock-badge {
+  background: var(--surface2) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: none !important;
+  white-space: nowrap !important;
+}
+.cash-drawer-status, .audit-ok, .audit-warn, .audit-bad {
+  background: var(--surface2) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: none !important;
+  /* Tidak ada nowrap agar text panjang bisa turun ke bawah */
+}
+.cashout-badge.qris { background: var(--blue-light) !important; border-color: var(--blue-light) !important; color: var(--blue) !important; }
+
+/* Section Toggle / Pills */
+.section-toggle, .pill {
+  background: var(--surface) !important;
+  border: 1px solid var(--line) !important;
+  box-shadow: var(--shadow-sm) !important;
+  color: var(--ink2) !important;
+}
+
+/* Typography fix */
+.section-title { margin: 10px 0 14px !important; }
+
+/* Removing old pseudo borders */
+* { outline: none !important; }
+.gold-main-input { border-bottom: 2px solid var(--line) !important; }
+
+/* ============================================================
+   HOME MINIMAL MODE
+   - Sembunyikan header brand card (alfajri / Refresh / Aman)
+   - Rapatkan jarak antar section di Home agar tidak terlalu penuh
+   - JS tidak diubah, elemen tetap ada di DOM (display:none saja)
+   ============================================================ */
+.top { display: none !important; }
+.app { padding-top: 14px !important; }
+
+/* Card "Total Dana Darurat Terkumpul" tetap tampil tapi diperkecil */
+#emergencyFundTotalCard {
+  padding: 8px 10px !important;
+  margin-bottom: 8px !important;
+}
+#emergencyFundTotalCard span { font-size: 10px !important; }
+#emergencyFundTotalCard b { font-size: 13px !important; }
+
+/* Rapatkan spacing umum di Home agar terasa lebih ringkas */
+#pageHome .hero { margin-bottom: 8px !important; padding: 14px !important; }
+#pageHome .section-divider { margin: 10px 0 !important; }
+#pageHome .home-section,
+#pageHome .stat,
+#pageHome .grid2,
+#pageHome .profit-summary-card,
+#pageHome .ops-status-card,
+#pageHome .zakat-card,
+#pageHome .gold-live-card,
+#pageHome .cash-fisik-card {
+  margin-bottom: 8px !important;
+}
+#pageHome .cash-fisik-card,
+#pageHome .gold-live-card,
+#pageHome .zakat-card {
+  padding: 12px !important;
+}
+#pageHome .profit-summary-card { padding: 11px !important; }
+#pageHome .ps-grid { gap: 4px !important; }
+#pageHome .ops-status-card { padding: 10px 12px !important; }
+#pageHome .home-section .home-section-body { padding-top: 8px !important; }
+
+/* Rapikan tombol Bayar/Nabung + Buka di Zakat Mal & Dana Darurat
+   agar tidak terlalu lebar/besar dan tidak kaku (bentuk pill) */
+.zakat-header { gap: 8px !important; align-items: center !important; }
+.section-action-stack { gap: 4px !important; }
+.zakat-card #payZakatBtn,
+.zakat-card #payEmergencyFundBtn {
+  min-height: 28px !important;
+  height: 28px !important;
+  min-width: 0 !important;
+  width: auto !important;
+  padding: 0 14px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  border-radius: 999px !important;
+  line-height: 28px !important;
+}
+.zakat-header .section-toggle {
+  padding: 3px 10px !important;
+  font-size: 10px !important;
+  min-height: 0 !important;
+}
