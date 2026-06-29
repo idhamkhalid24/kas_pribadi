@@ -528,12 +528,21 @@ async function fetchGoldPrice(){
   for(const route of PEGADAIAN_GOLD_FETCH_ROUTES){
     try{
       const res=await fetchGoldUrl(route.url);
-      if(!res.ok)throw new Error('HTTP '+res.status);
       const json=await res.json();
+      // Kalau proxy bilang harga_tersedia:false → semua sumber mati, jangan pakai cache
+      if(json.harga_tersedia===false){
+        throw Object.assign(new Error(json.message||'Harga tidak tersedia. Semua sumber sedang tidak dapat diakses.'),{semua_gagal:true});
+      }
+      if(!res.ok)throw new Error('HTTP '+res.status);
       const picked=parsePegadaianProxyGold(json,route.url);
       if(picked&&picked.price>0){goldPriceState=picked;saveGoldPriceCache();return picked;}
       throw new Error(json.message||'Format harga Pegadaian tidak cocok');
-    }catch(e){lastErr=e;console.warn('Harga emas Pegadaian gagal dari proxy '+(route.url||''),e);}
+    }catch(e){
+      lastErr=e;
+      console.warn('Harga emas Pegadaian gagal dari proxy '+(route.url||''),e);
+      // Kalau semua sumber proxy mati, langsung lempar error tanpa coba cache
+      if(e.semua_gagal)throw e;
+    }
   }
   const cached=restoreGoldPriceCache();
   if(cached&&cached.price)return cached;
@@ -1260,6 +1269,16 @@ function getLocalDateString(date=new Date()){
   // Pakai tanggal WIB agar sama dengan aplikasi kasir Server Pusat utama.
   return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).format(date);
 }
+function isLastDayOfMonth(dateStr) {
+  if(!dateStr)return false;
+  const parts=dateStr.split('-');
+  if(parts.length!==3)return false;
+  const y=parseInt(parts[0],10);
+  const m=parseInt(parts[1],10);
+  const d=parseInt(parts[2],10);
+  const lastDay=new Date(y,m,0).getDate();
+  return d===lastDay;
+}
 function getFirebaseRecordDateKey(t){
   if(!t)return '';
   if(t.dateKey)return String(t.dateKey).slice(0,10);
@@ -1537,6 +1556,7 @@ async function refreshFirebaseRowsOnce(date,mode='selected'){
     if(mode==='today'){
       todayFirebaseIncomeRows=rows.filter(t=>t.dateKey===date);
       todayFirebaseIncomeTotal=sumFirebaseRows(todayFirebaseIncomeRows);
+      if(isLastDayOfMonth(date) && todayFirebaseIncomeTotal>0) uploadFirebaseIncomeForDate(date, todayFirebaseIncomeTotal, true);
       renderTodayFirebaseIncomeHome();
       renderZakatSection();
   renderEmergencyFundSection();
@@ -1547,6 +1567,7 @@ async function refreshFirebaseRowsOnce(date,mode='selected'){
     }else{
       firebaseIncomeRows=rows.filter(t=>t.dateKey===date);
       firebaseIncomeTotal=sumFirebaseRows(firebaseIncomeRows);
+      if(isLastDayOfMonth(date) && firebaseIncomeTotal>0) uploadFirebaseIncomeForDate(date, firebaseIncomeTotal, true);
       renderFirebaseUploadCard();
     }
   }catch(e){console.warn('Refresh Server Pusat range gagal:',e.message||e)}
@@ -1735,27 +1756,10 @@ function renderTodayFirebaseIncomeHome(){
     infoEl.innerText=parts.length?parts.join(' · '):'Belum ada pendapatan hari ini';
   }
 }
-let todayServerRefreshTimer=null;
-function scheduleTodayServerRefresh(today){
-  clearTimeout(todayServerRefreshTimer);
-  todayServerRefreshTimer=setTimeout(()=>{
-    refreshFirebaseRowsOnce(today,'today').catch(err=>{
-      console.error(err);
-      if($('todayFirebaseIncomeInfo'))$('todayFirebaseIncomeInfo').innerText='Gagal baca Server Pusat hari ini';
-    });
-  },1000);
-}
 function startTodayFirebaseWatch(){
   if(!firebaseDb)return Promise.resolve();
   const today=getLocalDateString();
   if(todayFirebaseUnsub){todayFirebaseUnsub();todayFirebaseUnsub=null}
-  
-  const channel=firebaseDb.channel('server-pusat-today-realtime')
-    .on('postgres_changes',{event:'*',schema:'public',table:'transactions'},()=>{
-      scheduleTodayServerRefresh(today);
-    }).subscribe();
-  todayFirebaseUnsub=()=>{firebaseDb.removeChannel(channel);};
-
   return refreshFirebaseRowsOnce(today,'today').then(()=>{
     renderTodayFirebaseIncomeHome();
     renderZakatSection();
@@ -1768,31 +1772,11 @@ function startTodayFirebaseWatch(){
 }
 function changeFirebaseUploadDate(date){firebaseUploadDate=date||getLocalDateString();startFirebaseWatch(firebaseUploadDate)}
 function refreshFirebaseUpload(){startFirebaseWatch(firebaseUploadDate||getLocalDateString());showToast('Data Server Pusat direfresh')}
-
-let selectedServerRefreshTimer=null;
-function scheduleSelectedServerRefresh(date){
-  clearTimeout(selectedServerRefreshTimer);
-  selectedServerRefreshTimer=setTimeout(()=>{
-    refreshFirebaseRowsOnce(date,'selected').then(async()=>{
-      const qrisChangedSelected=await syncFirebaseQrisCashOut(firebaseIncomeRows,{quiet:true,date});
-      if(qrisChangedSelected)await loadTransactions();
-      renderFirebaseUploadCard();
-      renderCashFisik();
-    }).catch(err=>console.error(err));
-  },1000);
-}
 function startFirebaseWatch(date){
   if(!firebaseDb)return;
   firebaseUploadDate=date||getLocalDateString();
   if($('firebaseUploadDate'))$('firebaseUploadDate').value=firebaseUploadDate;
   if(firebaseUnsub){firebaseUnsub();firebaseUnsub=null}
-  
-  const channel=firebaseDb.channel('server-pusat-selected-realtime')
-    .on('postgres_changes',{event:'*',schema:'public',table:'transactions'},()=>{
-      scheduleSelectedServerRefresh(firebaseUploadDate);
-    }).subscribe();
-  firebaseUnsub=()=>{firebaseDb.removeChannel(channel);};
-
   return refreshFirebaseRowsOnce(firebaseUploadDate,'selected').then(async()=>{
     const qrisChangedSelected=await syncFirebaseQrisCashOut(firebaseIncomeRows,{quiet:true,date:firebaseUploadDate});
     if(qrisChangedSelected)await loadTransactions();
@@ -1900,14 +1884,15 @@ function renderPendingUploadList(){
   sum.innerText=`Ditemukan ${items.length} tanggal perlu dicek. Belum upload: ${formatRupiah(totalMissing)} · Selisih: ${formatRupiah(totalDiff)}.`;
   box.innerHTML=items.map(x=>{
     const isToday=x.date===getLocalDateString();
-    const label=isToday?'HARI INI BELUM FINAL':(x.status==='missing'?'BELUM UPLOAD':'SELISIH');
-    const cls=isToday?'st-pending':(x.status==='missing'?'st-pending':'st-update');
-    const info=isToday
+    const isEOM=isLastDayOfMonth(x.date);
+    const label=(isToday && !isEOM)?'HARI INI BELUM FINAL':(x.status==='missing'?'BELUM UPLOAD':'SELISIH');
+    const cls=(isToday && !isEOM)?'st-pending':(x.status==='missing'?'st-pending':'st-update');
+    const info=(isToday && !isEOM)
       ? `Server Pusat ${formatRupiah(x.firebaseTotal)} · data masih bisa berubah, upload besok`
       : (x.status==='missing'
         ? `Server Pusat ${formatRupiah(x.firebaseTotal)} · ${x.count} transaksi`
         : `Server Pusat ${formatRupiah(x.firebaseTotal)} · Supabase ${formatRupiah(x.uploadedAmount)}`);
-    const btn=isToday
+    const btn=(isToday && !isEOM)
       ? `<button class="btn secondary" disabled>Lock</button>`
       : `<button class="btn" onclick="uploadPendingFirebaseDate('${x.date}')">${x.status==='missing'?'Sync':'Sync'}</button>`;
     return `<div class="pending-upload-row"><div style="min-width:0"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><b>${escapeHtml(x.date)}</b><span class="firebase-status ${cls}">${label}</span></div><div class="small" style="margin-top:3px">${escapeHtml(info)}</div></div>${btn}</div>`;
@@ -1962,7 +1947,7 @@ async function uploadPendingFirebaseDate(date){
 }
 async function uploadFirebaseIncomeForDate(date,total,quiet=false){
   if(!supabaseClient)return showToast('Supabase belum aktif');
-  if(date===getLocalDateString())return showToast('Pendapatan hari ini belum final. Sync setelah ganti tanggal.');
+  if(date===getLocalDateString() && !isLastDayOfMonth(date))return showToast('Pendapatan hari ini belum final. Sync setelah ganti tanggal.');
   const uploadedBefore=getUploadedFirebaseTransaction(date);
   const safeTotal=Number(total||0);
   if(safeTotal<=0 && !uploadedBefore)return showToast('Omset Server Pusat kosong, tidak ada yang perlu disync');
@@ -1996,7 +1981,8 @@ function renderFirebaseUploadCard(){
     auditEl.innerText=text;
   }
 
-  if(isToday){
+  const isEOM=isLastDayOfMonth(firebaseUploadDate);
+  if(isToday && !isEOM){
     statusEl.className='firebase-status st-pending';statusEl.innerText='Hari Ini';
     infoEl.innerText=fbAmount>0?`${count} transaksi Server Pusat · belum final, upload besok`:`${firebaseUploadDate} · hari ini belum ada omset Server Pusat`;
     btn.disabled=true;btn.innerText='Belum Final';
