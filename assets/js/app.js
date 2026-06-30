@@ -3689,6 +3689,64 @@ function buildMonthlyDailyRows(rows){
     return [d,r.fbLock,r.fbLive,r.manualIncome,totalIncome,r.ops,r.expenseOther,totalExpense,r.cashQris,r.cashTabungan,r.cashLainnya,totalCashOut,saldoBersih,cashSetelahPindah,laba20,labaBersih20,r.count];
   });
 }
+// DOWNLOAD DETAIL KATEGORI PENGELUARAN XLS
+function downloadExpenseByCategoryDetailXls(){
+  if(typeof XLSX==='undefined'){showToast('Library XLS belum siap, coba lagi');return;}
+  const p=getFinanceReportPeriod();
+  const rows=getFinanceReportRows();
+  const expenses=rows.filter(t=>t.type==='expense'&&!isCashOut(t));
+  if(expenses.length===0){
+    showToast('Tidak ada pengeluaran pada periode ini');
+    return;
+  }
+  
+  const byCat={};
+  expenses.forEach(t=>{
+    const nm=getExpenseCategoryName(t);
+    if(!byCat[nm])byCat[nm]=[];
+    byCat[nm].push(t);
+  });
+  
+  const data=[];
+  data.push(['LAPORAN PENGELUARAN PER KATEGORI']);
+  data.push(['Periode:', p.mode==='range'?`${p.start||'-'} s.d ${p.end||'-'}`:p.label]);
+  data.push(['Waktu Download:', typeof getWibDateTimeString==='function'?getWibDateTimeString():new Date().toLocaleString()]);
+  data.push([]);
+  
+  data.push(['Kategori', 'Detail', 'Nominal (Rp)']);
+  
+  let grandTotal=0;
+  
+  Object.keys(byCat).sort().forEach(cat=>{
+    let catTotal=0;
+    byCat[cat].sort((a,b)=>String(a.date).localeCompare(String(b.date))).forEach((t)=>{
+      const amt=Math.round(Number(t.amount||0));
+      catTotal+=amt;
+      data.push([cat, getMonthlyReportDesc(t), amt]);
+    });
+    data.push(['SUBTOTAL '+cat.toUpperCase(), '', catTotal]);
+    data.push(['','','']); // Baris kosong supaya rapih per kategori
+    grandTotal+=catTotal;
+  });
+  
+  data.push(['GRAND TOTAL', '', grandTotal]);
+  
+  const ws=makeSheetFromAoa(data,[25,55,20],[2],null);
+  
+  if(!ws['!merges']) ws['!merges']=[];
+  ws['!merges'].push({s:{r:0,c:0},e:{r:0,c:2}});
+  ws['!merges'].push({s:{r:1,c:1},e:{r:1,c:2}});
+  ws['!merges'].push({s:{r:2,c:1},e:{r:2,c:2}});
+  
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Detail Kategori');
+  
+  const safeTitle=(p.mode==='range'?`${p.start||'x'}_sd_${p.end||'y'}`:p.label).replace(/[^0-9A-Za-z_-]/g,'_');
+  const filename=`alfajri_detail_kategori_${safeTitle}.xlsx`;
+  XLSX.writeFile(wb,filename,{bookType:'xlsx'});
+  showToast(`Laporan Detail Kategori XLS didownload`);
+}
+
 function downloadMonthlyFinanceReport(){
   if(typeof XLSX==='undefined'){showToast('Library XLS belum siap, coba lagi');return;}
 
