@@ -1223,7 +1223,20 @@ function getSalaryDailyHint(monthKey){
   const due=getSalaryFundDue(monthKey||getSalaryFundMonthKey());
   if(due<=0)return 0;
   const daysLeft=getSalaryDaysLeft();
-  return roundRp(Math.ceil(due/daysLeft));
+  const idealDaily=roundRp(Math.ceil(due/daysLeft));
+  const cashFisik=getTodayCashFisikData().cashFisik;
+  const safeCap=roundRp(Math.floor(Math.max(0,cashFisik)*0.10));
+  return Math.min(idealDaily,safeCap);
+}
+function getSalaryDailyHintDetail(monthKey){
+  const due=getSalaryFundDue(monthKey||getSalaryFundMonthKey());
+  const daysLeft=getSalaryDaysLeft();
+  const idealDaily=due>0?roundRp(Math.ceil(due/daysLeft)):0;
+  const cashFisik=getTodayCashFisikData().cashFisik;
+  const safeCap=roundRp(Math.floor(Math.max(0,cashFisik)*0.10));
+  const hint=due>0?Math.min(idealDaily,safeCap):0;
+  const capped=due>0&&safeCap<idealDaily;
+  return {hint,idealDaily,cashFisik,capped,daysLeft};
 }
 async function getSalaryCategory(){
   // Cari kategori yang persis sama namanya (case-insensitive).
@@ -1240,38 +1253,41 @@ function renderSalaryFundSection(){
   const target=getSalaryFundTarget();
   const saved=getSalaryFundSaved(monthKey);
   const due=getSalaryFundDue(monthKey);
-  const daysLeft=getSalaryDaysLeft();
-  const hint=getSalaryDailyHint(monthKey);
+  const detail=getSalaryDailyHintDetail(monthKey);
+  const {hint,cashFisik,capped,daysLeft}=detail;
   const pct=target>0?Math.min(100,Math.round((saved/target)*100)):0;
-  // Header card
   if($('salaryFundAmountLarge'))$('salaryFundAmountLarge').innerText=formatRupiah(saved);
-  // Progress bar
   if($('salaryFundProgressFill'))$('salaryFundProgressFill').style.width=pct+'%';
   if($('salaryFundProgressPct'))$('salaryFundProgressPct').innerText=pct+'%';
   if($('salaryFundProgressLabel'))$('salaryFundProgressLabel').innerText='Target: '+formatRupiah(target);
-  // Stats
   if($('salaryFundSavedDisplay'))$('salaryFundSavedDisplay').innerText=formatRupiah(saved);
   if($('salaryFundDueDisplay'))$('salaryFundDueDisplay').innerText=formatRupiah(due);
   if($('salaryFundDailyHint'))$('salaryFundDailyHint').innerText=formatRupiah(hint);
   if($('salaryFundDaysLeft'))$('salaryFundDaysLeft').innerText=daysLeft+' hari';
-  // Status text & button
   const statusEl=$('salaryFundStatusText'),btn=$('paySalaryFundBtn');
   if(target<=0){
     if(statusEl)statusEl.innerText='Set target gaji dulu via tombol Sisihkan';
     if(btn){btn.disabled=false;btn.style.opacity=1;}
   }else if(due<=0){
-    if(statusEl)statusEl.innerText='Dana Gaji bulan '+monthKey+' sudah aman ✓';
+    if(statusEl)statusEl.innerText='Dana Gaji bulan '+monthKey+' sudah aman \u2713';
     if(btn){btn.disabled=false;btn.style.opacity=1;}
   }else{
-    if(statusEl)statusEl.innerText='Terkumpul '+formatRupiah(saved)+' · Kurang '+formatRupiah(due);
+    if(statusEl)statusEl.innerText='Terkumpul '+formatRupiah(saved)+' \xb7 Kurang '+formatRupiah(due);
     if(btn){btn.disabled=false;btn.style.opacity=1;}
   }
-  // Basis info
   if($('salaryFundBasisInfo')){
     if(target<=0){
       $('salaryFundBasisInfo').innerText='Tap Sisihkan untuk set target gaji per bulan dan mulai menyisihkan.';
+    }else if(due<=0){
+      $('salaryFundBasisInfo').innerText='Target gaji bulan ini sudah terpenuhi. Kerja keras terbayar! \u2728';
     }else{
-      $('salaryFundBasisInfo').innerText=`Target gaji ${monthKey}: ${formatRupiah(target)}. Terkumpul: ${formatRupiah(saved)}. Saran sisihkan hari ini: ${formatRupiah(hint)} (sisa ${daysLeft} hari).`;
+      if(hint>0){
+        const cashInfo=" \xb7 Cash fisik: "+formatRupiah(cashFisik);
+        const cappedInfo=capped?" (disesuaikan, bukan dipaksakan)":"";
+        $('salaryFundBasisInfo').innerText="Saran hari ini: "+formatRupiah(hint)+cappedInfo+cashInfo+" \xb7 Sisa "+daysLeft+" hari.";
+      }else{
+        $('salaryFundBasisInfo').innerText="Belum ada cash fisik hari ini. Kumpulkan profit dulu (saran 10%). Sisa "+daysLeft+" hari.";
+      }
     }
   }
 }
@@ -1280,22 +1296,32 @@ function renderSalaryFundModal(){
   const target=getSalaryFundTarget();
   const saved=getSalaryFundSaved(monthKey);
   const due=getSalaryFundDue(monthKey);
-  const hint=getSalaryDailyHint(monthKey);
-  const daysLeft=getSalaryDaysLeft();
+  const detail=getSalaryDailyHintDetail(monthKey);
+  const {hint,idealDaily,cashFisik,capped,daysLeft}=detail;
   const pct=target>0?Math.min(100,Math.round((saved/target)*100)):0;
   if($('salaryModalMonthKey'))$('salaryModalMonthKey').innerText=monthKey;
   if($('salaryModalSaved'))$('salaryModalSaved').innerText=formatRupiah(saved);
   if($('salaryModalTarget'))$('salaryModalTarget').innerText=formatRupiah(target);
   if($('salaryModalDue'))$('salaryModalDue').innerText=formatRupiah(due);
   if($('salaryModalProgressFill'))$('salaryModalProgressFill').style.width=pct+'%';
-  // Set hint
   const hintBox=$('salaryModalHintBox'),hintTxt=$('salaryModalHintText');
   if(hintBox&&hintTxt){
-    if(target>0&&due>0&&hint>0){
-      hintTxt.innerText=`Sisihkan minimal ${formatRupiah(hint)}/hari untuk memenuhi target dalam ${daysLeft} hari ke depan.`;
-      hintBox.style.display='block';
+    if(target>0&&due>0){
+      if(hint>0){
+        let msg="Sisihkan "+formatRupiah(hint)+" hari ini";
+        if(capped){
+          msg+=" \xb7 Disesuaikan dari cash fisik "+formatRupiah(cashFisik)+" (10%). Idealnya "+formatRupiah(idealDaily)+"/hari, tapi tidak perlu dipaksakan.";
+        }else{
+          msg+=" \xb7 Setara 10% dari cash fisik "+formatRupiah(cashFisik)+". Sisa target terpenuhi dalam "+daysLeft+" hari.";
+        }
+        hintTxt.innerText=msg;
+        hintBox.style.display='block';
+      }else{
+        hintTxt.innerText="Belum ada cash fisik hari ini. Kumpulkan profit dulu untuk bisa menyisihkan gaji (saran 10% dari cash fisik).";
+        hintBox.style.display='block';
+      }
     }else if(due<=0&&target>0){
-      hintTxt.innerText='Target bulan ini sudah terpenuhi. Kamu bisa sisihkan lebih awal untuk bulan depan.';
+      hintTxt.innerText="Target bulan ini sudah terpenuhi. Kamu bisa sisihkan lebih awal untuk bulan depan. \u2728";
       hintBox.style.display='block';
     }else{
       hintBox.style.display='none';
