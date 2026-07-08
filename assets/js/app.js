@@ -1282,6 +1282,10 @@ function renderSalaryFundSection(){
   if($('salaryFundProgressFill'))$('salaryFundProgressFill').style.width=pct+'%';
   if($('salaryFundProgressPct'))$('salaryFundProgressPct').innerText=pct+'%';
   if($('salaryFundProgressLabel'))$('salaryFundProgressLabel').innerText='Target: '+formatRupiah(target);
+  
+  if($('miniSalaryPct'))$('miniSalaryPct').innerText=pct+'%';
+  if($('miniSalaryFill'))$('miniSalaryFill').style.width=pct+'%';
+
   if($('salaryFundSavedDisplay'))$('salaryFundSavedDisplay').innerText=formatRupiah(saved);
   if($('salaryFundDueDisplay'))$('salaryFundDueDisplay').innerText=formatRupiah(due);
   if($('salaryFundDailyHint'))$('salaryFundDailyHint').innerText=formatRupiah(hint);
