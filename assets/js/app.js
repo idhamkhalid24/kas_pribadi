@@ -1188,12 +1188,34 @@ async function deleteEmergencyFundRecord(id){
 // Penyisihan masuk Supabase (transaksi nyata, kategori Gaji & Bonus).
 // Target per bulan disimpan di localStorage (setting angka, bukan uang).
 // ============================================================
-function getSalaryFundTarget(){
-  try{return Math.round(Number(localStorage.getItem(SALARY_FUND_TARGET_KEY)||0)||0)}catch(e){return 0}
+let salaryTargets=[];
+async function loadSalaryTargets(){
+  if(!supabaseClient)return;
+  try{
+    const {data,error}=await supabaseClient.from('salary_targets').select('*').eq('owner_id',OWNER_ID);
+    if(!error&&data) salaryTargets=data;
+  }catch(e){console.warn('loadSalaryTargets',e)}
 }
-function setSalaryFundTarget(amount){
+function getSalaryFundTarget(monthKey){
+  const mk=monthKey||getSalaryFundMonthKey();
+  const found=salaryTargets.find(t=>t.month_key===mk);
+  if(found) return Math.round(Number(found.target_amount||0));
+  // Fallback: if user hasn't set this month, maybe fallback to previous logic or 0
+  // but to keep it simple, return 0 so they are forced to set it each month, OR
+  // find the latest target set and use that as default.
+  // We'll just return 0 for strict monthly targets.
+  return 0;
+}
+async function setSalaryFundTarget(amount){
   const n=Math.round(Number(amount||0));
-  try{if(n>0)localStorage.setItem(SALARY_FUND_TARGET_KEY,String(n));else localStorage.removeItem(SALARY_FUND_TARGET_KEY);}catch(e){}
+  const mk=getSalaryFundMonthKey();
+  if(!supabaseClient)return;
+  const payload={owner_id:OWNER_ID, month_key:mk, target_amount:n, updated_at:new Date().toISOString()};
+  const {error}=await supabaseClient.from('salary_targets').upsert(payload,{onConflict:'owner_id,month_key'});
+  if(error) throw new Error(error.message);
+  let existing=salaryTargets.find(t=>t.month_key===mk);
+  if(existing) existing.target_amount=n;
+  else salaryTargets.push(payload);
 }
 function getSalaryFundMonthKey(date){return String(date||getLocalDateString()).slice(0,7)}
 function isSalaryFundTx(t={}){
@@ -1355,15 +1377,23 @@ function closeSalaryFundModal(){
   if(amtInp){amtInp.value='';}
   if($('salaryFundAmountPreview'))$('salaryFundAmountPreview').innerText='';
 }
-function saveSalaryFundTarget(){
+async function saveSalaryFundTarget(){
   const inp=$('salaryFundTargetInput');
   if(!inp)return;
   const val=getActualAmount(inp.value);
   if(val<=0){showToast('Isi nominal target gaji dulu');inp.focus();return;}
-  setSalaryFundTarget(val);
-  renderSalaryFundSection();
-  renderSalaryFundModal();
-  showToast('Target gaji disimpan: '+formatRupiah(val));
+  const btn=$('saveSalaryTargetBtn') || inp.nextElementSibling;
+  if(btn) btn.disabled=true;
+  try{
+    await setSalaryFundTarget(val);
+    renderSalaryFundSection();
+    renderSalaryFundModal();
+    showToast('Target gaji '+getSalaryFundMonthKey()+' disimpan: '+formatRupiah(val));
+  }catch(e){
+    showToast('Gagal simpan target: '+e.message);
+  }finally{
+    if(btn) btn.disabled=false;
+  }
 }
 async function saveSalaryFundEntry(){
   const amtInp=$('salaryFundAmountInput');
@@ -4212,6 +4242,7 @@ async function initApp(){try{if(!initSupabase())return;
   try{await loadCashDrawerAudits();}catch(e){console.warn('Tabel audit cash fisik belum siap:',e)}
   restoreGoldPriceCache();
   try{await loadExpenseCategories();await ensureDefaultExpenseCategories();await migrateLegacyExpenseCategories();}catch(e){console.warn('Kategori belum siap:',e)}
+  try{await loadSalaryTargets();}catch(e){console.warn('Salary targets gagal diload',e)}
   await loadZakatHistory();
   if(firebaseDb){
     // Tunggu snapshot pertama Server Pusat hari ini. Panel tanggal lain baru dibaca saat halaman Server dibuka.
