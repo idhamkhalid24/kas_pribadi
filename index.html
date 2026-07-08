@@ -13,6 +13,92 @@
 </head>
 <body>
   <!-- ====== MODALS ====== -->
+
+  <!-- Modal Dana Gaji -->
+  <div id="salaryFundModal" class="modal hidden">
+    <div class="box" style="max-width:420px;width:100%">
+
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:16px">
+        <div>
+          <h3 style="color:#7c3aed;margin-bottom:2px">💼 Dana Gaji</h3>
+          <span id="salaryModalMonthKey" style="font-size:11px;font-weight:700;color:#a78bfa"></span>
+        </div>
+        <button class="x" style="font-size:24px;flex-shrink:0" onclick="closeSalaryFundModal()">×</button>
+      </div>
+
+      <!-- Status Strip: Terkumpul / Target / Kurang -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+        <div style="background:#f5f3ff;border-radius:10px;padding:10px 8px;text-align:center">
+          <div style="font-size:9px;color:#a78bfa;font-weight:800;letter-spacing:.3px;margin-bottom:4px">TERKUMPUL</div>
+          <div id="salaryModalSaved" class="num" style="font-size:13px;font-weight:800;color:#7c3aed">Rp 0</div>
+        </div>
+        <div style="background:#f5f3ff;border-radius:10px;padding:10px 8px;text-align:center">
+          <div style="font-size:9px;color:#a78bfa;font-weight:800;letter-spacing:.3px;margin-bottom:4px">TARGET</div>
+          <div id="salaryModalTarget" class="num" style="font-size:13px;font-weight:800;color:#374151">Rp 0</div>
+        </div>
+        <div style="background:#fff1f2;border-radius:10px;padding:10px 8px;text-align:center">
+          <div style="font-size:9px;color:#fca5a5;font-weight:800;letter-spacing:.3px;margin-bottom:4px">KURANG</div>
+          <div id="salaryModalDue" class="num" style="font-size:13px;font-weight:800;color:#ef4444">Rp 0</div>
+        </div>
+      </div>
+
+      <!-- Progress Bar -->
+      <div style="margin-bottom:10px">
+        <div class="salary-fund-progress-bar" style="height:7px">
+          <div id="salaryModalProgressFill" class="salary-fund-progress-fill" style="width:0%"></div>
+        </div>
+      </div>
+
+      <!-- Saran hari ini -->
+      <div id="salaryModalHintBox" style="background:#f5f3ff;border-radius:10px;padding:10px 12px;margin-bottom:14px;display:none">
+        <div style="font-size:10px;font-weight:800;color:#7c3aed;margin-bottom:3px">💡 Saran hari ini</div>
+        <div id="salaryModalHintText" style="font-size:12px;color:#6d28d9;font-weight:600;line-height:1.5"></div>
+      </div>
+
+      <!-- Divider -->
+      <div style="border-top:1px solid #ede9fe;margin-bottom:14px"></div>
+
+      <!-- Target Gaji -->
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <label style="font-size:12px;font-weight:800;color:#374151">🎯 Target Gaji / Bulan</label>
+          <span id="salaryFundTargetPreview" style="font-size:12px;font-weight:700;color:#7c3aed"></span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <input type="number" id="salaryFundTargetInput" placeholder="Contoh: 3000 = Rp 3.000.000" oninput="handleSalaryTargetPreview(this)" style="flex:1;border-color:#e9d5ff;font-size:13px">
+          <button onclick="saveSalaryFundTarget()" style="background:#7c3aed;color:white;border:none;border-radius:999px;padding:0 16px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;min-height:44px">Simpan</button>
+        </div>
+      </div>
+
+      <!-- Sisihkan Sekarang -->
+      <div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <label style="font-size:12px;font-weight:800;color:#374151">Sisihkan Sekarang</label>
+          <span id="salaryFundAmountPreview" style="font-size:12px;font-weight:700;color:#7c3aed"></span>
+        </div>
+        <input type="number" id="salaryFundAmountInput" placeholder="Contoh: 100 = Rp 100.000" oninput="handleSalaryAmountPreview(this)" style="width:100%;border-color:#e9d5ff;font-size:13px;box-sizing:border-box">
+        <div style="margin-top:5px;font-size:11px;color:#a78bfa;font-weight:600">Masuk Riwayat → kategori <b style="color:#7c3aed">Gaji &amp; Bonus</b></div>
+      </div>
+
+      <!-- Tombol Aksi -->
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button onclick="closeSalaryFundModal()" style="flex:1;background:transparent;border:1.5px solid #e9d5ff;color:#7c3aed;border-radius:999px;min-height:46px;font-weight:700;font-size:13px;cursor:pointer">Batal</button>
+        <button id="saveSalaryFundBtn" onclick="saveSalaryFundEntry()" style="flex:2;background:#7c3aed;color:white;border:none;border-radius:999px;min-height:46px;font-weight:800;font-size:14px;cursor:pointer">💾 Sisihkan</button>
+      </div>
+
+      <!-- Riwayat -->
+      <div style="border-top:1px solid #ede9fe;padding-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <b style="font-size:12px;font-weight:800;color:#374151">Riwayat Bulan Ini</b>
+          <span id="salaryFundHistoryCount" style="font-size:11px;font-weight:700;color:#a78bfa">0 data</span>
+        </div>
+        <div id="salaryFundHistoryList" style="max-height:28vh;overflow-y:auto"></div>
+      </div>
+
+    </div>
+  </div>
+
   <div id="passwordModal" class="modal hidden">
     <div class="box">
       <h3 style="margin-bottom:6px;text-align:center">Verifikasi PIN</h3>
@@ -95,7 +181,7 @@
     <div class="box" style="max-width:420px;width:100%">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px">
         <div>
-          <h3>💰 Pengurangan Cash</h3>
+          <h3>Pengurangan Cash</h3>
           <small class="small" style="color:var(--blue);font-weight:700;display:block;margin-top:2px">QRIS &amp; Tabungan tidak dihitung pengeluaran bisnis</small>
         </div>
         <button class="x" style="font-size:24px" onclick="closeCashOutModal()">×</button>
@@ -429,11 +515,11 @@
 
       <!-- Cash Fisik Card -->
       <div id="cashFisikCard" class="cash-fisik-card home-section is-collapsed tone-cash">
-        <div class="cash-fisik-header">
+        <div class="cash-fisik-header" onclick="toggleHomeSection('cashFisikCard')" style="cursor:pointer">
           <div>
             <div class="cash-fisik-title">Cash Fisik Hari Ini</div>
-            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 4px;">
-              <div id="cashFisikTotal" class="cash-fisik-amount num" style="margin:0;" onclick="openCashOutModal()">Rp 0</div>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 4px;" onclick="event.stopPropagation()">
+              <div id="cashFisikTotal" class="cash-fisik-amount num" style="margin:0;" onclick="event.stopPropagation();openCashOutModal()">Rp 0</div>
               <div class="cash-fisik-btns" style="display: flex; gap: 6px;">
                 <button onclick="openOpsModal()" class="cash-fisik-btn-small" style="background:var(--orange-light);color:var(--orange);border-color:#ffd7a0">+ Ops</button>
                 <button onclick="openCashOutModal()" class="cash-fisik-btn-small" style="background:var(--blue-light);color:var(--blue);border-color:#bfdbfe">+ QRIS</button>
@@ -442,9 +528,8 @@
             </div>
             <div id="todayFirebaseIncomeInfo" class="small" style="margin-top:6px">Server Pusat − Ops − QRIS − Tabungan</div>
           </div>
-          <div class="cash-fisik-actions">
+          <div class="cash-fisik-actions" onclick="event.stopPropagation()">
             <span class="cash-fisik-badge">HARI INI</span>
-            <button class="section-toggle" type="button" onclick="toggleHomeSection('cashFisikCard')">Buka</button>
           </div>
         </div>
         <div class="home-section-body">
@@ -483,15 +568,14 @@
 
       <!-- Harga Emas Real-Time -->
       <div id="goldLiveCard" class="gold-live-card home-section is-collapsed tone-gold">
-        <div class="gold-live-head">
+        <div class="gold-live-head" onclick="toggleHomeSection('goldLiveCard')" style="cursor:pointer">
           <div style="min-width:0">
             <div class="gold-live-title">Harga Emas Indonesia</div>
             <div id="goldPricePerGram" class="gold-live-price num">Memuat...</div>
             <div id="goldPriceInfo" class="small" style="margin-top:4px;color:#8a5b00;font-weight:800">Realtime · Rupiah / gram</div>
           </div>
-          <div class="gold-live-actions">
+          <div class="gold-live-actions" onclick="event.stopPropagation()">
             <span id="goldPriceStatus" class="gold-live-badge">LIVE</span>
-            <button class="section-toggle" type="button" onclick="toggleHomeSection('goldLiveCard')">Buka</button>
           </div>
         </div>
         <div class="home-section-body">
@@ -573,15 +657,14 @@
 
       <!-- Zakat Mal -->
       <div id="zakatMalCard" class="zakat-card home-section is-collapsed tone-zakat">
-        <div class="zakat-header">
+        <div class="zakat-header" onclick="toggleHomeSection('zakatMalCard')" style="cursor:pointer">
           <div>
             <div class="section-title" style="margin:0 0 4px">Zakat Mal</div>
             <div id="zakatAmountLarge" class="num gold" style="font-size:20px;font-weight:500">Rp 0</div>
             <div id="zakatPaymentStatusText" class="small" style="margin-top:3px">Menunggu</div>
           </div>
-          <div class="section-action-stack">
+          <div class="section-action-stack" onclick="event.stopPropagation()">
             <button id="payZakatBtn" class="btn gold" style="width:auto;min-width:90px;padding:10px" onclick="markZakatPaid()">Bayar</button>
-            <button class="section-toggle" type="button" onclick="toggleHomeSection('zakatMalCard')">Buka</button>
           </div>
         </div>
         <div class="home-section-body">
@@ -600,15 +683,14 @@
 
       <!-- Dana Darurat -->
       <div id="emergencyFundCard" class="zakat-card home-section is-collapsed tone-emergency" style="border-color:#bfdbfe;background:var(--blue-light)">
-        <div class="zakat-header">
+        <div class="zakat-header" onclick="toggleHomeSection('emergencyFundCard')" style="cursor:pointer">
           <div>
             <div class="section-title" style="margin:0 0 4px;color:var(--blue)">Dana Darurat</div>
             <div id="emergencyFundAmountLarge" class="num blue" style="font-size:20px;font-weight:500">Rp 0</div>
             <div id="emergencyFundStatusText" class="small" style="margin-top:3px;color:var(--blue);font-weight:700">Menunggu</div>
           </div>
-          <div class="section-action-stack">
+          <div class="section-action-stack" onclick="event.stopPropagation()">
             <button id="payEmergencyFundBtn" class="btn" style="width:auto;min-width:90px;padding:10px;background:var(--blue)" onclick="markEmergencyFundSaved()">Nabung</button>
-            <button class="section-toggle" type="button" onclick="toggleHomeSection('emergencyFundCard')">Buka</button>
           </div>
         </div>
         <div class="home-section-body">
@@ -620,17 +702,49 @@
         </div>
       </div>
 
+      <!-- Dana Gaji -->
+      <div id="salaryFundCard" class="zakat-card home-section is-collapsed" style="border-color:#e9d5ff;background:#faf5ff">
+        <div class="zakat-header" onclick="toggleHomeSection('salaryFundCard')" style="cursor:pointer">
+          <div style="min-width:0;flex:1">
+            <div class="section-title" style="margin:0 0 4px;color:#7c3aed">Dana Gaji Karyawan</div>
+            <div id="salaryFundAmountLarge" class="num" style="font-size:20px;font-weight:500;color:#7c3aed">Rp 0</div>
+            <div id="salaryFundStatusText" class="small" style="margin-top:3px;color:#7c3aed;font-weight:700">Set target dulu</div>
+          </div>
+          <div class="section-action-stack" onclick="event.stopPropagation()">
+            <button id="paySalaryFundBtn" class="btn" style="width:auto;min-width:90px;padding:10px;background:#7c3aed" onclick="openSalaryFundModal()">Sisihkan</button>
+          </div>
+        </div>
+        <div class="home-section-body">
+          <!-- Progress Bar -->
+          <div class="salary-fund-progress-wrap">
+            <div class="salary-fund-progress-bar">
+              <div id="salaryFundProgressFill" class="salary-fund-progress-fill" style="width:0%"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px">
+              <span id="salaryFundProgressPct" class="small" style="font-weight:800;color:#7c3aed">0%</span>
+              <span id="salaryFundProgressLabel" class="small" style="color:#6b7280">Target: Rp 0</span>
+            </div>
+          </div>
+          <div class="zakat-grid" style="margin-top:8px">
+            <div class="stat"><span>Terkumpul Bulan Ini</span><b id="salaryFundSavedDisplay" class="num" style="color:#7c3aed">Rp 0</b></div>
+            <div class="stat"><span>Sisa Kurang</span><b id="salaryFundDueDisplay" class="num" style="color:#ef4444">Rp 0</b></div>
+            <div class="stat"><span>Saran Hari Ini</span><b id="salaryFundDailyHint" class="num" style="color:#7c3aed">Rp 0</b></div>
+            <div class="stat"><span>Sisa Hari</span><b id="salaryFundDaysLeft" class="num">0 hari</b></div>
+          </div>
+          <div id="salaryFundBasisInfo" class="small" style="margin-top:10px;padding-top:10px;border-top:1px solid #e9d5ff;color:#7c3aed;font-weight:700">Sisihkan tiap hari agar tidak berat di akhir bulan. Tap Sisihkan untuk mencatat.</div>
+        </div>
+      </div>
+
       <!-- Hutang Section Paling Bawah -->
       <!-- Hutang Card -->
       <div id="debtHomeCard" class="debt-card home-section is-collapsed tone-debt">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div onclick="toggleHomeSection('debtHomeCard')" style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;cursor:pointer">
           <div style="min-width:0">
             <div class="debt-title">Hutang Uang Aktif</div>
-            <div id="debtActiveTotal" class="debt-amount num" onclick="openDebtModal('list')">Rp 0</div>
+            <div id="debtActiveTotal" class="debt-amount num" onclick="event.stopPropagation();openDebtModal('list')">Rp 0</div>
             <div id="debtTodayInfo" class="small" style="margin-top:3px;color:#92400e;font-weight:700">Pinjaman menambah Saldo Bersih, bayar pokok mengurangi Saldo Bersih.</div>
           </div>
-          <div class="debt-actions">
-            <button class="section-toggle" type="button" onclick="toggleHomeSection('debtHomeCard')">Buka</button>
+          <div class="debt-actions" onclick="event.stopPropagation()">
             <button class="debt-mini-btn" onclick="openDebtModal('borrow')">+ Pinjam</button>
             <button class="debt-mini-btn pay" onclick="openDebtModal('pay')">Bayar</button>
           </div>

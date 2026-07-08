@@ -315,8 +315,79 @@ input:focus, select:focus, textarea:focus {
   border-radius: 999px !important;
   line-height: 28px !important;
 }
-.zakat-header .section-toggle {
+/* Rapikan section toggle button di salaryFundCard */
+#salaryFundCard .section-toggle {
   padding: 3px 10px !important;
   font-size: 10px !important;
   min-height: 0 !important;
 }
+
+/* Card warna ungu muda agar muncul berbeda dari Dana Darurat */
+#salaryFundCard {
+  border-color: #e9d5ff !important;
+  background: #faf5ff !important;
+}
+#pageHome #salaryFundCard {
+  margin-bottom: 8px !important;
+  padding: 12px !important;
+}
+
+/* Section title ungu */
+#salaryFundCard .section-title {
+  color: #7c3aed !important;
+}
+
+/* Progress Bar */
+.salary-fund-progress-wrap {
+  margin-top: 8px;
+}
+.salary-fund-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #ede9fe;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.salary-fund-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7c3aed 0%, #a855f7 100%);
+  border-radius: 999px;
+  transition: width 0.4s cubic-bezier(.4,0,.2,1);
+  max-width: 100%;
+}
+
+/* Tombol Sisihkan ukurannya sama dengan Nabung di Dana Darurat */
+#salaryFundCard #paySalaryFundBtn {
+  min-height: 28px !important;
+  height: 28px !important;
+  min-width: 0 !important;
+  width: auto !important;
+  padding: 0 14px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  border-radius: 999px !important;
+  line-height: 28px !important;
+  background: #7c3aed !important;
+}
+
+/* Stat grid di dalam card Dana Gaji */
+#salaryFundCard .zakat-grid .stat {
+  border-color: #e9d5ff !important;
+  background: #f5f3ff !important;
+}
+#salaryFundCard .zakat-grid .stat b {
+  color: #7c3aed !important;
+}
+
+/* Modal Dana Gaji progress bar di modal */
+#salaryFundModal .salary-fund-progress-bar {
+  background: #ede9fe;
+}
+
+/* Rapikan section toggle button di salaryFundCard */
+#salaryFundCard .section-toggle {
+  padding: 3px 10px !important;
+  font-size: 10px !important;
+  min-height: 0 !important;
+}
+
