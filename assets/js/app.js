@@ -1862,10 +1862,16 @@ async function syncFirebaseStaffBonus(date){
     if(cat)catId=cat.id;
     else return false;
 
+    // Hitung total kasbon yang sudah diambil secara fisik
+    const totalWithdrawn = memosToSave.reduce((sum, m) => sum + m.amount, 0);
+
     const monthDigits=monthKey.replace(/\D/g,'')||'197001';
     const id=Number(monthDigits+'990001');
     const desc=`[AUTO-BONUS-STAFF:${monthKey}] Total Gaji & Bonus Staff`;
-    const amount=Math.max(0,Math.round(total));
+    
+    // KUNCI: Pengeluaran harus minimal sebesar total kasbon yang sudah keluar fisik!
+    const finalAmount = Math.max(total, totalWithdrawn);
+    const amount=Math.max(0,Math.round(finalAmount));
     const txDate=`${monthKey}-01`; // Use first day of the month so it falls in the correct month
 
     // Clean up any old daily auto-bonus entries we created previously
