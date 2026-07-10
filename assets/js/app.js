@@ -4631,16 +4631,25 @@ async function initApp(){try{if(!initSupabase())return;
 // supaya input yang sedang difokus tidak ketutup keyboard.
 // ============================================================
 let globalKeyboardFixReady=false,globalKeyboardTimer=null;
+// State anti-goyang: nyimpen nilai terakhir yang benar-benar dipakai supaya
+// getaran kecil (mis. bar prediksi angka Gboard naik-turun beberapa px saat
+// mengetik) tidak memicu reposisi + scroll ulang tiap event.
+let globalKbLastModal=null,globalKbLastVisibleH=null,globalKbLastOffsetTop=null,globalKbLifted=false,globalKbScrolledEl=null;
 function getOpenModalEl(){
   const modals=document.querySelectorAll('.modal');
   for(const m of modals){ if(!m.classList.contains('hidden')) return m; }
   return null;
 }
+function resetGlobalKeyboardState(){
+  globalKbLastModal=null;globalKbLastVisibleH=null;globalKbLastOffsetTop=null;
+  globalKbLifted=false;globalKbScrolledEl=null;
+}
 function adjustAnyModalForKeyboard(){
   const modal=getOpenModalEl();
-  if(!modal) return;
+  if(!modal){ resetGlobalKeyboardState(); return; }
   // Modal transactionModal sudah punya handler khusus sendiri.
   if(modal.id==='transactionModal') return;
+  if(modal!==globalKbLastModal) resetGlobalKeyboardState();
   const vv=window.visualViewport;
   const layoutH=window.innerHeight||document.documentElement.clientHeight||screen.height||0;
   const visibleH=Math.max(280,Math.floor(vv&&vv.height?vv.height:layoutH));
@@ -4648,24 +4657,41 @@ function adjustAnyModalForKeyboard(){
   const hiddenByKeyboard=Math.max(0,Math.floor(layoutH-visibleH-offsetTop));
   const activeInModal=modal.contains(document.activeElement);
   const mustLift=activeInModal&&hiddenByKeyboard>70;
+  // Toleransi getaran: kalau statusnya sama (masih terangkat/masih normal)
+  // dan perubahan tinggi/posisi kecil (<24px), abaikan — ini cuma noise
+  // dari keyboard, bukan perubahan beneran, jadi jangan reposisi lagi.
+  const SHAKE_TOLERANCE=24;
+  if(mustLift===globalKbLifted&&globalKbLastVisibleH!=null){
+    const dH=Math.abs(visibleH-globalKbLastVisibleH);
+    const dO=Math.abs(offsetTop-globalKbLastOffsetTop);
+    if(dH<SHAKE_TOLERANCE&&dO<SHAKE_TOLERANCE) return;
+  }
+  globalKbLastModal=modal;globalKbLastVisibleH=visibleH;globalKbLastOffsetTop=offsetTop;globalKbLifted=mustLift;
   if(mustLift){
     modal.style.height=visibleH+'px';
     modal.style.top=offsetTop+'px';
     modal.style.bottom='auto';
     modal.style.alignItems='flex-start';
     const box=modal.querySelector('.box');
-    if(box){ box.style.maxHeight=(visibleH-16)+'px'; box.style.marginTop='8px'; }
+    // Sisakan jarak di atas & bawah (bukan cuma atas) supaya box tidak
+    // mepet ke tepi container — kalau mepet, sudut rounded di bawah
+    // kelihatan lancip/kepotong walau border-radius CSS-nya tetap ada.
+    if(box){ box.style.maxHeight=(visibleH-32)+'px'; box.style.marginTop='8px'; box.style.marginBottom='8px'; }
     const active=document.activeElement;
-    if(active&&modal.contains(active)){
+    // Scroll ke posisi input cuma sekali per fokus (bukan tiap event resize),
+    // supaya tidak ada "loncatan" berulang saat user sedang mengetik.
+    if(active&&modal.contains(active)&&globalKbScrolledEl!==active){
+      globalKbScrolledEl=active;
       setTimeout(()=>{try{active.scrollIntoView({block:'center',inline:'nearest'});}catch(e){}},60);
     }
   }else{
+    globalKbScrolledEl=null;
     modal.style.removeProperty('height');
     modal.style.removeProperty('top');
     modal.style.removeProperty('bottom');
     modal.style.removeProperty('align-items');
     const box=modal.querySelector('.box');
-    if(box){ box.style.removeProperty('max-height'); box.style.removeProperty('margin-top'); }
+    if(box){ box.style.removeProperty('max-height'); box.style.removeProperty('margin-top'); box.style.removeProperty('margin-bottom'); }
   }
 }
 function bindGlobalKeyboardFix(){
