@@ -168,7 +168,7 @@
   <!-- Modal Pembayaran Piutang -->
   <!-- Modal Simple Bayar Hutang -->
   <div id="debtPaymentModal" class="modal hidden">
-    <div class="box" style="max-width:320px;width:100%">
+    <div class="box" style="max-width:340px;width:100%">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
         <div>
           <h3>Catat Pembayaran</h3>
@@ -185,9 +185,9 @@
         <input type="number" id="debtPaymentAmount" placeholder="Nominal" oninput="handleDebtPaymentPreview(this)">
         <span id="debtPaymentPreview" class="preview"></span>
       </div>
-      <div class="row">
+      <div class="row" style="grid-template-columns:.8fr 1.2fr">
         <button class="btn secondary" onclick="closeDebtPaymentModal()">Batal</button>
-        <button class="btn" style="background:#15803d" onclick="saveDebtPaymentSimple()">Catat Pembayaran</button>
+        <button class="btn" style="background:#15803d;white-space:nowrap;font-size:14px;padding-left:8px;padding-right:8px" onclick="saveDebtPaymentSimple()">Catat Pembayaran</button>
       </div>
     </div>
   </div>
