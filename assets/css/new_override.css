@@ -104,7 +104,7 @@ body::before { display: none !important; }
 .box {
   background: var(--surface) !important;
   box-shadow: 0 -10px 30px rgba(0,0,0,0.1) !important;
-  border-radius: 20px 20px 0 0 !important;
+  border-radius: 20px !important;
 }
 .modal { background: rgba(15,23,42,0.6) !important; }
 

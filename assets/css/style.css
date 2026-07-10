@@ -338,12 +338,13 @@
     /* === MODAL === */
     .modal {
       position: fixed; inset: 0; background: rgba(26,31,24,.5);
-      z-index: 100; display: flex; align-items: flex-end; justify-content: center; padding: 0;
+      z-index: 100; display: flex; align-items: center; justify-content: center; padding: 16px;
     }
     .box {
-      background: white; border-radius: var(--r-xl) var(--r-xl) 0 0;
-      padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
-      max-width: 420px; width: 100%; max-height: 92vh; overflow-y: auto;
+      background: white; border-radius: var(--r-xl);
+      padding: 20px 16px;
+      max-width: 420px; width: 100%; max-height: 100%; overflow-y: auto;
+      margin: auto;
     }
     .box h3 { font-size: 17px; font-weight: 800; letter-spacing: -.3px; }
     .hidden { display: none !important; }
@@ -814,7 +815,7 @@ body::before { display: none !important; }
 .box {
   background: var(--surface) !important;
   box-shadow: 0 -10px 30px rgba(0,0,0,0.1) !important;
-  border-radius: 20px 20px 0 0 !important;
+  border-radius: 20px !important;
 }
 .modal { background: rgba(15,23,42,0.6) !important; }
 
