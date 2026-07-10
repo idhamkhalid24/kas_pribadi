@@ -1809,8 +1809,113 @@ async function syncFirebaseQrisCashOut(rows,opts={}){
   }
 }
 
-async function getFirebaseQuerySnapshot(q){
-  throw new Error('Query Server Pusat sudah diganti ke Server Pusat Supabase');
+async function syncFirebaseStaffBonus(date){
+  if(!serverPusatClient||!date)return false;
+  try{
+    const monthKey=date.slice(0,7);
+    const [txRes, manualRes, closingRes] = await Promise.all([
+      serverPusatClient.from('transactions').select('data').eq('data->>monthKey',monthKey),
+      serverPusatClient.from('manualBonuses').select('data').eq('data->>monthKey',monthKey),
+      serverPusatClient.from('closings').select('data').like('data->>dateKey',`${monthKey}-%`)
+    ]);
+    
+    let total=0;
+    (txRes.data||[]).forEach(r=>{
+      const t=r.data||{};
+      if(isFirebaseRecordDeleted(t)||isTrialServerRecord(t))return;
+      const group=String(t.bonusGroup||'').toLowerCase();
+      const role=String(t.userRole||t.role||'').toLowerCase();
+      if(group==='harian'||role==='harian')return;
+      const rate=Number(t.bonusRate??t.transactionBonusRate??(t.bonusPercent?t.bonusPercent/100:0.015));
+      total+=Number(t.amount||0)*rate;
+    });
+    const memosToSave=[];
+    (manualRes.data||[]).forEach(r=>{
+      const t=r.data||{};
+      if(isFirebaseRecordDeleted(t)||isTrialServerRecord(t))return;
+      const type=String(t.type||t.bonusType||'').toLowerCase();
+      const action=String(t.action||t.bonusAction||'').toLowerCase();
+      const source=String(t.source||'').toLowerCase();
+      if(type==='bonus_withdrawal'||action==='withdraw'||source==='bonus_withdrawal'||String(t.id).startsWith('bonuswd_')){
+        const wAmount=Math.abs(Number(t.amount||0));
+        if(wAmount>0){
+          const wName=t.name||t.user||'Staff';
+          const wDate=(t.dateKey||t.date||`${monthKey}-01`).slice(0,10);
+          const memoId=Number(String(autoQrisHash(t.id||(wName+wDate))).padStart(6,'0')+'990002');
+          memosToSave.push({id:memoId,date:wDate,name:wName,amount:wAmount});
+        }
+        return;
+      }
+      const group=String(t.bonusGroup||'').toLowerCase();
+      const role=String(t.userRole||t.role||'').toLowerCase();
+      if(group==='harian'||role==='harian')return;
+      total+=Number(t.amount||0);
+    });
+    (closingRes.data||[]).forEach(r=>{
+      const c=r.data||{};
+      if(isFirebaseRecordDeleted(c)||c.closed!==true||c.canceled===true)return;
+      total+=Number(c.totalBonus||0);
+    });
+
+    let catId=0;
+    const cat=(expenseCategories||[]).find(c=>String(c.name).toLowerCase()==='gaji & bonus');
+    if(cat)catId=cat.id;
+    else return false;
+
+    const monthDigits=monthKey.replace(/\D/g,'')||'197001';
+    const id=Number(monthDigits+'990001');
+    const desc=`[AUTO-BONUS-STAFF:${monthKey}] Total Gaji & Bonus Staff`;
+    const amount=Math.max(0,Math.round(total));
+    const txDate=`${monthKey}-01`; // Use first day of the month so it falls in the correct month
+
+    // Clean up any old daily auto-bonus entries we created previously
+    const toDelete=(transactions||[]).filter(t=>String(t.description).startsWith('[AUTO-BONUS-STAFF:')&&Number(t.id)!==id);
+    if(toDelete.length){
+      for(const d of toDelete){
+        await supabaseClient.from('transactions').delete().eq('owner_id',OWNER_ID).eq('id',d.id);
+      }
+    }
+
+    const existing=(transactions||[]).find(t=>Number(t.id)===id);
+    let mainChanged=false;
+    if(amount>0){
+      if(!existing||Number(existing.amount)!==amount||existing.description!==desc||Number(existing.category_id)!==catId){
+        const payload={id,owner_id:OWNER_ID,date:txDate,description:desc,amount,type:'expense',category_id:catId,category_name:'Gaji & Bonus'};
+        await supabaseClient.from('transactions').upsert(payload,{onConflict:'id'});
+        mainChanged=true;
+      }
+    }else if(existing){
+      await supabaseClient.from('transactions').delete().eq('owner_id',OWNER_ID).eq('id',id);
+      mainChanged=true;
+    }
+
+    let memoChanged=false;
+    const currentMemos=(transactions||[]).filter(t=>{
+      const d=String(t.description);
+      return (d.startsWith('[MEMO] Kasbon')||(d.startsWith('Memo ')&&d.includes('ambil bonus')))&&t.date.startsWith(monthKey);
+    });
+    for(const m of memosToSave){
+      const mDesc=`Memo ${m.name} ambil bonus ${formatRupiah(m.amount)}`;
+      const ex=currentMemos.find(tx=>Number(tx.id)===m.id);
+      if(!ex||ex.description!==mDesc||Number(ex.category_id)!==catId||Number(ex.amount)!==0){
+        const payload={id:m.id,owner_id:OWNER_ID,date:m.date,description:mDesc,amount:0,type:'expense',category_id:catId,category_name:'Gaji & Bonus'};
+        await supabaseClient.from('transactions').upsert(payload,{onConflict:'id'});
+        memoChanged=true;
+      }
+    }
+    // Delete old memos in this month that are no longer valid
+    for(const ex of currentMemos){
+      if(!memosToSave.find(m=>m.id===Number(ex.id))){
+        await supabaseClient.from('transactions').delete().eq('owner_id',OWNER_ID).eq('id',ex.id);
+        memoChanged=true;
+      }
+    }
+
+    return mainChanged || memoChanged || toDelete.length>0;
+  }catch(e){
+    console.warn('syncFirebaseStaffBonus err:',e);
+    return false;
+  }
 }
 async function refreshFirebaseRowsOnce(date,mode='selected'){
   // Baca ulang pakai range supaya data index lama/baru tetap kebaca walau field tanggal berbeda.
@@ -1818,7 +1923,8 @@ async function refreshFirebaseRowsOnce(date,mode='selected'){
   try{
     const rows=await fetchFirebaseRowsByRange(date,date);
     const qrisChanged=await syncFirebaseQrisCashOut(rows,{quiet:true,date});
-    if(qrisChanged)await loadTransactions();
+    const bonusChanged=await syncFirebaseStaffBonus(date);
+    if(qrisChanged||bonusChanged)await loadTransactions();
     if(mode==='today'){
       todayFirebaseIncomeRows=rows.filter(t=>t.dateKey===date);
       todayFirebaseIncomeTotal=sumFirebaseRows(todayFirebaseIncomeRows);
@@ -3629,6 +3735,10 @@ function renderFinanceReport(){
     const sorted=(info.rows||[]).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||((Number(b.id)||0)-(Number(a.id)||0)));
     const detailRows=sorted.map(t=>{
       const desc=cleanFirebaseDesc(t.description||'Pengeluaran');
+      const isMemo = desc.startsWith('Memo ') && desc.includes('ambil bonus');
+      if (isMemo) {
+        return `<div class="category-detail-row memo-brutalist"><div style="min-width:0; grid-column: 1 / -1;"><b>${escapeHtml(desc)}</b><small>${escapeHtml(t.date||'-')}</small></div></div>`;
+      }
       return `<div class="category-detail-row"><div style="min-width:0"><b>${escapeHtml(desc)}</b><small>${escapeHtml(t.date||'-')}</small></div><b class="num" style="font-size:12px;white-space:nowrap;color:${pal.ink}">${formatRupiah(t.amount)}</b></div>`;
     }).join('');
     return `<div class="category-accordion" style="${catStyle}"><div class="category-accordion-head"><div class="category-accordion-title"><b>${escapeHtml(name)}</b><div class="category-accordion-meta"><small>${sorted.length} transaksi</small><small>${pct}% dari total</small></div><div class="progressbar"><span style="width:${Math.min(100,pct)}%"></span></div></div><div class="category-accordion-amount"><b class="num" style="font-size:13px;color:${pal.ink}">${formatRupiah(total)}</b><button class="mini-btn" type="button" style="background:${pal.bgSoft};border-color:${pal.border};color:${pal.ink}" onclick="toggleReportCategoryDetail(${idx})">Detail</button></div></div><div id="report-cat-detail-${idx}" class="category-accordion-detail hidden">${detailRows}</div></div>`;
