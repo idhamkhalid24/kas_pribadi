@@ -1897,7 +1897,7 @@ async function syncFirebaseStaffBonus(date){
       }
     });
     const hutangId=Number(monthDigits+'990003');
-    const hutangDesc=`[AUTO-HUTANG-STAFF:${monthKey}] Piutang Kasbon: ${hutangUsers.join(', ')}`;
+    const hutangDesc=`[AUTO-HUTANG-STAFF:${monthKey}] Piutang Kasbon: ${hutangUsers.join(' | ')}`;
     const hutangAmount=Math.max(0,Math.round(totalHutang));
 
     // Clean up any old daily auto-bonus entries we created previously
@@ -3787,8 +3787,26 @@ function renderFinanceReport(){
     const detailRows=sorted.map(t=>{
       const desc=cleanFirebaseDesc(t.description||'Pengeluaran');
       const isMemo = desc.startsWith('Memo ') && desc.includes('ambil bonus');
+      const isHutang = desc.startsWith('[AUTO-HUTANG-STAFF:');
       if (isMemo) {
         return `<div class="category-detail-row memo-brutalist"><div style="min-width:0; grid-column: 1 / -1;"><b>${escapeHtml(desc)}</b><small>${escapeHtml(t.date||'-')}</small></div></div>`;
+      }
+      if (isHutang) {
+        let cleanDesc = desc.replace(/\[AUTO-HUTANG-STAFF:[^\]]+\]\s*/, '');
+        let parts = cleanDesc.split(': ');
+        let mainTitle = parts[0];
+        // Support both old format (', ') and new format (' | ')
+        let splitChar = parts.length > 1 && parts[1].includes(' | ') ? ' | ' : ', ';
+        let details = parts.length > 1 ? parts[1].split(splitChar).map(s => `<span style="display:block;margin-top:4px;">• ${escapeHtml(s)}</span>`).join('') : '';
+        
+        return `<div class="category-detail-row hutang-brutalist" style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div style="min-width:0; display:flex; flex-direction:column; gap:2px;">
+            <b style="font-size:15px; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">⚠️ ${escapeHtml(mainTitle)}</b>
+            <div style="font-size:13px; line-height:1.4; color:#fff; font-weight:600; font-family:monospace;">${details}</div>
+            <small style="margin-top:6px;">${escapeHtml(t.date||'-')}</small>
+          </div>
+          <b class="num" style="margin-left:12px; font-size:18px; white-space:nowrap; flex-shrink:0;">${formatRupiah(t.amount)}</b>
+        </div>`;
       }
       return `<div class="category-detail-row"><div style="min-width:0"><b>${escapeHtml(desc)}</b><small>${escapeHtml(t.date||'-')}</small></div><b class="num" style="font-size:12px;white-space:nowrap;color:${pal.ink}">${formatRupiah(t.amount)}</b></div>`;
     }).join('');

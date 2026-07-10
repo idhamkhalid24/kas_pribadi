@@ -414,3 +414,31 @@ input:focus, select:focus, textarea:focus {
   font-weight: bold !important;
 }
 
+.hutang-brutalist {
+  background: #FF0000 !important;
+  border: 2px solid #000 !important;
+  box-shadow: 2px 2px 0px #000 !important;
+  color: #fff !important;
+  border-radius: 0px !important;
+  padding: 12px !important;
+}
+.hutang-brutalist b {
+  white-space: normal !important;
+  word-break: break-word !important;
+  color: #fff !important;
+  text-shadow: 1px 1px 0 #000 !important;
+  font-weight: 900 !important;
+  font-size: 14px !important;
+}
+.hutang-brutalist small {
+  color: #FFCCCC !important;
+  font-weight: bold !important;
+}
+.hutang-brutalist .num {
+  font-size: 18px !important;
+  color: #fff !important;
+  text-shadow: 1px 1px 0 #000 !important;
+  font-weight: 900 !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
