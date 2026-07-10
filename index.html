@@ -135,13 +135,89 @@
     <div class="box">
       <h3 style="margin-bottom:14px;text-align:center">Import JSON</h3>
       <textarea id="importDataText" rows="7" placeholder="Tempel data JSON di sini..."></textarea>
-      <div class="row" style="margin-top:12px">
-        <button class="btn secondary" onclick="closeImportModal()">Batal</button>
-        <button class="btn" onclick="importFromText()">Import</button>
+      <div class="row" style="margin-top:16px">
+        <button class="btn secondary" onclick="closeCashDrawerAuditModal()">Tutup</button>
+        <button class="btn" onclick="saveCashDrawerAudit()">Simpan Hasil Cek</button>
       </div>
     </div>
   </div>
 
+  <!-- Modal Piutang -->
+  <div id="piutangModal" class="modal hidden">
+    <div class="box" style="max-width:400px;width:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px">
+        <div>
+          <h3>Catat Piutang Baru</h3>
+          <small class="small" style="display:block;margin-top:2px">Uang yang dipinjamkan. Saldo bersih akan BERKURANG.</small>
+        </div>
+        <button class="x" style="font-size:24px" onclick="closePiutangModal()">×</button>
+      </div>
+      <div class="field"><input type="text" id="piutangName" placeholder="Nama Peminjam"></div>
+      <div class="field"><input type="text" id="piutangDesc" placeholder="Keterangan (opsional)"></div>
+      <div class="field amount-wrap">
+        <input type="number" id="piutangAmount" placeholder="Nominal Pinjaman" oninput="handlePiutangPreview(this)">
+        <span id="piutangAmountPreview" class="preview"></span>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn secondary" onclick="closePiutangModal()">Batal</button>
+        <button class="btn" style="background:#e11d48" onclick="savePiutang()">Simpan Piutang</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Pembayaran Piutang -->
+  <!-- Modal Simple Bayar Hutang -->
+  <div id="debtPaymentModal" class="modal hidden">
+    <div class="box" style="max-width:320px;width:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div>
+          <h3>Catat Pembayaran</h3>
+          <small class="small" style="display:block;margin-top:2px;color:var(--ink2)">Bayar hutang. Saldo bersih akan BERKURANG.</small>
+        </div>
+        <button class="x" style="font-size:24px" onclick="closeDebtPaymentModal()">×</button>
+      </div>
+      <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px">
+        <div class="small" style="color:var(--ink2);margin-bottom:4px">Kreditur: <b id="debtPaymentName" style="color:var(--ink);text-transform:capitalize"></b></div>
+        <div class="small" style="color:var(--ink2)">Sisa Hutang: <b id="debtPaymentRemain" class="num" style="color:#92400e"></b></div>
+      </div>
+      <input type="hidden" id="debtPaymentPersonName">
+      <div class="field amount-wrap">
+        <input type="number" id="debtPaymentAmount" placeholder="Nominal" oninput="handleDebtPaymentPreview(this)">
+        <span id="debtPaymentPreview" class="preview"></span>
+      </div>
+      <div class="row">
+        <button class="btn secondary" onclick="closeDebtPaymentModal()">Batal</button>
+        <button class="btn" style="background:#15803d" onclick="saveDebtPaymentSimple()">Catat Pembayaran</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="piutangPaymentModal" class="modal hidden">
+    <div class="box" style="max-width:400px;width:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px">
+        <div>
+          <h3>Catat Pembayaran</h3>
+          <small class="small" style="display:block;margin-top:2px">Cicilan/pelunasan. Saldo bersih akan BERTAMBAH.</small>
+        </div>
+        <button class="x" style="font-size:24px" onclick="closePiutangPaymentModal()">×</button>
+      </div>
+      <input type="hidden" id="piutangPaymentId">
+      <div style="background:#f1f5f9;padding:12px;border-radius:var(--r);margin-bottom:12px">
+        <div style="font-size:12px;color:var(--ink2);margin-bottom:4px">Peminjam: <b id="piutangPaymentName" style="color:var(--ink)">-</b></div>
+        <div style="font-size:12px;color:var(--ink2)">Sisa Hutang: <b id="piutangPaymentRemain" class="num" style="color:#e11d48">-</b></div>
+      </div>
+      <div class="field amount-wrap">
+        <input type="number" id="piutangPaymentAmount" placeholder="Nominal Dibayar" oninput="handlePiutangPaymentPreview(this)">
+        <span id="piutangPaymentPreview" class="preview"></span>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn secondary" onclick="closePiutangPaymentModal()">Batal</button>
+        <button class="btn" style="background:var(--green)" onclick="savePiutangPayment()">Catat Pembayaran</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="app">
   <div id="categoryModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="categoryModalTitle">
     <div class="box" style="max-width:420px;width:100%;border-radius:var(--r-xl)">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px">
@@ -263,13 +339,37 @@
     </div>
   </div>
 
-  <!-- Modal Hutang -->
+  <!-- Modal Pinjam Uang (Baru) -->
+  <div id="debtBorrowModal" class="modal hidden">
+    <div class="box" style="max-width:320px;width:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px">
+        <div>
+          <h3>Pinjam Uang</h3>
+          <small class="small" style="color:#92400e;font-weight:700;display:block;margin-top:2px">Menambah Saldo Bersih.</small>
+        </div>
+        <button class="x" style="font-size:24px" onclick="closeDebtBorrowModal()">×</button>
+      </div>
+      <div class="field"><input type="date" id="debtBorrowDate"></div>
+      <div class="field"><input type="text" id="debtBorrowParty" placeholder="Nama orang / sumber hutang"></div>
+      <div class="field"><input type="text" id="debtBorrowNote" placeholder="Catatan (opsional)"></div>
+      <div class="field amount-wrap">
+        <input type="number" id="debtBorrowAmount" placeholder="Nominal" oninput="handleDebtBorrowPreview(this)">
+        <span id="debtBorrowPreview" class="preview"></span>
+      </div>
+      <div class="row" style="margin-bottom:14px">
+        <button class="btn secondary" onclick="closeDebtBorrowModal()">Batal</button>
+        <button class="btn" style="background:#a16207" onclick="saveDebtBorrowSimple()">Simpan Pinjaman</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Hutang (History) -->
   <div id="debtModal" class="modal hidden">
     <div class="box" style="max-width:420px;width:100%">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px">
         <div>
-          <h3>Hutang Uang</h3>
-          <small class="small" style="color:#92400e;font-weight:700;display:block;margin-top:2px">Masuk Saldo Bersih, tapi netral dari pendapatan, pengeluaran, laba, dan zakat.</small>
+          <h3>Riwayat Hutang Uang</h3>
+          <small class="small" style="color:#92400e;font-weight:700;display:block;margin-top:2px">Netral dari pendapatan, pengeluaran, laba, dan zakat.</small>
         </div>
         <button class="x" style="font-size:24px" onclick="closeDebtModal()">×</button>
       </div>
@@ -283,22 +383,6 @@
           <div>Pinjam: <span id="debtModalBorrowed" class="num" style="color:#92400e">Rp 0</span></div>
           <div>Bayar: <span id="debtModalPaid" class="num" style="color:#15803d">Rp 0</span></div>
         </div>
-      </div>
-
-      <div class="cashout-type-row">
-        <button id="debt-mode-borrow" class="cashout-type-btn active" onclick="setDebtMode('borrow')">Pinjam Uang</button>
-        <button id="debt-mode-pay" class="cashout-type-btn" onclick="setDebtMode('pay')">Bayar Pokok</button>
-      </div>
-      <div class="field"><input type="date" id="debtDate"></div>
-      <div class="field"><input type="text" id="debtParty" placeholder="Nama orang / sumber hutang"></div>
-      <div class="field"><input type="text" id="debtNote" placeholder="Catatan (opsional)"></div>
-      <div class="field amount-wrap">
-        <input type="number" id="debtAmount" placeholder="Nominal" oninput="handleDebtPreview(this)">
-        <span id="debtAmountPreview" class="preview"></span>
-      </div>
-      <div class="row" style="margin-bottom:14px">
-        <button class="btn secondary" onclick="closeDebtModal()">Batal</button>
-        <button id="debtSaveBtn" class="btn" style="background:#a16207" onclick="saveDebtTransaction()">Simpan Hutang</button>
       </div>
 
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -749,42 +833,56 @@
         <div onclick="toggleHomeSection('debtHomeCard')" style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;cursor:pointer">
           <div style="min-width:0">
             <div class="debt-title">Hutang Uang Aktif</div>
-            <div id="debtActiveTotal" class="debt-amount num" onclick="event.stopPropagation();openDebtModal('list')">Rp 0</div>
+            <div id="debtActiveTotal" class="debt-amount num" onclick="event.stopPropagation();openDebtModal()">Rp 0</div>
             <div id="debtTodayInfo" class="small" style="margin-top:3px;color:#92400e;font-weight:700">Pinjaman menambah Saldo Bersih, bayar pokok mengurangi Saldo Bersih.</div>
           </div>
           <div class="debt-actions" onclick="event.stopPropagation()">
-            <button class="debt-mini-btn" onclick="openDebtModal('borrow')">+ Pinjam</button>
-            <button class="debt-mini-btn pay" onclick="openDebtModal('pay')">Bayar</button>
+            <button class="debt-mini-btn" onclick="openDebtBorrowModal()">+ Pinjam</button>
           </div>
         </div>
         <div class="home-section-body">
-        <div class="cash-fisik-breakdown" style="border-color:#fde68a;margin-top:9px">
-          <div class="breakdown-row">
-            <span class="breakdown-label">Belum Dibayar</span>
-            <b id="debtCardUnpaid" class="breakdown-val num" style="color:#92400e" onclick="openDebtModal('list')">Rp 0</b>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;margin-bottom:10px;border-top:1px solid #fde68a;padding-top:12px">
+            <b style="font-size:13px;font-weight:800;color:#92400e">Daftar Hutang Berjalan</b>
+            <span id="debtPersonListCount" class="num" style="font-size:12px;color:#92400e;font-weight:500">0 data</span>
           </div>
-          <div class="breakdown-row">
-            <span class="breakdown-label">Status</span>
-            <b id="debtCardStatus" class="breakdown-val" style="color:#92400e" onclick="openDebtModal('list')">Lunas</b>
-          </div>
-        </div>
-        <div class="debt-note">Tidak masuk pendapatan, pengeluaran, laba, atau zakat. Hanya mutasi Saldo Bersih dan sisa hutang.</div>
+          <div id="debtPersonList" class="list" style="margin-bottom:10px"></div>
+          <div class="debt-note">Tidak masuk pendapatan, pengeluaran, laba, atau zakat. Hanya mutasi Saldo Bersih dan sisa hutang.</div>
         </div>
       </div>
 
       <div class="grid2 debt-extra">
-        <div class="stat" onclick="openDebtModal('list')" style="cursor:pointer;background:#fffbeb;border-color:#fde68a">
+        <div class="stat" onclick="openDebtModal()" style="cursor:pointer;background:#fffbeb;border-color:#fde68a">
           <span>Total Pinjaman</span>
           <b id="debtTotalBorrowed" class="num" style="color:#92400e">Rp 0</b>
         </div>
-        <div class="stat" onclick="openDebtModal('list')" style="cursor:pointer;background:#f0fdf4;border-color:#bbf7d0">
+        <div class="stat" onclick="openDebtModal()" style="cursor:pointer;background:#f0fdf4;border-color:#bbf7d0">
           <span>Sudah Dibayar</span>
           <b id="debtTotalPaid" class="num" style="color:#15803d">Rp 0</b>
         </div>
       </div>
-      <div class="stat debt-extra" onclick="openDebtModal('list')" style="cursor:pointer;background:#fff7ed;border-color:#fed7aa;margin-bottom:10px">
+      <div class="stat debt-extra" onclick="openDebtModal()" style="cursor:pointer;background:#fff7ed;border-color:#fed7aa;margin-bottom:10px">
         <span>Belum Dibayar</span>
         <b id="debtTotalUnpaid" class="num" style="color:#c2410c">Rp 0</b>
+      </div>
+      <!-- ====== BUKU PIUTANG (Di dalam Home) ====== -->
+      <div id="piutangHomeCard" class="debt-card home-section is-collapsed" style="background:#fff1f2;border-color:#fecdd3;margin-top:20px">
+        <div onclick="toggleHomeSection('piutangHomeCard')" style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;cursor:pointer">
+          <div style="min-width:0">
+            <div class="debt-title" style="color:#be123c">Buku Piutang & Kasbon</div>
+            <div id="piutangTotalAmount" class="debt-amount num" style="color:#e11d48">Rp 0</div>
+            <div class="small" style="margin-top:3px;color:#be123c;font-weight:700">Piutang potong Saldo Bersih, cicilan nambah Saldo Bersih.</div>
+          </div>
+          <div class="debt-actions" onclick="event.stopPropagation()">
+            <button class="debt-mini-btn" style="background:#e11d48;color:white;border:none" onclick="openPiutangModal()">+ Catat</button>
+          </div>
+        </div>
+        <div class="home-section-body">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;margin-bottom:10px;border-top:1px solid #fecdd3;padding-top:12px">
+            <b style="font-size:13px;font-weight:800;color:#be123c">Daftar Piutang Berjalan</b>
+            <span id="piutangListCount" class="num" style="font-size:12px;color:#be123c;font-weight:500">0 data</span>
+          </div>
+          <div id="piutangList" class="list" style="margin-bottom:10px"></div>
+        </div>
       </div>
 
     </section>
@@ -956,6 +1054,7 @@
         <button class="btn secondary" onclick="downloadCsvReportFromFinancePage()">Download CSV</button>
       </div>
     </section>
+
 
     <!-- ====== SERVER PAGE ====== -->
     <section id="pageFirebase" class="page">

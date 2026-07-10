@@ -13,7 +13,7 @@ const ROCKY_STAFF_NOTIFY_WORKER_BASE_URL='https://rocky-notif-worker.alfajrihani
 const ROCKY_STAFF_NOTIFY_CASH_DRAWER_URL=ROCKY_STAFF_NOTIFY_WORKER_BASE_URL+'/notify-cash-drawer-status';
 const ROCKY_STAFF_NOTIFY_SECRET='rockyNotifRahasia2026';
 
-let supabaseClient=null,transactions=[],zakatHistory=[],emergencyFundHistory=[],expenseCategories=[],cashDrawerAudits=[],currentFilter='today',currentFinanceReportFilter='month',pendingAction=null,currentPage='home';
+let supabaseClient=null,transactions=[],zakatHistory=[],emergencyFundHistory=[],expenseCategories=[],cashDrawerAudits=[],receivables=[],currentFilter='today',currentFinanceReportFilter='month',pendingAction=null,currentPage='home';
 let firebaseDb=null,firebaseUnsub=null,todayFirebaseUnsub=null,firebaseUploadDate='',firebaseIncomeRows=[],firebaseIncomeTotal=0,todayFirebaseIncomeRows=[],todayFirebaseIncomeTotal=0,pendingFirebaseUploads=[],monthValidityBusy=false,emergencyFundTableReady=false,cashDrawerTableReady=false;
 const HISTORY_PAGE_SIZE=15;
 let historyVisibleCount=HISTORY_PAGE_SIZE,currentGoldHomeTab='buy',currentCashDrawerFilter='today',cashDrawerEditingId=null;
@@ -40,8 +40,19 @@ function renderActiveFilterChip(){
 }
 function isSupabaseConfigured(){return SUPABASE_URL&&SUPABASE_ANON_KEY&&!SUPABASE_URL.includes('ISI_')&&!SUPABASE_ANON_KEY.includes('ISI_')}
 function initSupabase(){if(!isSupabaseConfigured()){showToast('Supabase belum disetting');return false}supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);return true}
-function goPage(p){currentPage=p;['home','history','laci','laporan','firebase'].forEach(x=>{ const page=$('page'+x[0].toUpperCase()+x.slice(1)); if(page)page.classList.toggle('active',x===p); const nav=$('nav-'+x); if(nav)nav.classList.toggle('active',x===p)}); render(); if(p==='firebase')startFirebaseWatch(firebaseUploadDate||getLocalDateString()); if(p==='laporan')renderFinanceReport(); if(p==='laci')renderCashDrawerPage()}
+function goPage(p){currentPage=p;['home','history','laci','laporan','firebase'].forEach(x=>{ const page=$('page'+x[0].toUpperCase()+x.slice(1)); if(page)page.classList.toggle('active',x===p); const nav=$('nav-'+x); if(nav)nav.classList.toggle('active',x===p)}); render(); if(p==='firebase')startFirebaseWatch(firebaseUploadDate||getLocalDateString()); if(p==='laporan')renderFinanceReport(); if(p==='laci')renderCashDrawerPage(); }
 let kasRefreshBusy=false;
+async function loadReceivables() {
+  if (!supabaseClient) return;
+  try {
+    const {data, error} = await supabaseClient.from('receivables').select('*').eq('owner_id', OWNER_ID).order('status', {ascending: false}).order('id', {ascending: false});
+    if (!error) receivables = data || [];
+  } catch (e) {
+    console.warn('loadReceivables err:', e);
+  }
+}
+async function refreshApp(){if(kasRefreshBusy)return;kasRefreshBusy=true;showToast('Menyinkronkan data...',2000);await Promise.all([loadTransactions(),loadZakatHistory(),loadEmergencyFundHistory(),loadExpenseCategories(),loadCashDrawerAudits(),loadSalaryTargets(),loadReceivables()]);await checkAndCreateMissingFirebaseUsers();checkEmergencyFundAlerts();checkZakatAlerts();checkCashDrawerMinusAlert();await Promise.all([refreshFirebaseIncome(),refreshTodayFirebaseIncome()]);render();kasRefreshBusy=false;showToast('Data diperbarui')}
+
 async function refreshKasApp(){
   if(kasRefreshBusy)return;
   kasRefreshBusy=true;
@@ -2023,6 +2034,17 @@ async function deleteTransaction(id){
     try{
       await deleteTransactionFromDB(id);
       if(t&&isAutoEmergencyFundTx(t)){await deleteEmergencyHistoryRowsForTransaction(t).catch(()=>{});}
+      
+      // Auto-delete Piutang related data
+      if(t) {
+        const desc = String(t.description || '');
+        if (desc.startsWith('[PIUTANG] ') || desc.startsWith('[PELUNASAN PIUTANG] ')) {
+          let pName = desc.replace(/^\[PIUTANG\] /, '').replace(/^\[PELUNASAN PIUTANG\] /, '').split(' - ')[0].trim();
+          await supabaseClient.from('receivables').delete().eq('owner_id', OWNER_ID).eq('name', pName);
+          await loadReceivables();
+        }
+      }
+
       await loadTransactions();
       validateAndCancelInvalidZakat();
       render();
@@ -2475,6 +2497,7 @@ function render(){
   renderTodayFirebaseIncomeHome();
   renderProfitSummary();
   renderDebtSummary();
+  renderPiutangPage();
   renderGoldSection();
   renderCashDrawerPage();
 
@@ -2580,7 +2603,11 @@ function renderTransactionDetailCard(t={},opts={}){
   const meta=getTransactionDetailMeta(t);
   const action=opts.actionHtml||'';
   const rightClass=action?'right history-action-stack':'right';
-  return `<div class="item transaction-detail-card"><div class="left"><div class="icon ${meta.iconClass}">${meta.icon}</div><div class="desc"><b>${escapeHtml(meta.desc)}</b><small>${escapeHtml(t.date||'')}</small><span class="category-chip ${meta.chipClass}">${escapeHtml(meta.label)}</span></div></div><div class="${rightClass}"><b class="num" style="color:${meta.color}">${meta.sign}${formatRupiah(t.amount).replace('Rp','')}</b>${action}</div></div>`;
+  const amt = Math.abs(Number(t.amount||0));
+  // Jika expense negatif (offset piutang), kita bisa beri warna hijau atau tetap merah dengan tanda +
+  const signOverride = Number(t.amount) < 0 && t.type === 'expense' ? '+' : meta.sign;
+  const colorOverride = Number(t.amount) < 0 && t.type === 'expense' ? 'var(--green)' : meta.color;
+  return `<div class="item transaction-detail-card"><div class="left"><div class="icon ${meta.iconClass}">${meta.icon}</div><div class="desc"><b>${escapeHtml(meta.desc)}</b><small>${escapeHtml(t.date||'')}</small><span class="category-chip ${meta.chipClass}">${escapeHtml(meta.label)}</span></div></div><div class="${rightClass}"><b class="num" style="color:${colorOverride}">${signOverride}${formatRupiah(amt).replace('Rp','')}</b>${action}</div></div>`;
 }
 function isProtectedServerPusatOmsetTx(t={}){
   return /Omset Server Pusat Hari Ini/i.test(cleanFirebaseDesc(t&&t.description));
@@ -2725,29 +2752,81 @@ function getDebtSummary(rows=transactions){
   const paid=debtRows.filter(isDebtPay).reduce((s,t)=>s+Number(t.amount||0),0);
   const todayBorrowed=debtRows.filter(t=>isDebtIn(t)&&t.date===today).reduce((s,t)=>s+Number(t.amount||0),0);
   const todayPaid=debtRows.filter(t=>isDebtPay(t)&&t.date===today).reduce((s,t)=>s+Number(t.amount||0),0);
-  return {rows:debtRows,borrowed,paid,active:Math.max(0,borrowed-paid),todayBorrowed,todayPaid,todayNet:todayBorrowed-todayPaid};
+  
+  const map = {};
+  debtRows.forEach(t => {
+    let cleaned = String(t.description || '').replace(/^\[HUTANG:(?:PINJAM|BAYAR)\]\s*/, '');
+    let parts = cleaned.split(' - ');
+    let nameRaw = parts[0].trim();
+    if (!nameRaw) nameRaw = 'Lainnya';
+    let nameKey = nameRaw.toLowerCase();
+    if (!map[nameKey]) map[nameKey] = { name: nameRaw, borrowed: 0, paid: 0 };
+    if (isDebtIn(t)) map[nameKey].borrowed += Number(t.amount||0);
+    if (isDebtPay(t)) map[nameKey].paid += Number(t.amount||0);
+  });
+  const persons = Object.values(map).map(p => ({
+    name: p.name,
+    borrowed: p.borrowed,
+    paid: p.paid,
+    active: Math.max(0, p.borrowed - p.paid)
+  })).sort((a,b) => b.active - a.active);
+
+  return {rows:debtRows,borrowed,paid,active:Math.max(0,borrowed-paid),todayBorrowed,todayPaid,todayNet:todayBorrowed-todayPaid, persons};
 }
-function setDebtMode(mode){
-  currentDebtMode=mode==='pay'?'pay':'borrow';
-  const borrow=$('debt-mode-borrow'),pay=$('debt-mode-pay'),btn=$('debtSaveBtn'),party=$('debtParty'),note=$('debtNote');
-  if(borrow)borrow.classList.toggle('active',currentDebtMode==='borrow');
-  if(pay)pay.classList.toggle('active',currentDebtMode==='pay');
-  if(btn){btn.innerText=currentDebtMode==='borrow'?'Simpan Pinjaman':'Simpan Bayar';btn.style.background=currentDebtMode==='borrow'?'#a16207':'#15803d'}
-  if(party)party.placeholder=currentDebtMode==='borrow'?'Nama orang / sumber hutang':'Bayar ke siapa';
-  if(note)note.placeholder=currentDebtMode==='borrow'?'Catatan pinjaman (opsional)':'Catatan pembayaran (opsional)';
+function openDebtBorrowModal() {
+  if($('debtBorrowDate')) $('debtBorrowDate').value = getLocalDateString();
+  if($('debtBorrowParty')) $('debtBorrowParty').value = '';
+  if($('debtBorrowNote')) $('debtBorrowNote').value = '';
+  if($('debtBorrowAmount')) $('debtBorrowAmount').value = '';
+  if($('debtBorrowPreview')) $('debtBorrowPreview').innerText = '';
+  if($('debtBorrowModal')) $('debtBorrowModal').classList.remove('hidden');
+  setTimeout(() => { if($('debtBorrowParty')) $('debtBorrowParty').focus(); }, 80);
 }
-function handleDebtPreview(input){$('debtAmountPreview').innerText=input.value?formatRupiah(getActualAmount(input.value)):''}
-function openDebtModal(mode='borrow'){
-  const date=$('debtDate'),party=$('debtParty'),note=$('debtNote'),amount=$('debtAmount'),preview=$('debtAmountPreview');
-  if(date)date.value=getLocalDateString();
-  if(party)party.value='';
-  if(note)note.value='';
-  if(amount)amount.value='';
-  if(preview)preview.innerText='';
-  setDebtMode(mode==='pay'?'pay':'borrow');
+function closeDebtBorrowModal() {
+  if($('debtBorrowModal')) $('debtBorrowModal').classList.add('hidden');
+}
+function handleDebtBorrowPreview(input) {
+  const val = getActualAmount(input.value);
+  if($('debtBorrowPreview')) $('debtBorrowPreview').innerText = val > 0 ? formatRupiah(val) : '';
+}
+async function saveDebtBorrowSimple() {
+  const date = String($('debtBorrowDate')?.value || getLocalDateString()).slice(0, 10);
+  const party = String($('debtBorrowParty')?.value || '').trim();
+  const note = String($('debtBorrowNote')?.value || '').trim();
+  const amount = getActualAmount($('debtBorrowAmount')?.value || '');
+  
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)) return showToast('Tanggal hutang tidak valid');
+  if(!party) return showToast('Nama orang tidak boleh kosong');
+  if(!amount || amount <= 0) return showToast('Nominal hutang tidak valid');
+
+  const btn = event.currentTarget;
+  const oldText = btn.innerText;
+  btn.innerText = 'Menyimpan...';
+  btn.disabled = true;
+
+  try {
+    await saveTransaction({
+      id: Date.now(),
+      date,
+      description: buildDebtDesc(DEBT_IN_PREFIX, party, note),
+      amount,
+      type: DEBT_IN_TYPE
+    });
+    showToast('Pinjaman uang tersimpan');
+    closeDebtBorrowModal();
+    await loadTransactions();
+    render();
+  } catch(e) {
+    showToast('Gagal simpan pinjaman: ' + e.message);
+  } finally {
+    btn.innerText = oldText;
+    btn.disabled = false;
+  }
+}
+
+function openDebtModal(){
   renderDebtSummary();
   $('debtModal').classList.remove('hidden');
-  setTimeout(()=>{const target=mode==='list'?$('debtAmount'):$('debtParty');if(target)target.focus()},80);
 }
 function closeDebtModal(){$('debtModal').classList.add('hidden')}
 function renderDebtHistoryList(){
@@ -2767,39 +2846,106 @@ function renderDebtSummary(){
   const s=getDebtSummary();
   const setText=(id,val)=>{const el=$(id);if(el)el.innerText=formatRupiah(val)};
   setText('debtActiveTotal',s.active);
-  setText('debtCardUnpaid',s.active);
   setText('debtTotalBorrowed',s.borrowed);
   setText('debtTotalPaid',s.paid);
   setText('debtTotalUnpaid',s.active);
   setText('debtModalActiveTotal',s.active);
   setText('debtModalBorrowed',s.borrowed);
   setText('debtModalPaid',s.paid);
-  const cardStatus=$('debtCardStatus');
-  if(cardStatus){cardStatus.innerText=s.active>0?'Belum Lunas':'Lunas';cardStatus.style.color=s.active>0?'#c2410c':'#15803d'}
   const info=$('debtTodayInfo');
   if(info)info.innerText=s.active>0?`Belum dibayar: ${formatRupiah(s.active)}`:'Hutang lunas';
+  
+  const unpaidPersons = (s.persons||[]).filter(p => p.active > 0);
+  if ($('debtPersonListCount')) $('debtPersonListCount').innerText = `${unpaidPersons.length} data aktif`;
+  const list = $('debtPersonList');
+  if (list) {
+    if (!unpaidPersons.length) {
+      list.innerHTML = '<div class="empty" style="color:#92400e">Belum ada hutang aktif</div>';
+    } else {
+      list.innerHTML = unpaidPersons.map(p => {
+        const pct = Math.min(100, Math.round((p.paid / p.borrowed) * 100)) || 0;
+        return `
+          <div class="card" style="margin-bottom:8px; border-color:#fde68a; background:#fffbeb">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start">
+              <div>
+                <b style="font-size:15px; color:#92400e; text-transform:capitalize">${escapeHtml(p.name)}</b>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:10px; color:#b45309; font-weight:800; text-transform:uppercase">Total Pinjam</div>
+                <b class="num" style="font-size:14px; color:#92400e">${formatRupiah(p.borrowed)}</b>
+              </div>
+            </div>
+            <div style="margin-top:12px; background:#fef3c7; border-radius:4px; padding:8px 10px">
+              <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:11px; font-weight:800">
+                <span style="color:#15803d">Terbayar: ${formatRupiah(p.paid)}</span>
+                <span style="color:#92400e">Sisa: ${formatRupiah(p.active)}</span>
+              </div>
+              <div class="progressbar" style="height:6px; background:#fde68a"><span style="width:${pct}%; background:#15803d"></span></div>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px">
+              <button class="btn" style="background:#f59e0b; font-size:12px; padding:6px 12px; color:white; border:none" onclick="openDebtPaymentModal('${escapeHtml(p.name)}', ${p.active})">Bayar Hutang</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
   renderDebtHistoryList();
 }
-async function saveDebtTransaction(){
-  const date=String($('debtDate')?.value||getLocalDateString()).slice(0,10);
-  const party=String($('debtParty')?.value||'').trim();
-  const note=String($('debtNote')?.value||'').trim();
-  const amount=getActualAmount($('debtAmount')?.value||'');
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){showToast('Tanggal hutang tidak valid');return}
-  if(!amount||amount<=0){showToast('Nominal hutang tidak valid');return}
-  const isPay=currentDebtMode==='pay';
-  const summary=getDebtSummary();
-  if(isPay&&summary.active<=0){showToast('Belum ada hutang aktif');return}
-  if(isPay&&amount>summary.active){showToast('Nominal bayar melebihi sisa hutang');return}
-  try{
-    await saveTransaction({id:Date.now(),date,description:buildDebtDesc(isPay?DEBT_PAY_PREFIX:DEBT_IN_PREFIX,party,note),amount,type:isPay?DEBT_PAY_TYPE:DEBT_IN_TYPE});
+
+
+
+function openDebtPaymentModal(name, active) {
+  if($('debtPaymentName')) $('debtPaymentName').innerText = name;
+  if($('debtPaymentRemain')) $('debtPaymentRemain').innerText = formatRupiah(active);
+  if($('debtPaymentPersonName')) $('debtPaymentPersonName').value = name;
+  if($('debtPaymentAmount')) $('debtPaymentAmount').value = '';
+  if($('debtPaymentPreview')) $('debtPaymentPreview').innerText = '';
+  if($('debtPaymentModal')) $('debtPaymentModal').classList.remove('hidden');
+}
+function closeDebtPaymentModal() {
+  if($('debtPaymentModal')) $('debtPaymentModal').classList.add('hidden');
+}
+function handleDebtPaymentPreview(input) {
+  const val = Number(input.value) || 0;
+  if($('debtPaymentPreview')) $('debtPaymentPreview').innerText = val > 0 ? formatRupiah(val) : '';
+}
+async function saveDebtPaymentSimple() {
+  const name = $('debtPaymentPersonName').value.trim();
+  const amt = Number($('debtPaymentAmount').value) || 0;
+  if (!name || amt <= 0) return showToast('Nominal tidak valid');
+  
+  const txDesc = `[HUTANG:BAYAR] ${name}`;
+  const txPayload = {
+    id: Date.now(),
+    owner_id: OWNER_ID,
+    date: getLocalDateString(),
+    description: txDesc,
+    amount: amt,
+    type: 'expense',
+    category_id: 0,
+    category_name: 'Bayar Hutang'
+  };
+  
+  const btn = event.currentTarget;
+  const oldText = btn.innerText;
+  btn.innerText = 'Menyimpan...';
+  btn.disabled = true;
+  
+  try {
+    await saveTransaction(txPayload);
+    showToast('Pembayaran dicatat & saldo berkurang');
+    closeDebtPaymentModal();
     await loadTransactions();
     render();
-    renderDebtSummary();
-    $('debtParty').value='';$('debtNote').value='';$('debtAmount').value='';$('debtAmountPreview').innerText='';
-    showToast(isPay?'Bayar pokok hutang tersimpan':'Pinjaman uang tersimpan');
-  }catch(e){showToast('Gagal simpan hutang: '+e.message)}
+  } catch (e) {
+    showToast('Gagal simpan pembayaran: ' + e.message);
+  } finally {
+    btn.innerText = oldText;
+    btn.disabled = false;
+  }
 }
+
 function deleteDebtWithPin(id){
   closeDebtModal();
   setTimeout(()=>{
@@ -3600,9 +3746,13 @@ function getProfitSummaryData(filter){
   const todayCovered=(filter==='today')||(filter==='month'&&today.startsWith(thisMonth))||(filter==='year'&&today.startsWith(thisYear))||(filter==='custom'&&s&&e&&today>=s&&today<=e);
   let fbExtra=0;
   if(todayCovered&&fbToday>0&&!uploadedTodayTx)fbExtra=fbToday;
-  const totalIncome=incomeRows.reduce((sum,t)=>sum+Number(t.amount||0),0)+fbExtra;
-  const manualIncome=incomeRows.filter(t=>!isFirebaseUploaded(t)&&!t.__firebasePreview&&!isCashDrawerAdjustmentTx(t)).reduce((sum,t)=>sum+Number(t.amount||0),0);
-  const totalExpense=expenseRows.reduce((sum,t)=>sum+Number(t.amount||0),0);
+  const piutangPayments = incomeRows.filter(t=>String(t.description||'').startsWith('[PELUNASAN PIUTANG]'));
+  const piutangPaymentTotal = piutangPayments.reduce((sum,t)=>sum+Number(t.amount||0),0);
+  const realIncomeRows = incomeRows.filter(t=>!String(t.description||'').startsWith('[PELUNASAN PIUTANG]'));
+
+  const totalIncome=realIncomeRows.reduce((sum,t)=>sum+Number(t.amount||0),0)+fbExtra;
+  const manualIncome=realIncomeRows.filter(t=>!isFirebaseUploaded(t)&&!t.__firebasePreview&&!isCashDrawerAdjustmentTx(t)).reduce((sum,t)=>sum+Number(t.amount||0),0);
+  const totalExpense=expenseRows.reduce((sum,t)=>sum+Number(t.amount||0),0) - piutangPaymentTotal;
   const laba=Math.round(totalIncome*.2);
   const sisaOperasional=Math.round(laba-totalExpense);
   return {totalIncome,manualIncome,totalExpense,laba,laba20:laba,sisaOperasional,labaBersih:Math.max(0,sisaOperasional)};
@@ -3635,7 +3785,12 @@ function showExpenseListTodayModal(){
   $('expenseListSubtitle').innerText=`${expenses.length} transaksi · Pengeluaran hari ini (${today})`;
   const c=$('expenseListContent');
   if(!expenses.length){c.innerHTML='<div class="empty">Belum ada pengeluaran hari ini</div>';}
-  else{c.innerHTML=expenses.slice(0,100).map(t=>`<div class="item"><div class="left"><div class="icon out">-</div><div class="desc"><b>${escapeHtml(cleanFirebaseDesc(t.description))}</b><small>${t.date}</small>${getExpenseCategoryChip(t)}</div></div><div class="right"><b class="num red">-${formatRupiah(t.amount).replace('Rp','')}</b></div></div>`).join('')}
+  else{c.innerHTML=expenses.slice(0,100).map(t=>{
+    const amt=Math.abs(Number(t.amount||0));
+    const sign=Number(t.amount)<0?'+':'-';
+    const colorClass=Number(t.amount)<0?'green':'red';
+    return `<div class="item"><div class="left"><div class="icon out">-</div><div class="desc"><b>${escapeHtml(cleanFirebaseDesc(t.description))}</b><small>${t.date}</small>${getExpenseCategoryChip(t)}</div></div><div class="right"><b class="num ${colorClass}">${sign}${formatRupiah(amt).replace('Rp','')}</b></div></div>`;
+  }).join('')}
   $('expenseListModal').classList.remove('hidden');
 }
 function showManualIncomeListModalFiltered(){
@@ -3764,9 +3919,12 @@ function renderFinanceReport(){
   if(!$('reportCategoryList'))return;
   const p=getFinanceReportPeriod();
   const rows=getFinanceReportRows();
-  const income=rows.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount||0),0);
+  const allIncomes = rows.filter(t=>t.type==='income');
+  const piutangPayments = allIncomes.filter(t=>String(t.description||'').startsWith('[PELUNASAN PIUTANG]'));
+  const piutangPaymentTotal = piutangPayments.reduce((s,t)=>s+Number(t.amount||0),0);
+  const income = allIncomes.filter(t=>!String(t.description||'').startsWith('[PELUNASAN PIUTANG]')).reduce((s,t)=>s+Number(t.amount||0),0);
   const expenses=rows.filter(t=>t.type==='expense'&&!isCashOut(t));
-  const expenseTotal=expenses.reduce((s,t)=>s+Number(t.amount||0),0);
+  const expenseTotal=expenses.reduce((s,t)=>s+Number(t.amount||0),0) - piutangPaymentTotal;
   const cashOut=rows.filter(t=>isCashOut(t)).reduce((s,t)=>s+Number(t.amount||0),0);
   const net=income-expenseTotal;
   const profit20=Math.round(income*.2);
@@ -3776,6 +3934,13 @@ function renderFinanceReport(){
   if($('reportPeriodLabel'))$('reportPeriodLabel').innerText=p.mode==='range'?`${p.start||'-'} s.d ${p.end||'-'}`:p.label;
   if($('reportCount'))$('reportCount').innerText=`${rows.length} data`;
   const byCat={};expenses.forEach(t=>{const nm=getExpenseCategoryName(t);if(!byCat[nm])byCat[nm]={total:0,rows:[]};byCat[nm].total+=Number(t.amount||0);byCat[nm].rows.push(t)});
+  if (piutangPaymentTotal > 0) {
+    const nm = 'Piutang';
+    if (!byCat[nm]) byCat[nm] = {total: 0, rows: []};
+    byCat[nm].total -= piutangPaymentTotal;
+    // ensure it doesn't go below 0 just in case
+    if (byCat[nm].total < 0) byCat[nm].total = 0;
+  }
   const catRows=Object.entries(byCat).sort((a,b)=>b[1].total-a[1].total);
   const catBox=$('reportCategoryList');
   if(!catRows.length){catBox.innerHTML='<div class="empty">Belum ada pengeluaran di periode ini</div>'}
@@ -4427,6 +4592,7 @@ async function initApp(){try{if(!initSupabase())return;
   try{await loadExpenseCategories();await ensureDefaultExpenseCategories();await migrateLegacyExpenseCategories();}catch(e){console.warn('Kategori belum siap:',e)}
   try{await loadSalaryTargets();}catch(e){console.warn('Salary targets gagal diload',e)}
   await loadZakatHistory();
+  await loadReceivables();
   if(firebaseDb){
     // Tunggu snapshot pertama Server Pusat hari ini. Panel tanggal lain baru dibaca saat halaman Server dibuka.
     await Promise.race([
@@ -4520,3 +4686,153 @@ function bindGlobalKeyboardFix(){
   document.addEventListener('focusout',e=>{ if(e.target.closest&&e.target.closest('.modal')) setTimeout(adjustAnyModalForKeyboard,180); },true);
 }
 bindGlobalKeyboardFix();
+
+// === PIUTANG LOGIC ===
+function renderPiutangPage() {
+  const unpaid = receivables.filter(r => r.status !== 'paid');
+  const total = unpaid.reduce((s, r) => s + (Number(r.amount) - Number(r.paid_amount)), 0);
+  if ($('piutangTotalAmount')) $('piutangTotalAmount').innerText = formatRupiah(total);
+  if ($('piutangListCount')) $('piutangListCount').innerText = `${unpaid.length} data aktif`;
+  const list = $('piutangList');
+  if (!list) return;
+  if (!receivables.length) {
+    list.innerHTML = '<div class="empty">Belum ada data piutang tersimpan</div>';
+    return;
+  }
+  list.innerHTML = receivables.map(r => {
+    const isPaid = r.status === 'paid';
+    const sisa = Number(r.amount) - Number(r.paid_amount);
+    const pct = Math.min(100, Math.round((Number(r.paid_amount) / Number(r.amount)) * 100)) || 0;
+    return `
+      <div class="card" style="margin-bottom:8px; opacity:${isPaid ? 0.6 : 1}">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start">
+          <div>
+            <b style="font-size:15px; color:var(--ink); text-transform:capitalize">${escapeHtml(r.name)}</b>
+            ${r.description ? `<div class="small" style="margin-top:2px; font-weight:700">${escapeHtml(r.description)}</div>` : ''}
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:10px; color:var(--ink2); font-weight:800; text-transform:uppercase">Total Pinjaman</div>
+            <b class="num" style="font-size:15px; color:#e11d48">${formatRupiah(r.amount)}</b>
+          </div>
+        </div>
+        <div style="margin-top:12px; background:#f1f5f9; border-radius:4px; padding:8px 10px">
+          <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:11px; font-weight:800">
+            <span style="color:var(--green)">Terbayar: ${formatRupiah(r.paid_amount)}</span>
+            <span style="color:#e11d48">Sisa: ${formatRupiah(sisa)}</span>
+          </div>
+          <div class="progressbar" style="height:6px; background:#cbd5e1"><span style="width:${pct}%; background:var(--green)"></span></div>
+        </div>
+        ${!isPaid ? `
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px">
+          <button class="btn secondary" style="font-size:12px; padding:6px 12px" onclick="deletePiutang(${r.id})">Hapus</button>
+          <button class="btn" style="background:var(--green); font-size:12px; padding:6px 12px" onclick="openPiutangPaymentModal(${r.id})">Catat Bayar</button>
+        </div>` : ''}
+        ${isPaid ? `<div class="small" style="margin-top:8px; text-align:right; color:var(--green); font-weight:800">LUNAS ✅</div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function openPiutangModal() {
+  $('piutangName').value = '';
+  $('piutangDesc').value = '';
+  $('piutangAmount').value = '';
+  $('piutangAmountPreview').innerText = '';
+  $('piutangModal').classList.remove('hidden');
+}
+function closePiutangModal() { $('piutangModal').classList.add('hidden'); }
+function handlePiutangPreview(input) {
+  const val = Number(input.value) || 0;
+  $('piutangAmountPreview').innerText = val > 0 ? formatRupiah(val) : '';
+}
+async function savePiutang() {
+  const name = $('piutangName').value.trim();
+  const desc = $('piutangDesc').value.trim();
+  const amount = Number($('piutangAmount').value) || 0;
+  if (!name || amount <= 0) { showToast('Nama dan nominal wajib diisi'); return; }
+  
+  const payload = { owner_id: OWNER_ID, name, description: desc, amount, paid_amount: 0, status: 'unpaid', is_auto: false };
+  const { data, error } = await supabaseClient.from('receivables').insert(payload).select('id').single();
+  if (error) { showToast('Gagal simpan piutang'); return; }
+  
+  // Create expense transaction
+  const txDesc = `[PIUTANG] ${name}${desc ? ' - ' + desc : ''}`;
+  const cat = getCategoryByName('Piutang') || getCategoryByName('Lainnya') || expenseCategories[0];
+  const txPayload = { id: Date.now(), owner_id: OWNER_ID, date: getLocalDateString(), description: txDesc, amount, type: 'expense', category_id: cat ? Number(cat.id) : 0, category_name: cat ? cat.name : 'Piutang' };
+  await saveTransaction(txPayload);
+  
+  showToast('Piutang dicatat & saldo berkurang');
+  closePiutangModal();
+  await Promise.all([loadReceivables(), loadTransactions()]);
+  render();
+  renderPiutangPage();
+}
+async function deletePiutang(id) {
+  const r = receivables.find(x => x.id === id);
+  if (!r) return;
+  if (!confirm(`Hapus data piutang ${r.name}? Seluruh riwayat transaksi (pinjam & lunas) untuk piutang ini juga akan ikut dihapus agar Saldo Bersih kembali normal.`)) return;
+  
+  const { error } = await supabaseClient.from('receivables').delete().eq('owner_id', OWNER_ID).eq('id', id);
+  if (error) { showToast('Gagal hapus piutang'); return; }
+
+  const txName = r.name;
+  const toDelete = transactions.filter(t => {
+    const desc = String(t.description || '');
+    if (desc === `[PIUTANG] ${txName}` || desc.startsWith(`[PIUTANG] ${txName} - `)) return true;
+    if (desc === `[PELUNASAN PIUTANG] ${txName}`) return true;
+    return false;
+  });
+
+  if (toDelete.length > 0) {
+    const ids = toDelete.map(t => t.id);
+    await supabaseClient.from('transactions').delete().eq('owner_id', OWNER_ID).in('id', ids);
+  }
+
+  showToast('Piutang dihapus');
+  await Promise.all([loadReceivables(), loadTransactions()]);
+  render();
+  renderPiutangPage();
+}
+
+let activePaymentPiutang = null;
+function openPiutangPaymentModal(id) {
+  const r = receivables.find(x => x.id === id);
+  if (!r) return;
+  activePaymentPiutang = r;
+  const sisa = Number(r.amount) - Number(r.paid_amount);
+  $('piutangPaymentId').value = id;
+  $('piutangPaymentName').innerText = r.name;
+  $('piutangPaymentRemain').innerText = formatRupiah(sisa);
+  $('piutangPaymentAmount').value = '';
+  $('piutangPaymentPreview').innerText = '';
+  $('piutangPaymentModal').classList.remove('hidden');
+}
+function closePiutangPaymentModal() { $('piutangPaymentModal').classList.add('hidden'); activePaymentPiutang = null; }
+function handlePiutangPaymentPreview(input) {
+  const val = Number(input.value) || 0;
+  $('piutangPaymentPreview').innerText = val > 0 ? formatRupiah(val) : '';
+}
+async function savePiutangPayment() {
+  if (!activePaymentPiutang) return;
+  const pay = Number($('piutangPaymentAmount').value) || 0;
+  if (pay <= 0) { showToast('Nominal tidak valid'); return; }
+  const sisa = Number(activePaymentPiutang.amount) - Number(activePaymentPiutang.paid_amount);
+  if (pay > sisa) { showToast('Pembayaran melebihi sisa hutang'); return; }
+  
+  const newPaid = Number(activePaymentPiutang.paid_amount) + pay;
+  const status = newPaid >= Number(activePaymentPiutang.amount) ? 'paid' : 'partial';
+  
+  const { error } = await supabaseClient.from('receivables').update({ paid_amount: newPaid, status }).eq('owner_id', OWNER_ID).eq('id', activePaymentPiutang.id);
+  if (error) { showToast('Gagal catat pembayaran'); return; }
+  
+  // Create income transaction
+  const txDesc = `[PELUNASAN PIUTANG] ${activePaymentPiutang.name}`;
+  const txPayload = { id: Date.now(), owner_id: OWNER_ID, date: getLocalDateString(), description: txDesc, amount: pay, type: 'income', category_id: 0, category_name: 'Pemasukan' };
+  await saveTransaction(txPayload);
+  
+  showToast('Pembayaran dicatat & saldo bertambah');
+  closePiutangPaymentModal();
+  await Promise.all([loadReceivables(), loadTransactions()]);
+  render();
+  renderPiutangPage();
+}
