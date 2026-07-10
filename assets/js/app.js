@@ -1820,6 +1820,12 @@ async function syncFirebaseStaffBonus(date){
     ]);
     
     let total=0;
+    const userStats={};
+    const getU=(n)=>{
+      const name=String(n||'Staff').toLowerCase().trim();
+      if(!userStats[name])userStats[name]={earned:0,withdrawn:0,name:n||'Staff'};
+      return userStats[name];
+    };
     (txRes.data||[]).forEach(r=>{
       const t=r.data||{};
       if(isFirebaseRecordDeleted(t)||isTrialServerRecord(t))return;
@@ -1827,7 +1833,9 @@ async function syncFirebaseStaffBonus(date){
       const role=String(t.userRole||t.role||'').toLowerCase();
       if(group==='harian'||role==='harian')return;
       const rate=Number(t.bonusRate??t.transactionBonusRate??(t.bonusPercent?t.bonusPercent/100:0.015));
-      total+=Number(t.amount||0)*rate;
+      const amt=Number(t.amount||0)*rate;
+      total+=amt;
+      getU(t.user||t.username).earned+=amt;
     });
     const memosToSave=[];
     (manualRes.data||[]).forEach(r=>{
@@ -1843,18 +1851,28 @@ async function syncFirebaseStaffBonus(date){
           const wDate=(t.dateKey||t.date||`${monthKey}-01`).slice(0,10);
           const memoId=Number(String(autoQrisHash(t.id||(wName+wDate))).padStart(6,'0')+'990002');
           memosToSave.push({id:memoId,date:wDate,name:wName,amount:wAmount});
+          getU(wName).withdrawn+=wAmount;
         }
         return;
       }
       const group=String(t.bonusGroup||'').toLowerCase();
       const role=String(t.userRole||t.role||'').toLowerCase();
       if(group==='harian'||role==='harian')return;
-      total+=Number(t.amount||0);
+      const amt=Number(t.amount||0);
+      total+=amt;
+      getU(t.user||t.username||t.name).earned+=amt;
     });
     (closingRes.data||[]).forEach(r=>{
       const c=r.data||{};
       if(isFirebaseRecordDeleted(c)||c.closed!==true||c.canceled===true)return;
-      total+=Number(c.totalBonus||0);
+      const tBonus=Number(c.totalBonus||0);
+      total+=tBonus;
+      const byUser=c.bonusByUser||c.bonusPerUser||{};
+      if(Object.keys(byUser).length>0){
+        Object.keys(byUser).forEach(k=>getU(k).earned+=Number(byUser[k]||0));
+      }else if(c.user){
+        getU(c.user).earned+=tBonus;
+      }
     });
 
     let catId=0;
@@ -1862,22 +1880,36 @@ async function syncFirebaseStaffBonus(date){
     if(cat)catId=cat.id;
     else return false;
 
-    // Hitung total kasbon yang sudah diambil secara fisik
-    const totalWithdrawn = memosToSave.reduce((sum, m) => sum + m.amount, 0);
-
     const monthDigits=monthKey.replace(/\D/g,'')||'197001';
     const id=Number(monthDigits+'990001');
     const desc=`[AUTO-BONUS-STAFF:${monthKey}] Total Gaji & Bonus Staff`;
-    
-    // KUNCI: Pengeluaran harus minimal sebesar total kasbon yang sudah keluar fisik!
-    const finalAmount = Math.max(total, totalWithdrawn);
-    const amount=Math.max(0,Math.round(finalAmount));
-    const txDate=`${monthKey}-01`; // Use first day of the month so it falls in the correct month
+    const amount=Math.max(0,Math.round(total));
+    const txDate=`${monthKey}-01`; 
+
+    // Hitung Piutang (Minus)
+    let totalHutang=0;
+    const hutangUsers=[];
+    Object.values(userStats).forEach(u=>{
+      const hutang=u.withdrawn-u.earned;
+      if(hutang>0){
+        totalHutang+=hutang;
+        hutangUsers.push(`${u.name} ${formatRupiah(hutang)}`);
+      }
+    });
+    const hutangId=Number(monthDigits+'990003');
+    const hutangDesc=`[AUTO-HUTANG-STAFF:${monthKey}] Piutang Kasbon: ${hutangUsers.join(', ')}`;
+    const hutangAmount=Math.max(0,Math.round(totalHutang));
 
     // Clean up any old daily auto-bonus entries we created previously
     const toDelete=(transactions||[]).filter(t=>String(t.description).startsWith('[AUTO-BONUS-STAFF:')&&Number(t.id)!==id);
     if(toDelete.length){
       for(const d of toDelete){
+        await supabaseClient.from('transactions').delete().eq('owner_id',OWNER_ID).eq('id',d.id);
+      }
+    }
+    const hutangToDelete=(transactions||[]).filter(t=>String(t.description).startsWith('[AUTO-HUTANG-STAFF:')&&Number(t.id)!==hutangId&&t.date.startsWith(monthKey));
+    if(hutangToDelete.length){
+      for(const d of hutangToDelete){
         await supabaseClient.from('transactions').delete().eq('owner_id',OWNER_ID).eq('id',d.id);
       }
     }
@@ -1893,6 +1925,19 @@ async function syncFirebaseStaffBonus(date){
     }else if(existing){
       await supabaseClient.from('transactions').delete().eq('owner_id',OWNER_ID).eq('id',id);
       mainChanged=true;
+    }
+
+    const exHutang=(transactions||[]).find(t=>Number(t.id)===hutangId);
+    let hutangChanged=false;
+    if(hutangAmount>0){
+      if(!exHutang||Number(exHutang.amount)!==hutangAmount||exHutang.description!==hutangDesc||Number(exHutang.category_id)!==catId){
+        const payload={id:hutangId,owner_id:OWNER_ID,date:txDate,description:hutangDesc,amount:hutangAmount,type:'expense',category_id:catId,category_name:'Gaji & Bonus'};
+        await supabaseClient.from('transactions').upsert(payload,{onConflict:'id'});
+        hutangChanged=true;
+      }
+    }else if(exHutang){
+      await supabaseClient.from('transactions').delete().eq('owner_id',OWNER_ID).eq('id',hutangId);
+      hutangChanged=true;
     }
 
     let memoChanged=false;
@@ -1917,7 +1962,7 @@ async function syncFirebaseStaffBonus(date){
       }
     }
 
-    return mainChanged || memoChanged || toDelete.length>0;
+    return mainChanged || hutangChanged || memoChanged || toDelete.length>0 || hutangToDelete.length>0;
   }catch(e){
     console.warn('syncFirebaseStaffBonus err:',e);
     return false;
