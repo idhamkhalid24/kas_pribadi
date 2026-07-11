@@ -1252,24 +1252,42 @@ function getSalaryDaysLeft(){
   const curDay=Number(today.slice(8,10));
   return Math.max(1,lastDay-curDay+1);
 }
+const SALARY_BOOST_RAMAI_START=20;  // cash fisik >= 20x idealDaily mulai dianggap 'ramai'
+const SALARY_BOOST_RAMAI_FULL=40;   // cash fisik >= 40x idealDaily -> boost penuh (2x)
+const SALARY_BOOST_MAX=2;           // boost maksimal 2x idealDaily
+function computeSalaryHint(due,daysLeft,cashFisik){
+  const idealDaily=due>0?roundRp(Math.ceil(due/daysLeft)):0;
+  const safeCap=roundRp(Math.floor(Math.max(0,cashFisik)*0.10));
+  if(due<=0)return{hint:0,idealDaily,safeCap,capped:false,boosted:false,boostMultiplier:1};
+  if(safeCap<idealDaily){
+    // Sepi: cash fisik hari ini gak cukup buat kejar target ideal -> sisihkan semampunya (10% cash)
+    return{hint:safeCap,idealDaily,safeCap,capped:true,boosted:false,boostMultiplier:1};
+  }
+  // Cash fisik cukup. Cek apakah lagi ramai banget sampai layak di-boost biar due kekejar lebih cepat.
+  const ratio=idealDaily>0?cashFisik/idealDaily:0;
+  let boostMultiplier=1;
+  if(ratio>SALARY_BOOST_RAMAI_START){
+    const progress=Math.min(1,(ratio-SALARY_BOOST_RAMAI_START)/(SALARY_BOOST_RAMAI_FULL-SALARY_BOOST_RAMAI_START));
+    boostMultiplier=1+progress*(SALARY_BOOST_MAX-1);
+  }
+  const boosted=boostMultiplier>1.001;
+  const boostedAmount=roundRp(Math.ceil(idealDaily*boostMultiplier));
+  const hint=Math.min(boostedAmount,safeCap,due);
+  return{hint,idealDaily,safeCap,capped:false,boosted,boostMultiplier};
+}
 function getSalaryDailyHint(monthKey){
   const due=getSalaryFundDue(monthKey||getSalaryFundMonthKey());
   if(due<=0)return 0;
   const daysLeft=getSalaryDaysLeft();
-  const idealDaily=roundRp(Math.ceil(due/daysLeft));
   const cashFisik=getTodayCashFisikData().cashFisik;
-  const safeCap=roundRp(Math.floor(Math.max(0,cashFisik)*0.10));
-  return Math.min(idealDaily,safeCap);
+  return computeSalaryHint(due,daysLeft,cashFisik).hint;
 }
 function getSalaryDailyHintDetail(monthKey){
   const due=getSalaryFundDue(monthKey||getSalaryFundMonthKey());
   const daysLeft=getSalaryDaysLeft();
-  const idealDaily=due>0?roundRp(Math.ceil(due/daysLeft)):0;
   const cashFisik=getTodayCashFisikData().cashFisik;
-  const safeCap=roundRp(Math.floor(Math.max(0,cashFisik)*0.10));
-  const hint=due>0?Math.min(idealDaily,safeCap):0;
-  const capped=due>0&&safeCap<idealDaily;
-  return {hint,idealDaily,cashFisik,capped,daysLeft};
+  const {hint,idealDaily,capped,boosted,boostMultiplier}=computeSalaryHint(due,daysLeft,cashFisik);
+  return {hint,idealDaily,cashFisik,capped,boosted,boostMultiplier,daysLeft};
 }
 async function getSalaryCategory(){
   // Cari kategori yang persis sama namanya (case-insensitive).
@@ -1287,7 +1305,7 @@ function renderSalaryFundSection(){
   const saved=getSalaryFundSaved(monthKey);
   const due=getSalaryFundDue(monthKey);
   const detail=getSalaryDailyHintDetail(monthKey);
-  const {hint,cashFisik,capped,daysLeft}=detail;
+  const {hint,cashFisik,capped,boosted,daysLeft}=detail;
   const pct=target>0?Math.min(100,Math.round((saved/target)*100)):0;
   if($('salaryFundAmountLarge'))$('salaryFundAmountLarge').innerText=formatRupiah(saved);
   if($('salaryFundProgressFill'))$('salaryFundProgressFill').style.width=pct+'%';
@@ -1321,7 +1339,11 @@ function renderSalaryFundSection(){
       if(hint>0){
         const cashInfo=" \xb7 Cash fisik: "+formatRupiah(cashFisik);
         const cappedInfo=capped?" (disesuaikan, bukan dipaksakan)":"";
-        $('salaryFundBasisInfo').innerText="Saran hari ini: "+formatRupiah(hint)+cappedInfo+cashInfo+" \xb7 Sisa "+daysLeft+" hari.";
+        let basisInfo;
+        if(capped)basisInfo=" \xb7 Dibatasi maks 10% cash fisik";
+        else if(boosted)basisInfo=" \xb7 Lagi ramai, dinaikkan biar kekejar lebih cepat";
+        else basisInfo=" \xb7 Sesuai target harian";
+        $('salaryFundBasisInfo').innerText="Saran hari ini: "+formatRupiah(hint)+cappedInfo+basisInfo+cashInfo+" \xb7 Sisa "+daysLeft+" hari.";
       }else{
         $('salaryFundBasisInfo').innerText="Belum ada cash fisik hari ini. Kumpulkan profit dulu (saran 10%). Sisa "+daysLeft+" hari.";
       }
@@ -1334,7 +1356,7 @@ function renderSalaryFundModal(){
   const saved=getSalaryFundSaved(monthKey);
   const due=getSalaryFundDue(monthKey);
   const detail=getSalaryDailyHintDetail(monthKey);
-  const {hint,idealDaily,cashFisik,capped,daysLeft}=detail;
+  const {hint,idealDaily,cashFisik,capped,boosted,daysLeft}=detail;
   const pct=target>0?Math.min(100,Math.round((saved/target)*100)):0;
   if($('salaryModalMonthKey'))$('salaryModalMonthKey').innerText=monthKey;
   if($('salaryModalSaved'))$('salaryModalSaved').innerText=formatRupiah(saved);
@@ -1348,8 +1370,10 @@ function renderSalaryFundModal(){
         let msg="Sisihkan "+formatRupiah(hint)+" hari ini";
         if(capped){
           msg+=" \xb7 Disesuaikan dari cash fisik "+formatRupiah(cashFisik)+" (10%). Idealnya "+formatRupiah(idealDaily)+"/hari, tapi tidak perlu dipaksakan.";
+        }else if(boosted){
+          msg+=" \xb7 Lagi ramai (cash fisik "+formatRupiah(cashFisik)+"), dinaikkan dari "+formatRupiah(idealDaily)+"/hari biar target kekejar lebih cepat.";
         }else{
-          msg+=" \xb7 Setara 10% dari cash fisik "+formatRupiah(cashFisik)+". Sisa target terpenuhi dalam "+daysLeft+" hari.";
+          msg+=" \xb7 Sesuai target harian agar tercapai dalam "+daysLeft+" hari (cash fisik hari ini: "+formatRupiah(cashFisik)+", cukup untuk itu).";
         }
         hintTxt.innerText=msg;
         hintBox.style.display='block';
@@ -2865,25 +2889,16 @@ function renderDebtSummary(){
       list.innerHTML = unpaidPersons.map(p => {
         const pct = Math.min(100, Math.round((p.paid / p.borrowed) * 100)) || 0;
         return `
-          <div class="card" style="margin-bottom:8px; border-color:#fde68a; background:#fffbeb">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start">
-              <div>
-                <b style="font-size:15px; color:#92400e; text-transform:capitalize">${escapeHtml(p.name)}</b>
-              </div>
-              <div style="text-align:right">
-                <div style="font-size:10px; color:#b45309; font-weight:800; text-transform:uppercase">Total Pinjam</div>
-                <b class="num" style="font-size:14px; color:#92400e">${formatRupiah(p.borrowed)}</b>
-              </div>
+          <div class="card" style="margin-bottom:7px; padding:10px 12px">
+            <div style="display:flex; justify-content:space-between; align-items:baseline; gap:10px">
+              <b style="font-size:13px; color:var(--ink); text-transform:capitalize">${escapeHtml(p.name)}</b>
+              <b class="num" style="font-size:14px; color:#92400e; white-space:nowrap">${formatRupiah(p.active)}</b>
             </div>
-            <div style="margin-top:12px; background:#fef3c7; border-radius:4px; padding:8px 10px">
-              <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:11px; font-weight:800">
-                <span style="color:#15803d">Terbayar: ${formatRupiah(p.paid)}</span>
-                <span style="color:#92400e">Sisa: ${formatRupiah(p.active)}</span>
-              </div>
-              <div class="progressbar" style="height:6px; background:#fde68a"><span style="width:${pct}%; background:#15803d"></span></div>
-            </div>
-            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px">
-              <button class="btn" style="background:#f59e0b; font-size:12px; padding:6px 12px; color:white; border:none" onclick="openDebtPaymentModal('${escapeHtml(p.name)}', ${p.active})">Bayar Hutang</button>
+            <div style="font-size:10px; color:var(--muted); font-weight:600; margin-top:1px">Sisa dari pinjaman ${formatRupiah(p.borrowed)}</div>
+            <div class="progressbar" style="height:4px; margin-top:6px"><span style="width:${pct}%"></span></div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px">
+              <span style="font-size:10px; color:var(--muted); font-weight:600">Terbayar ${formatRupiah(p.paid)} (${pct}%)</span>
+              <button class="btn secondary" style="width:auto; min-height:0 !important; height:auto; padding:3px 10px !important; font-size:10.5px; border-radius:6px !important" onclick="openDebtPaymentModal('${escapeHtml(p.name)}', ${p.active})">Bayar</button>
             </div>
           </div>
         `;
