@@ -2922,9 +2922,7 @@ async function saveDebtPaymentSimple() {
     date: getLocalDateString(),
     description: txDesc,
     amount: amt,
-    type: 'expense',
-    category_id: 0,
-    category_name: 'Bayar Hutang'
+    type: DEBT_PAY_TYPE
   };
   
   const btn = event.currentTarget;
