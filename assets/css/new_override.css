@@ -45,7 +45,7 @@ html, body {
 
 body::before { display: none !important; }
 
-.app { padding: 14px 14px 80px !important; }
+.app { padding: 14px 7px 80px !important; }
 
 /* Top bar */
 .top {
