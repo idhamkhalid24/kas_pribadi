@@ -370,6 +370,21 @@ input:focus, select:focus, textarea:focus {
   background: #7c3aed !important;
 }
 
+/* Tombol Atur Auto Debet Harian: ditaruh di dalam (muncul pas card dibuka), ukuran sama kecilnya seperti tombol section lain */
+#autoDebitCard #openAutoDebitBtn {
+  min-height: 28px !important;
+  height: 28px !important;
+  min-width: 0 !important;
+  width: auto !important;
+  padding: 0 14px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  border-radius: 999px !important;
+  line-height: 28px !important;
+  background: #b45309 !important;
+  color: #fff !important;
+}
+
 /* Stat grid di dalam card Dana Gaji */
 #salaryFundCard .zakat-grid .stat {
   border-color: #e9d5ff !important;
@@ -441,4 +456,67 @@ input:focus, select:focus, textarea:focus {
   font-weight: 900 !important;
   white-space: nowrap !important;
   flex-shrink: 0 !important;
+}
+
+/* ===== Auto Debet Harian: toggle switch ===== */
+.ad-switch{position:relative;display:inline-block;width:46px;height:26px;flex-shrink:0}
+.ad-switch input{opacity:0;width:0;height:0}
+.ad-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#e5e7eb;transition:.2s;border-radius:999px}
+.ad-slider:before{position:absolute;content:"";height:20px;width:20px;left:3px;bottom:3px;background:#fff;transition:.2s;border-radius:50%;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.ad-switch input:checked + .ad-slider{background:#16a34a}
+.ad-switch input:checked + .ad-slider:before{transform:translateX(20px)}
+
+/* ===== Perkecil ~40% semua card ringkasan di Home:
+   Zakat Mal, Dana Darurat, Dana Gaji Karyawan, Auto Debet Harian,
+   Hutang Uang Aktif, Buku Piutang & Kasbon ===== */
+#pageHome .zakat-card,
+#pageHome .debt-card {
+  padding: 7px !important;
+  margin-bottom: 6px !important;
+}
+#pageHome .zakat-header { margin-bottom: 6px !important; gap: 6px !important; }
+#pageHome .zakat-grid { gap: 5px !important; margin-top: 6px !important; }
+#pageHome .home-section .home-section-body { margin-top: 6px !important; padding-top: 5px !important; }
+
+/* Judul kartu */
+#pageHome .zakat-card .section-title { font-size: 9px !important; margin: 0 0 3px !important; }
+#pageHome .debt-title { font-size: 8px !important; margin-bottom: 1px !important; }
+
+/* Angka besar (Rp ...) */
+#pageHome #zakatAmountLarge,
+#pageHome #emergencyFundAmountLarge,
+#pageHome #salaryFundAmountLarge,
+#pageHome #autoDebitAmountLarge {
+  font-size: 13px !important;
+}
+#pageHome .debt-amount { font-size: 13px !important; }
+
+/* Teks keterangan kecil di bawah angka */
+#pageHome .zakat-card .small,
+#pageHome .debt-card .small,
+#pageHome #debtTodayInfo,
+#pageHome .debt-note {
+  font-size: 9.5px !important;
+  margin-top: 2px !important;
+  line-height: 1.3 !important;
+}
+
+/* Grid stat di dalam card (Terkumpul, Kurang, Terpotong, dll) */
+#pageHome .zakat-card .stat b,
+#pageHome .debt-card .stat b,
+#pageHome .grid2.debt-extra .stat b,
+#pageHome .stat.debt-extra b {
+  font-size: 11px !important;
+}
+#pageHome .zakat-card .stat span,
+#pageHome .debt-card .stat span,
+#pageHome .grid2.debt-extra .stat span,
+#pageHome .stat.debt-extra span {
+  font-size: 8px !important;
+}
+
+/* Tombol mini Pinjam/Catat di card Hutang & Piutang */
+#pageHome .debt-actions .debt-mini-btn {
+  font-size: 9px !important;
+  padding: 4px 7px !important;
 }
