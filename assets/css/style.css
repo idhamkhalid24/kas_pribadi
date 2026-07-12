@@ -34,6 +34,8 @@
       --r-lg: 8px;
       --r-xl: 10px;
       --font-custom: 'Kids Word', system-ui, -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", sans-serif;
+      --font-opensans: 'Open Sans', system-ui, -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", sans-serif;
+      --font-misans: 'MiSansLatin', system-ui, -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", sans-serif;
       --font-system: system-ui, -apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", sans-serif;
       --font: var(--font-custom);
       --mono: var(--font-custom);
