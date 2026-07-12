@@ -793,13 +793,17 @@
       </div>
 
       <!-- Sisa Operasional -->
-      <div id="operationalCard" class="ops-status-card safe">
-        <div style="min-width:0">
-          <b style="font-size:14.3px;font-weight:800">Sisa Operasional</b>
+      <div id="operationalCard" class="ops-status-card safe home-section is-collapsed">
+        <div onclick="toggleHomeSection('operationalCard')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;width:100%">
+          <div style="min-width:0">
+            <b style="font-size:14.3px;font-weight:800">Sisa Operasional</b>
+          </div>
+          <b id="operationalUsed" class="num" style="font-size:17.6px;white-space:nowrap;font-family:var(--mono);font-weight:500">Rp 0</b>
+        </div>
+        <div class="home-section-body">
           <div class="small" style="margin-top:2px">Ikut filter Ringkasan Laba · Limit 20%: <span id="operationalTotal">Rp 0</span> · Terpakai: <span id="operationalSpent">Rp 0</span></div>
           <div id="limitWarning" class="small red" style="font-weight:800;margin-top:4px"></div>
         </div>
-        <b id="operationalUsed" class="num" style="font-size:17.6px;white-space:nowrap;font-family:var(--mono);font-weight:500">Rp 0</b>
       </div>
 
       <!-- Zakat Mal -->
@@ -808,13 +812,13 @@
           <div>
             <div class="section-title" style="margin:0 0 4px">Zakat Mal</div>
             <div id="zakatAmountLarge" class="num gold" style="font-size:22px;font-weight:500">Rp 0</div>
-            <div id="zakatPaymentStatusText" class="small" style="margin-top:3px">Menunggu</div>
           </div>
           <div class="section-action-stack" onclick="event.stopPropagation()">
             <button id="payZakatBtn" class="btn gold" style="width:auto;min-width:90px;padding:10px" onclick="markZakatPaid()">Bayar</button>
           </div>
         </div>
         <div class="home-section-body">
+        <div id="zakatPaymentStatusText" class="small" style="margin-top:3px">Menunggu</div>
         <div class="zakat-grid">
           <div class="stat"><span>Laba 20% Final s.d H-1</span><b id="totalProfitDisplay" class="num">Rp 0</b></div>
           <div class="stat"><span>Belum Dizakatkan Final</span><b id="unpaidProfitDisplay" class="num">Rp 0</b></div>
@@ -834,13 +838,13 @@
           <div>
             <div class="section-title" style="margin:0 0 4px;color:var(--blue)">Dana Darurat</div>
             <div id="emergencyFundAmountLarge" class="num blue" style="font-size:22px;font-weight:500">Rp 0</div>
-            <div id="emergencyFundStatusText" class="small" style="margin-top:3px;color:var(--blue);font-weight:700">Menunggu</div>
           </div>
           <div class="section-action-stack" onclick="event.stopPropagation()">
             <button id="payEmergencyFundBtn" class="btn" style="width:auto;min-width:90px;padding:10px;background:var(--blue)" onclick="markEmergencyFundSaved()">Nabung</button>
           </div>
         </div>
         <div class="home-section-body">
+        <div id="emergencyFundStatusText" class="small" style="margin-top:3px;color:var(--blue);font-weight:700">Menunggu</div>
         <div class="zakat-grid">
           <div class="stat"><span>Cash Fisik Bulan Ini s.d H-1</span><b id="emergencyFundIncomeDisplay" class="num">Rp 0</b></div>
           <div class="stat"><span>Belum Ditabungkan</span><b id="emergencyFundUnpaidDisplay" class="num">Rp 0</b></div>
@@ -855,13 +859,13 @@
           <div style="min-width:0;flex:1">
             <div class="section-title" style="margin:0 0 4px;color:#7c3aed">Dana Gaji Karyawan</div>
             <div id="salaryFundAmountLarge" class="num" style="font-size:22px;font-weight:500;color:#7c3aed">Rp 0</div>
-            <div id="salaryFundStatusText" class="small" style="margin-top:3px;color:#7c3aed;font-weight:700">Set target dulu</div>
           </div>
           <div class="section-action-stack" onclick="event.stopPropagation()">
             <button id="paySalaryFundBtn" class="btn" style="width:auto;min-width:90px;padding:10px;background:#7c3aed" onclick="openSalaryFundModal()">Sisihkan</button>
           </div>
         </div>
         <div class="home-section-body">
+          <div id="salaryFundStatusText" class="small" style="margin-bottom:6px;color:#7c3aed;font-weight:700">Set target dulu</div>
           <!-- Progress Bar -->
           <div class="salary-fund-progress-wrap">
             <div class="salary-fund-progress-bar">
@@ -888,13 +892,13 @@
           <div style="min-width:0;flex:1">
             <div class="section-title" style="margin:0 0 4px;color:#000">Auto Debet Harian</div>
             <div id="autoDebitAmountLarge" class="num" style="font-size:22px;font-weight:500;color:#000">Rp 0 / hari</div>
-            <div id="autoDebitStatusText" class="small" style="margin-top:3px;color:#000;font-weight:700">Nonaktif</div>
           </div>
           <div class="section-action-stack" onclick="event.stopPropagation()">
             <button id="openAutoDebitBtn" class="btn" style="width:auto;min-width:90px;padding:10px;background:#b45309" onclick="openAutoDebitModal()">Atur</button>
           </div>
         </div>
         <div class="home-section-body">
+          <div id="autoDebitStatusText" class="small" style="margin-bottom:6px;color:#000;font-weight:700">Nonaktif</div>
           <div class="zakat-grid">
             <div class="stat"><span style="color:#000">Terpotong Bulan Ini</span><b id="autoDebitMonthTotal" class="num" style="color:#000">Rp 0</b></div>
             <div class="stat"><span style="color:#000">Terpotong Semua</span><b id="autoDebitAllTotal" class="num" style="color:#000">Rp 0</b></div>
@@ -910,13 +914,13 @@
           <div style="min-width:0">
             <div class="debt-title">Hutang Uang Aktif</div>
             <div id="debtActiveTotal" class="debt-amount num" onclick="event.stopPropagation();openDebtModal()">Rp 0</div>
-            <div id="debtTodayInfo" class="small" style="margin-top:3px;color:#92400e;font-weight:700">Pinjaman menambah Saldo Bersih, bayar pokok mengurangi Saldo Bersih.</div>
           </div>
           <div class="debt-actions" onclick="event.stopPropagation()">
             <button class="debt-mini-btn" onclick="openDebtBorrowModal()">+ Pinjam</button>
           </div>
         </div>
         <div class="home-section-body">
+          <div id="debtTodayInfo" class="small" style="margin-bottom:8px;color:#92400e;font-weight:700">Pinjaman menambah Saldo Bersih, bayar pokok mengurangi Saldo Bersih.</div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;margin-bottom:10px;border-top:1px solid #fde68a;padding-top:12px">
             <b style="font-size:14.3px;font-weight:800;color:#92400e">Daftar Hutang Berjalan</b>
             <span id="debtPersonListCount" class="num" style="font-size:13.2px;color:#92400e;font-weight:500">0 data</span>
@@ -946,13 +950,13 @@
           <div style="min-width:0">
             <div class="debt-title" style="color:#be123c">Buku Piutang & Kasbon</div>
             <div id="piutangTotalAmount" class="debt-amount num" style="color:#e11d48">Rp 0</div>
-            <div class="small" style="margin-top:3px;color:#be123c;font-weight:700">Piutang potong Saldo Bersih, cicilan nambah Saldo Bersih.</div>
           </div>
           <div class="debt-actions" onclick="event.stopPropagation()">
             <button class="debt-mini-btn" style="background:#e11d48;color:white;border:none" onclick="openPiutangModal()">+ Catat</button>
           </div>
         </div>
         <div class="home-section-body">
+          <div class="small" style="margin-bottom:8px;color:#be123c;font-weight:700">Piutang potong Saldo Bersih, cicilan nambah Saldo Bersih.</div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;margin-bottom:10px;border-top:1px solid #fecdd3;padding-top:12px">
             <b style="font-size:14.3px;font-weight:800;color:#be123c">Daftar Piutang Berjalan</b>
             <span id="piutangListCount" class="num" style="font-size:13.2px;color:#be123c;font-weight:500">0 data</span>
