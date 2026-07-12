@@ -14,6 +14,7 @@ const ROCKY_STAFF_NOTIFY_CASH_DRAWER_URL=ROCKY_STAFF_NOTIFY_WORKER_BASE_URL+'/no
 const ROCKY_STAFF_NOTIFY_SECRET='rockyNotifRahasia2026';
 
 let supabaseClient=null,transactions=[],zakatHistory=[],emergencyFundHistory=[],expenseCategories=[],cashDrawerAudits=[],receivables=[],currentFilter='today',currentFinanceReportFilter='month',pendingAction=null,currentPage='home';
+let autoDebitSettings={enabled:false,amount:0,last_run_date:null};
 let firebaseDb=null,firebaseUnsub=null,todayFirebaseUnsub=null,firebaseUploadDate='',firebaseIncomeRows=[],firebaseIncomeTotal=0,todayFirebaseIncomeRows=[],todayFirebaseIncomeTotal=0,pendingFirebaseUploads=[],monthValidityBusy=false,emergencyFundTableReady=false,cashDrawerTableReady=false;
 const HISTORY_PAGE_SIZE=15;
 let historyVisibleCount=HISTORY_PAGE_SIZE,currentGoldHomeTab='buy',currentCashDrawerFilter='today',cashDrawerEditingId=null;
@@ -211,6 +212,9 @@ const CASH_DRAWER_PLUS_CATEGORY_NAME='Selisih Kas Lebih';
 const SALARY_FUND_PREFIX='[DANA_GAJI:';
 const SALARY_CATEGORY_NAME='Gaji & Bonus';
 const SALARY_FUND_TARGET_KEY='kas_dana_gaji_target_v1';
+// === AUTO DEBET HARIAN (meniru auto debet ATM) ===
+const AUTO_DEBIT_PREFIX='[AUTODEBET:';
+const AUTO_DEBIT_CATEGORY_NAME='Auto Debet Harian';
 const GOLD_ADMIN_FEE=2500;
 const GOLD_TROY_OUNCE_GRAM=31.1034768;
 const GOLD_PRICE_CACHE_KEY='kas_gold_price_cache_v2';
@@ -260,6 +264,7 @@ async function ensureDefaultExpenseCategories(){
     if(!getCategoryByName(EMERGENCY_CATEGORY_NAME)){await insertExpenseCategory(EMERGENCY_CATEGORY_NAME,4)}
     if(!getCategoryByName(GOLD_CATEGORY_NAME)){await insertExpenseCategory(GOLD_CATEGORY_NAME,5)}
     if(!getCategoryByName(CASH_DRAWER_MINUS_CATEGORY_NAME)){await insertExpenseCategory(CASH_DRAWER_MINUS_CATEGORY_NAME,6)}
+    if(!getCategoryByName(AUTO_DEBIT_CATEGORY_NAME)){await insertExpenseCategory(AUTO_DEBIT_CATEGORY_NAME,7)}
     await loadExpenseCategories();
   }catch(e){console.warn('Default kategori gagal:',e);}
 }
@@ -2195,6 +2200,177 @@ function isFirebaseUploaded(t){const d=String(t?.description||'');return !!(t&&t
 function cleanFirebaseDesc(desc){return String(desc||'').replace(/^\[(?:FIREBASE|SERVERPUSAT):\d{4}-\d{2}-\d{2}\]\s*/,'')}
 function getFirebaseUploadId(date){return Number(String(date||'').replace(/\D/g,'')+'777')}
 function getUploadedFirebaseTransaction(date){const id=getFirebaseUploadId(date);return transactions.find(t=>Number(t.id)===id || String(t.description||'').startsWith(`[FIREBASE:${date}]`) || String(t.description||'').startsWith(`[SERVERPUSAT:${date}]`))}
+// ============================================================
+// AUTO DEBET HARIAN — meniru fitur auto debet ATM (Poket BCA dkk).
+// Status aktif/nonaktif + nominal disimpan di Supabase (tabel auto_debit_settings)
+// supaya ikut sinkron di semua device, sama seperti data lain.
+// ATURAN PENTING: transaksi yang SUDAH tercatat tidak pernah diubah waktu nominal
+// diganti. Nominal baru cuma berlaku buat hari ini & seterusnya.
+// ============================================================
+function isAutoDebitTx(t={}){
+  const desc=String(t&&t.description||'');
+  return !!(t&&t.type==='expense'&&desc.startsWith(AUTO_DEBIT_PREFIX));
+}
+function cleanAutoDebitDesc(desc){return String(desc||'').replace(/\[AUTODEBET:[^\]]+\]\s*/,'').trim()||'Auto Debet Harian'}
+async function getAutoDebitExpenseCategory(){
+  await loadExpenseCategories().catch(()=>{});
+  let cat=getCategoryByName(AUTO_DEBIT_CATEGORY_NAME);
+  if(!cat){
+    await insertExpenseCategory(AUTO_DEBIT_CATEGORY_NAME,7);
+    await loadExpenseCategories();
+    cat=getCategoryByName(AUTO_DEBIT_CATEGORY_NAME);
+  }
+  return cat;
+}
+async function loadAutoDebitSettings(){
+  if(!supabaseClient)return;
+  try{
+    const {data,error}=await supabaseClient.from('auto_debit_settings').select('*').eq('owner_id',OWNER_ID).maybeSingle();
+    if(error)throw error;
+    autoDebitSettings=data?{enabled:!!data.enabled,amount:Number(data.amount||0),last_run_date:data.last_run_date||null}:{enabled:false,amount:0,last_run_date:null};
+  }catch(e){console.warn('Tabel auto_debit_settings belum siap (jalankan SQL dulu):',e);}
+}
+async function persistAutoDebitSettings(){
+  if(!supabaseClient)return;
+  const payload={owner_id:OWNER_ID,enabled:!!autoDebitSettings.enabled,amount:Math.round(Number(autoDebitSettings.amount||0)),last_run_date:autoDebitSettings.last_run_date,updated_at:new Date().toISOString()};
+  const {error}=await supabaseClient.from('auto_debit_settings').upsert(payload,{onConflict:'owner_id'});
+  if(error)throw error;
+}
+function nextDateStr(dateStr){
+  const parts=String(dateStr).split('-').map(Number);
+  const dt=new Date(Date.UTC(parts[0],(parts[1]||1)-1,parts[2]||1));
+  dt.setUTCDate(dt.getUTCDate()+1);
+  return dt.toISOString().slice(0,10);
+}
+async function insertAutoDebitForDate(dateStr,amount){
+  const already=(transactions||[]).some(t=>isAutoDebitTx(t)&&t.date===dateStr);
+  if(already||amount<=0)return;
+  const cat=await getAutoDebitExpenseCategory();
+  const tx={
+    id:Date.now()+Math.floor(Math.random()*900)+1,
+    date:dateStr,
+    description:`${AUTO_DEBIT_PREFIX}${dateStr}] Auto Debet Harian`,
+    amount,
+    type:'expense',
+    category_id:cat?Number(cat.id):null,
+    category_name:AUTO_DEBIT_CATEGORY_NAME
+  };
+  await saveTransaction(tx);
+  transactions.push(tx);
+}
+// Dipanggil sekali tiap app dibuka: catch-up hari yang kelewat kalau statusnya aktif,
+// tapi kalau lagi nonaktif, cuma geser penanda "sudah dicek" tanpa nambah transaksi
+// (jadi tidak numpuk pas diaktifkan lagi nanti).
+async function runDailyAutoDebit(){
+  if(!supabaseClient)return;
+  await loadAutoDebitSettings();
+  const today=getLocalDateString();
+  if(!autoDebitSettings.last_run_date){
+    // Pertama kali fitur ini dicek: jangan tembak mundur ke hari-hari sebelumnya.
+    autoDebitSettings.last_run_date=today;
+    try{await persistAutoDebitSettings();}catch(e){}
+    return;
+  }
+  if(autoDebitSettings.last_run_date>=today)return; // sudah dicek hari ini
+  if(autoDebitSettings.enabled){
+    const amount=Math.round(Number(autoDebitSettings.amount||0));
+    let cursor=nextDateStr(autoDebitSettings.last_run_date),guard=0;
+    while(cursor<=today&&guard<366){
+      try{await insertAutoDebitForDate(cursor,amount);}catch(e){console.warn('Auto debet gagal utk',cursor,e);}
+      cursor=nextDateStr(cursor);guard++;
+    }
+  }
+  autoDebitSettings.last_run_date=today;
+  try{await persistAutoDebitSettings();}catch(e){}
+}
+async function toggleAutoDebit(enabled){
+  const prev=autoDebitSettings.enabled;
+  autoDebitSettings.enabled=!!enabled;
+  try{
+    if(enabled&&!prev){
+      const today=getLocalDateString();
+      const amount=Math.round(Number(autoDebitSettings.amount||0));
+      if(amount>0)await insertAutoDebitForDate(today,amount);
+      autoDebitSettings.last_run_date=today;
+    }
+    await persistAutoDebitSettings();
+    showToast(enabled?'Auto Debet Harian diaktifkan':'Auto Debet Harian dinonaktifkan');
+    await loadTransactions();
+    render();renderAutoDebitModalContent();
+  }catch(e){
+    autoDebitSettings.enabled=prev;
+    showToast('Gagal ubah status auto debet: '+(e.message||e));
+    renderAutoDebitModalContent();
+  }
+}
+function handleAutoDebitAmountPreview(inp){
+  const v=getActualAmount(inp.value);
+  const el=$('autoDebitAmountPreview');
+  if(el)el.innerText=v>0?formatRupiah(v):'';
+}
+async function saveAutoDebitAmount(){
+  const inp=$('autoDebitAmountInput');
+  if(!inp)return;
+  const val=getActualAmount(inp.value);
+  if(val<=0){showToast('Isi nominal auto debet dulu');inp.focus();return;}
+  try{
+    autoDebitSettings.amount=val;
+    await persistAutoDebitSettings();
+    // Kalau statusnya lagi Aktif tapi hari ini belum kepotong (misal nominal baru
+    // diisi SETELAH toggle di-ON-kan), langsung potong sekarang juga.
+    if(autoDebitSettings.enabled){
+      const today=getLocalDateString();
+      const already=(transactions||[]).some(t=>isAutoDebitTx(t)&&t.date===today);
+      if(!already){
+        await insertAutoDebitForDate(today,val);
+        autoDebitSettings.last_run_date=today;
+        await persistAutoDebitSettings();
+        await loadTransactions();
+        render();
+      }
+    }
+    showToast('Nominal auto debet disimpan: '+formatRupiah(val)+'/hari. Potongan yang sudah lewat tidak ikut berubah.');
+    inp.value='';
+    if($('autoDebitAmountPreview'))$('autoDebitAmountPreview').innerText='';
+    renderAutoDebitSection();renderAutoDebitModalContent();
+  }catch(e){showToast('Gagal simpan nominal auto debet: '+(e.message||e));}
+}
+function getAutoDebitTxRows(){return (transactions||[]).filter(isAutoDebitTx).sort((a,b)=>String(b.date).localeCompare(String(a.date)))}
+function getAutoDebitTotal(monthOnly=false){
+  const month=getLocalDateString().slice(0,7);
+  return getAutoDebitTxRows().filter(t=>!monthOnly||String(t.date).startsWith(month)).reduce((s,t)=>s+Number(t.amount||0),0);
+}
+function renderAutoDebitSection(){
+  const active=!!autoDebitSettings.enabled;
+  if($('autoDebitAmountLarge'))$('autoDebitAmountLarge').innerText=formatRupiah(autoDebitSettings.amount||0)+' / hari';
+  if($('autoDebitStatusText'))$('autoDebitStatusText').innerText=active?'Aktif':'Nonaktif';
+  if($('autoDebitMonthTotal'))$('autoDebitMonthTotal').innerText=formatRupiah(getAutoDebitTotal(true));
+  if($('autoDebitAllTotal'))$('autoDebitAllTotal').innerText=formatRupiah(getAutoDebitTotal(false));
+}
+function renderAutoDebitModalContent(){
+  const active=!!autoDebitSettings.enabled;
+  if($('autoDebitModalStatus'))$('autoDebitModalStatus').innerText=active?`Aktif — ${formatRupiah(autoDebitSettings.amount||0)}/hari`:'Nonaktif';
+  const chk=$('autoDebitToggleInput');if(chk)chk.checked=active;
+  const rows=getAutoDebitTxRows();
+  if($('autoDebitHistoryCount'))$('autoDebitHistoryCount').innerText=rows.length+' data';
+  const list=$('autoDebitHistoryList');
+  if(list){
+    list.innerHTML=rows.length?rows.slice(0,30).map(t=>`<div class="item" style="border-color:#fde68a;display:flex;justify-content:space-between;align-items:center"><div><b style="font-size:12px;color:#b45309">${escapeHtml(t.date)}</b><div class="small" style="color:#6b7280;margin-top:1px">Terpotong otomatis</div></div><b class="num" style="color:#b45309">-${formatRupiah(Number(t.amount||0))}</b></div>`).join(''):'<div class="empty" style="color:#b45309">Belum ada potongan.</div>';
+  }
+}
+function openAutoDebitModal(){
+  renderAutoDebitModalContent();
+  const modal=$('autoDebitModal');
+  if(modal)modal.classList.remove('hidden');
+  bindGlobalKeyboardFix();
+}
+function closeAutoDebitModal(){
+  const modal=$('autoDebitModal');
+  if(modal)modal.classList.add('hidden');
+  const inp=$('autoDebitAmountInput');
+  if(inp)inp.value='';
+  if($('autoDebitAmountPreview'))$('autoDebitAmountPreview').innerText='';
+}
 function initFirebase(){try{serverPusatClient=window.supabase.createClient(SERVER_PUSAT_URL,SERVER_PUSAT_ANON_KEY);firebaseDb=serverPusatClient;return true}catch(e){console.error(e);showToast('Server Pusat gagal aktif: '+e.message);return false}}
 function renderTodayFirebaseIncomeHome(){
   // Card Pendapatan Hari Ini sudah digabung ke Cash Fisik — panggil renderCashFisik saja
@@ -2586,6 +2762,7 @@ function render(){
   renderZakatSection();
   renderEmergencyFundSection();
   renderSalaryFundSection();
+  renderAutoDebitSection();
 
   const over=opSpent>opProfit&&opProfit>0;
   $('operationalCard').className='card '+(over?'danger-card':'safe-card');
@@ -2613,8 +2790,8 @@ function render(){
 }
 function escapeHtml(s){return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
 function getTransactionDetailMeta(t={}){
-  const co=isCashOut(t),debt=isDebtTx(t),zakat=isZakatExpenseTx(t),gold=isGoldPurchaseTx(t),emergency=isEmergencyFundTx(t),drawer=isCashDrawerAdjustmentTx(t);
-  const desc=co?cleanCashOutDesc(t.description):(debt?cleanDebtDesc(t.description):(zakat?cleanZakatDesc(t.description):(gold?cleanGoldDesc(t.description):(emergency?'Tabungan Dana Darurat':(drawer?cleanCashDrawerAdjustmentDesc(t.description):cleanFirebaseDesc(t.description))))));
+  const co=isCashOut(t),debt=isDebtTx(t),zakat=isZakatExpenseTx(t),gold=isGoldPurchaseTx(t),emergency=isEmergencyFundTx(t),drawer=isCashDrawerAdjustmentTx(t),autodebit=isAutoDebitTx(t);
+  const desc=co?cleanCashOutDesc(t.description):(debt?cleanDebtDesc(t.description):(zakat?cleanZakatDesc(t.description):(gold?cleanGoldDesc(t.description):(emergency?'Tabungan Dana Darurat':(drawer?cleanCashDrawerAdjustmentDesc(t.description):(autodebit?cleanAutoDebitDesc(t.description):cleanFirebaseDesc(t.description)))))));
   const label=drawer?(t.type==='income'?CASH_DRAWER_PLUS_CATEGORY_NAME:CASH_DRAWER_MINUS_CATEGORY_NAME):(t.type==='income'?(isFirebaseUploaded(t)||t.__firebasePreview?'Pendapatan Server Pusat':'Pendapatan Manual'):(debt?(isDebtIn(t)?'Pinjam Uang':'Bayar Pokok Hutang'):getExpenseCategoryName(t)));
   const isIn=t.type==='income'||isDebtIn(t);
   const sign=isIn?'+':'-';
@@ -4618,6 +4795,7 @@ async function initApp(){try{if(!initSupabase())return;
       firebaseIncomeTotal=Number(todayFirebaseIncomeTotal||0);
     }
   }
+  try{await runDailyAutoDebit();await loadTransactions();}catch(e){console.warn('Auto Debet Harian gagal jalan:',e)}
   // Semua data siap — render sekali, langsung akurat
   if(nb)nb.style.opacity='1';
   if(st)st.innerText='Aman';
