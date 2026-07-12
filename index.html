@@ -9,10 +9,59 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="assets/css/style.css?v=modern-banking-fix11-20260622">
-  <link rel="stylesheet" href="assets/css/new_override.css?v=home-minimal-20260622">
+  <link rel="stylesheet" href="assets/css/new_override.css?v=shrink40-20260712">
 </head>
 <body>
   <!-- ====== MODALS ====== -->
+
+  <!-- Modal Auto Debet Harian -->
+  <div id="autoDebitModal" class="modal hidden">
+    <div class="box" style="max-width:420px;width:100%">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:16px">
+        <div>
+          <h3 style="color:#b45309;margin-bottom:2px">Auto Debet Harian</h3>
+          <span style="font-size:11px;font-weight:700;color:#d97706">Potong Saldo Bersih otomatis tiap hari</span>
+        </div>
+        <button class="x" style="font-size:24px;flex-shrink:0" onclick="closeAutoDebitModal()">×</button>
+      </div>
+
+      <!-- Toggle aktif/nonaktif -->
+      <div style="display:flex;justify-content:space-between;align-items:center;background:#fffbeb;border-radius:10px;padding:12px;margin-bottom:14px">
+        <div>
+          <div style="font-size:13px;font-weight:800;color:#374151">Status Auto Debet</div>
+          <div id="autoDebitModalStatus" class="small" style="color:#b45309;font-weight:700;margin-top:2px">Nonaktif</div>
+        </div>
+        <label class="ad-switch">
+          <input type="checkbox" id="autoDebitToggleInput" onchange="toggleAutoDebit(this.checked)">
+          <span class="ad-slider"></span>
+        </label>
+      </div>
+
+      <!-- Nominal -->
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <label style="font-size:12px;font-weight:800;color:#374151">💸 Nominal per Hari</label>
+          <span id="autoDebitAmountPreview" style="font-size:12px;font-weight:700;color:#b45309"></span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <input type="number" id="autoDebitAmountInput" placeholder="Contoh: 10 = Rp 10.000" oninput="handleAutoDebitAmountPreview(this)" style="flex:1;border-color:#fde68a;font-size:13px">
+          <button onclick="saveAutoDebitAmount()" style="background:#b45309;color:white;border:none;border-radius:999px;padding:0 16px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;min-height:44px">Simpan</button>
+        </div>
+        <div style="margin-top:5px;font-size:11px;color:#d97706;font-weight:600">Potongan yang sudah lewat TIDAK ikut berubah. Nominal baru cuma berlaku mulai hari ini &amp; seterusnya.</div>
+      </div>
+
+      <div style="border-top:1px solid #fde68a;margin:14px 0"></div>
+
+      <!-- Riwayat -->
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <b style="font-size:12px;font-weight:800;color:#374151">Riwayat Auto Debet</b>
+          <span id="autoDebitHistoryCount" style="font-size:11px;font-weight:700;color:#d97706">0 data</span>
+        </div>
+        <div id="autoDebitHistoryList" style="max-height:28vh;overflow-y:auto"></div>
+      </div>
+    </div>
+  </div>
 
   <!-- Modal Dana Gaji -->
   <div id="salaryFundModal" class="modal hidden">
@@ -827,6 +876,27 @@
         </div>
       </div>
 
+      <!-- Auto Debet Harian -->
+      <div id="autoDebitCard" class="zakat-card home-section is-collapsed" style="border-color:#fde68a;background:#fffbeb">
+        <div class="zakat-header" onclick="toggleHomeSection('autoDebitCard')" style="cursor:pointer">
+          <div style="min-width:0;flex:1">
+            <div class="section-title" style="margin:0 0 4px;color:#b45309">Auto Debet Harian</div>
+            <div id="autoDebitAmountLarge" class="num" style="font-size:20px;font-weight:500;color:#b45309">Rp 0 / hari</div>
+            <div id="autoDebitStatusText" class="small" style="margin-top:3px;color:#b45309;font-weight:700">Nonaktif</div>
+          </div>
+        </div>
+        <div class="home-section-body">
+          <div class="zakat-grid">
+            <div class="stat"><span>Terpotong Bulan Ini</span><b id="autoDebitMonthTotal" class="num" style="color:#b45309">Rp 0</b></div>
+            <div class="stat"><span>Terpotong Semua</span><b id="autoDebitAllTotal" class="num" style="color:#b45309">Rp 0</b></div>
+          </div>
+          <div style="margin-top:8px">
+            <button id="openAutoDebitBtn" class="btn" onclick="event.stopPropagation();openAutoDebitModal()">Atur</button>
+          </div>
+          <div id="autoDebitBasisInfo" class="small" style="margin-top:10px;padding-top:10px;border-top:1px solid #fde68a;color:#b45309;font-weight:700">Potong Saldo Bersih otomatis tiap hari, seperti auto debet ATM. Ganti nominal tidak mengubah potongan yang sudah lewat.</div>
+        </div>
+      </div>
+
       <!-- Hutang Section Paling Bawah -->
       <!-- Hutang Card -->
       <div id="debtHomeCard" class="debt-card home-section is-collapsed tone-debt">
@@ -1146,6 +1216,6 @@
     <button id="nav-firebase" onclick="goPage('firebase')">🌐 Server</button>
   </nav>
 
-<script src="assets/js/app.js?v=salary-target-supabase-20260708"></script>
+<script src="assets/js/app.js?v=autodebit-fix2-20260712"></script>
 </body>
 </html>
