@@ -307,13 +307,30 @@ input:focus, select:focus, textarea:focus {
 .zakat-card #payEmergencyFundBtn {
   min-height: 28px !important;
   height: 28px !important;
-  min-width: 0 !important;
-  width: auto !important;
-  padding: 0 14px !important;
+  padding: 0 !important;
   font-size: 12.1px !important;
   font-weight: 700 !important;
   border-radius: 999px !important;
   line-height: 28px !important;
+}
+/* Ukuran tombol aksi disamakan biar rata meski jumlah huruf beda (Bayar/Nabung/Sisihkan/Atur) */
+.zakat-card #payZakatBtn,
+.zakat-card #payEmergencyFundBtn,
+#salaryFundCard #paySalaryFundBtn,
+#autoDebitCard #openAutoDebitBtn {
+  min-width: 92px !important;
+  width: 92px !important;
+  text-align: center !important;
+  justify-content: center !important;
+}
+/* Warna beda tiap tombol */
+.zakat-card #payZakatBtn {
+  background: #f59e0b !important;
+  color: #fff !important;
+}
+.zakat-card #payEmergencyFundBtn {
+  background: var(--blue) !important;
+  color: #fff !important;
 }
 /* Rapikan section toggle button di salaryFundCard */
 #salaryFundCard .section-toggle {
@@ -360,29 +377,33 @@ input:focus, select:focus, textarea:focus {
 #salaryFundCard #paySalaryFundBtn {
   min-height: 28px !important;
   height: 28px !important;
-  min-width: 0 !important;
-  width: auto !important;
-  padding: 0 14px !important;
+  min-width: 92px !important;
+  width: 92px !important;
+  padding: 0 !important;
   font-size: 12.1px !important;
   font-weight: 700 !important;
   border-radius: 999px !important;
   line-height: 28px !important;
   background: #7c3aed !important;
+  text-align: center !important;
+  justify-content: center !important;
 }
 
 /* Tombol Atur Auto Debet Harian: ditaruh di dalam (muncul pas card dibuka), ukuran sama kecilnya seperti tombol section lain */
 #autoDebitCard #openAutoDebitBtn {
   min-height: 28px !important;
   height: 28px !important;
-  min-width: 0 !important;
-  width: auto !important;
-  padding: 0 14px !important;
+  min-width: 92px !important;
+  width: 92px !important;
+  padding: 0 !important;
   font-size: 12.1px !important;
   font-weight: 700 !important;
   border-radius: 999px !important;
   line-height: 28px !important;
   background: #b45309 !important;
   color: #fff !important;
+  text-align: center !important;
+  justify-content: center !important;
 }
 
 /* Stat grid di dalam card Dana Gaji */
@@ -552,3 +573,8 @@ body.font-mode-misans {
   white-space: nowrap;
 }
 #fontSwitchBtn:active { opacity: .8; }
+
+/* Sisa Operasional dibikin collapsible: card jadi block, baris ringkas tetap flex row */
+#operationalCard.ops-status-card {
+  display: block !important;
+}
