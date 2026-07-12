@@ -4,8 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>alfajri Finance v27</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <link rel="stylesheet" href="assets/css/style.css?v=modern-banking-fix11-20260622">
@@ -20,15 +18,15 @@
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:16px">
         <div>
           <h3 style="color:#b45309;margin-bottom:2px">Auto Debet Harian</h3>
-          <span style="font-size:11px;font-weight:700;color:#d97706">Potong Saldo Bersih otomatis tiap hari</span>
+          <span style="font-size:12.1px;font-weight:700;color:#d97706">Potong Saldo Bersih otomatis tiap hari</span>
         </div>
-        <button class="x" style="font-size:24px;flex-shrink:0" onclick="closeAutoDebitModal()">×</button>
+        <button class="x" style="font-size:26.4px;flex-shrink:0" onclick="closeAutoDebitModal()">×</button>
       </div>
 
       <!-- Toggle aktif/nonaktif -->
       <div style="display:flex;justify-content:space-between;align-items:center;background:#fffbeb;border-radius:10px;padding:12px;margin-bottom:14px">
         <div>
-          <div style="font-size:13px;font-weight:800;color:#374151">Status Auto Debet</div>
+          <div style="font-size:14.3px;font-weight:800;color:#374151">Status Auto Debet</div>
           <div id="autoDebitModalStatus" class="small" style="color:#b45309;font-weight:700;margin-top:2px">Nonaktif</div>
         </div>
         <label class="ad-switch">
@@ -40,14 +38,14 @@
       <!-- Nominal -->
       <div style="margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <label style="font-size:12px;font-weight:800;color:#374151">💸 Nominal per Hari</label>
-          <span id="autoDebitAmountPreview" style="font-size:12px;font-weight:700;color:#b45309"></span>
+          <label style="font-size:13.2px;font-weight:800;color:#374151">💸 Nominal per Hari</label>
+          <span id="autoDebitAmountPreview" style="font-size:13.2px;font-weight:700;color:#b45309"></span>
         </div>
         <div style="display:flex;gap:8px">
-          <input type="number" id="autoDebitAmountInput" placeholder="Contoh: 10 = Rp 10.000" oninput="handleAutoDebitAmountPreview(this)" style="flex:1;border-color:#fde68a;font-size:13px">
-          <button onclick="saveAutoDebitAmount()" style="background:#b45309;color:white;border:none;border-radius:999px;padding:0 16px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;min-height:44px">Simpan</button>
+          <input type="number" id="autoDebitAmountInput" placeholder="Contoh: 10 = Rp 10.000" oninput="handleAutoDebitAmountPreview(this)" style="flex:1;border-color:#fde68a;font-size:14.3px">
+          <button onclick="saveAutoDebitAmount()" style="background:#b45309;color:white;border:none;border-radius:999px;padding:0 16px;font-size:13.2px;font-weight:700;cursor:pointer;white-space:nowrap;min-height:44px">Simpan</button>
         </div>
-        <div style="margin-top:5px;font-size:11px;color:#d97706;font-weight:600">Potongan yang sudah lewat TIDAK ikut berubah. Nominal baru cuma berlaku mulai hari ini &amp; seterusnya.</div>
+        <div style="margin-top:5px;font-size:12.1px;color:#d97706;font-weight:600">Potongan yang sudah lewat TIDAK ikut berubah. Nominal baru cuma berlaku mulai hari ini &amp; seterusnya.</div>
       </div>
 
       <div style="border-top:1px solid #fde68a;margin:14px 0"></div>
@@ -55,8 +53,8 @@
       <!-- Riwayat -->
       <div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <b style="font-size:12px;font-weight:800;color:#374151">Riwayat Auto Debet</b>
-          <span id="autoDebitHistoryCount" style="font-size:11px;font-weight:700;color:#d97706">0 data</span>
+          <b style="font-size:13.2px;font-weight:800;color:#374151">Riwayat Auto Debet</b>
+          <span id="autoDebitHistoryCount" style="font-size:12.1px;font-weight:700;color:#d97706">0 data</span>
         </div>
         <div id="autoDebitHistoryList" style="max-height:28vh;overflow-y:auto"></div>
       </div>
@@ -71,24 +69,24 @@
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:16px">
         <div>
           <h3 style="color:#7c3aed;margin-bottom:2px">Dana Gaji</h3>
-          <span id="salaryModalMonthKey" style="font-size:11px;font-weight:700;color:#a78bfa"></span>
+          <span id="salaryModalMonthKey" style="font-size:12.1px;font-weight:700;color:#a78bfa"></span>
         </div>
-        <button class="x" style="font-size:24px;flex-shrink:0" onclick="closeSalaryFundModal()">×</button>
+        <button class="x" style="font-size:26.4px;flex-shrink:0" onclick="closeSalaryFundModal()">×</button>
       </div>
 
       <!-- Status Strip: Terkumpul / Target / Kurang -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
         <div style="background:#f5f3ff;border-radius:10px;padding:10px 8px;text-align:center">
-          <div style="font-size:9px;color:#a78bfa;font-weight:800;letter-spacing:.3px;margin-bottom:4px">TERKUMPUL</div>
-          <div id="salaryModalSaved" class="num" style="font-size:13px;font-weight:800;color:#7c3aed">Rp 0</div>
+          <div style="font-size:9.9px;color:#a78bfa;font-weight:800;letter-spacing:.3px;margin-bottom:4px">TERKUMPUL</div>
+          <div id="salaryModalSaved" class="num" style="font-size:14.3px;font-weight:800;color:#7c3aed">Rp 0</div>
         </div>
         <div style="background:#f5f3ff;border-radius:10px;padding:10px 8px;text-align:center">
-          <div style="font-size:9px;color:#a78bfa;font-weight:800;letter-spacing:.3px;margin-bottom:4px">TARGET</div>
-          <div id="salaryModalTarget" class="num" style="font-size:13px;font-weight:800;color:#374151">Rp 0</div>
+          <div style="font-size:9.9px;color:#a78bfa;font-weight:800;letter-spacing:.3px;margin-bottom:4px">TARGET</div>
+          <div id="salaryModalTarget" class="num" style="font-size:14.3px;font-weight:800;color:#374151">Rp 0</div>
         </div>
         <div style="background:#fff1f2;border-radius:10px;padding:10px 8px;text-align:center">
-          <div style="font-size:9px;color:#fca5a5;font-weight:800;letter-spacing:.3px;margin-bottom:4px">KURANG</div>
-          <div id="salaryModalDue" class="num" style="font-size:13px;font-weight:800;color:#ef4444">Rp 0</div>
+          <div style="font-size:9.9px;color:#fca5a5;font-weight:800;letter-spacing:.3px;margin-bottom:4px">KURANG</div>
+          <div id="salaryModalDue" class="num" style="font-size:14.3px;font-weight:800;color:#ef4444">Rp 0</div>
         </div>
       </div>
 
@@ -101,8 +99,8 @@
 
       <!-- Saran hari ini -->
       <div id="salaryModalHintBox" style="background:#f5f3ff;border-radius:10px;padding:10px 12px;margin-bottom:14px;display:none">
-        <div style="font-size:10px;font-weight:800;color:#7c3aed;margin-bottom:3px">💡 Saran hari ini</div>
-        <div id="salaryModalHintText" style="font-size:12px;color:#6d28d9;font-weight:600;line-height:1.5"></div>
+        <div style="font-size:11px;font-weight:800;color:#7c3aed;margin-bottom:3px">💡 Saran hari ini</div>
+        <div id="salaryModalHintText" style="font-size:13.2px;color:#6d28d9;font-weight:600;line-height:1.5"></div>
       </div>
 
       <!-- Divider -->
@@ -111,36 +109,36 @@
       <!-- Target Gaji -->
       <div style="margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <label style="font-size:12px;font-weight:800;color:#374151">🎯 Target Gaji / Bulan</label>
-          <span id="salaryFundTargetPreview" style="font-size:12px;font-weight:700;color:#7c3aed"></span>
+          <label style="font-size:13.2px;font-weight:800;color:#374151">🎯 Target Gaji / Bulan</label>
+          <span id="salaryFundTargetPreview" style="font-size:13.2px;font-weight:700;color:#7c3aed"></span>
         </div>
         <div style="display:flex;gap:8px">
-          <input type="number" id="salaryFundTargetInput" placeholder="Contoh: 3000 = Rp 3.000.000" oninput="handleSalaryTargetPreview(this)" style="flex:1;border-color:#e9d5ff;font-size:13px">
-          <button onclick="saveSalaryFundTarget()" style="background:#7c3aed;color:white;border:none;border-radius:999px;padding:0 16px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;min-height:44px">Simpan</button>
+          <input type="number" id="salaryFundTargetInput" placeholder="Contoh: 3000 = Rp 3.000.000" oninput="handleSalaryTargetPreview(this)" style="flex:1;border-color:#e9d5ff;font-size:14.3px">
+          <button onclick="saveSalaryFundTarget()" style="background:#7c3aed;color:white;border:none;border-radius:999px;padding:0 16px;font-size:13.2px;font-weight:700;cursor:pointer;white-space:nowrap;min-height:44px">Simpan</button>
         </div>
       </div>
 
       <!-- Sisihkan Sekarang -->
       <div style="margin-bottom:14px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <label style="font-size:12px;font-weight:800;color:#374151">Sisihkan Sekarang</label>
-          <span id="salaryFundAmountPreview" style="font-size:12px;font-weight:700;color:#7c3aed"></span>
+          <label style="font-size:13.2px;font-weight:800;color:#374151">Sisihkan Sekarang</label>
+          <span id="salaryFundAmountPreview" style="font-size:13.2px;font-weight:700;color:#7c3aed"></span>
         </div>
-        <input type="number" id="salaryFundAmountInput" placeholder="Contoh: 100 = Rp 100.000" oninput="handleSalaryAmountPreview(this)" style="width:100%;border-color:#e9d5ff;font-size:13px;box-sizing:border-box">
-        <div style="margin-top:5px;font-size:11px;color:#a78bfa;font-weight:600">Masuk Riwayat → kategori <b style="color:#7c3aed">Gaji &amp; Bonus</b></div>
+        <input type="number" id="salaryFundAmountInput" placeholder="Contoh: 100 = Rp 100.000" oninput="handleSalaryAmountPreview(this)" style="width:100%;border-color:#e9d5ff;font-size:14.3px;box-sizing:border-box">
+        <div style="margin-top:5px;font-size:12.1px;color:#a78bfa;font-weight:600">Masuk Riwayat → kategori <b style="color:#7c3aed">Gaji &amp; Bonus</b></div>
       </div>
 
       <!-- Tombol Aksi -->
       <div style="display:flex;gap:8px;margin-bottom:16px">
-        <button onclick="closeSalaryFundModal()" style="flex:1;background:transparent;border:1.5px solid #e9d5ff;color:#7c3aed;border-radius:999px;min-height:46px;font-weight:700;font-size:13px;cursor:pointer">Batal</button>
-        <button id="saveSalaryFundBtn" onclick="saveSalaryFundEntry()" style="flex:2;background:#7c3aed;color:white;border:none;border-radius:999px;min-height:46px;font-weight:800;font-size:14px;cursor:pointer">💾 Sisihkan</button>
+        <button onclick="closeSalaryFundModal()" style="flex:1;background:transparent;border:1.5px solid #e9d5ff;color:#7c3aed;border-radius:999px;min-height:46px;font-weight:700;font-size:14.3px;cursor:pointer">Batal</button>
+        <button id="saveSalaryFundBtn" onclick="saveSalaryFundEntry()" style="flex:2;background:#7c3aed;color:white;border:none;border-radius:999px;min-height:46px;font-weight:800;font-size:15.4px;cursor:pointer">💾 Sisihkan</button>
       </div>
 
       <!-- Riwayat -->
       <div style="border-top:1px solid #ede9fe;padding-top:12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <b style="font-size:12px;font-weight:800;color:#374151">Riwayat Bulan Ini</b>
-          <span id="salaryFundHistoryCount" style="font-size:11px;font-weight:700;color:#a78bfa">0 data</span>
+          <b style="font-size:13.2px;font-weight:800;color:#374151">Riwayat Bulan Ini</b>
+          <span id="salaryFundHistoryCount" style="font-size:12.1px;font-weight:700;color:#a78bfa">0 data</span>
         </div>
         <div id="salaryFundHistoryList" style="max-height:28vh;overflow-y:auto"></div>
       </div>
@@ -152,7 +150,7 @@
     <div class="box">
       <h3 style="margin-bottom:6px;text-align:center">Verifikasi PIN</h3>
       <p class="small" style="text-align:center;margin-bottom:14px">Masukkan PIN untuk hapus transaksi</p>
-      <input type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" id="confirmPasswordInput" placeholder="PIN" maxlength="8" style="text-align:center;font-size:26px;letter-spacing:8px;font-family:var(--mono)">
+      <input type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" id="confirmPasswordInput" placeholder="PIN" maxlength="8" style="text-align:center;font-size:28.6px;letter-spacing:8px;font-family:var(--mono)">
       <div class="row" style="margin-top:12px">
         <button class="btn secondary" onclick="closePasswordModal()">Batal</button>
         <button id="btnConfirmAction" class="btn">Lanjut</button>
@@ -199,7 +197,7 @@
           <h3>Catat Piutang Baru</h3>
           <small class="small" style="display:block;margin-top:2px">Uang yang dipinjamkan. Saldo bersih akan BERKURANG.</small>
         </div>
-        <button class="x" style="font-size:24px" onclick="closePiutangModal()">×</button>
+        <button class="x" style="font-size:26.4px" onclick="closePiutangModal()">×</button>
       </div>
       <div class="field"><input type="text" id="piutangName" placeholder="Nama Peminjam"></div>
       <div class="field"><input type="text" id="piutangDesc" placeholder="Keterangan (opsional)"></div>
@@ -223,7 +221,7 @@
           <h3>Catat Pembayaran</h3>
           <small class="small" style="display:block;margin-top:2px;color:var(--ink2)">Bayar hutang. Saldo bersih akan BERKURANG.</small>
         </div>
-        <button class="x" style="font-size:24px" onclick="closeDebtPaymentModal()">×</button>
+        <button class="x" style="font-size:26.4px" onclick="closeDebtPaymentModal()">×</button>
       </div>
       <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px">
         <div class="small" style="color:var(--ink2);margin-bottom:4px">Kreditur: <b id="debtPaymentName" style="color:var(--ink);text-transform:capitalize"></b></div>
@@ -236,7 +234,7 @@
       </div>
       <div class="row" style="grid-template-columns:.8fr 1.2fr">
         <button class="btn secondary" onclick="closeDebtPaymentModal()">Batal</button>
-        <button class="btn" style="background:#15803d;white-space:nowrap;font-size:14px;padding-left:8px;padding-right:8px" onclick="saveDebtPaymentSimple()">Catat Pembayaran</button>
+        <button class="btn" style="background:#15803d;white-space:nowrap;font-size:15.4px;padding-left:8px;padding-right:8px" onclick="saveDebtPaymentSimple()">Catat Pembayaran</button>
       </div>
     </div>
   </div>
@@ -248,12 +246,12 @@
           <h3>Catat Pembayaran</h3>
           <small class="small" style="display:block;margin-top:2px">Cicilan/pelunasan. Saldo bersih akan BERTAMBAH.</small>
         </div>
-        <button class="x" style="font-size:24px" onclick="closePiutangPaymentModal()">×</button>
+        <button class="x" style="font-size:26.4px" onclick="closePiutangPaymentModal()">×</button>
       </div>
       <input type="hidden" id="piutangPaymentId">
       <div style="background:#f1f5f9;padding:12px;border-radius:var(--r);margin-bottom:12px">
-        <div style="font-size:12px;color:var(--ink2);margin-bottom:4px">Peminjam: <b id="piutangPaymentName" style="color:var(--ink)">-</b></div>
-        <div style="font-size:12px;color:var(--ink2)">Sisa Hutang: <b id="piutangPaymentRemain" class="num" style="color:#e11d48">-</b></div>
+        <div style="font-size:13.2px;color:var(--ink2);margin-bottom:4px">Peminjam: <b id="piutangPaymentName" style="color:var(--ink)">-</b></div>
+        <div style="font-size:13.2px;color:var(--ink2)">Sisa Hutang: <b id="piutangPaymentRemain" class="num" style="color:#e11d48">-</b></div>
       </div>
       <div class="field amount-wrap">
         <input type="number" id="piutangPaymentAmount" placeholder="Nominal Dibayar" oninput="handlePiutangPaymentPreview(this)">
@@ -293,7 +291,7 @@
       </div>
 
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px">
-        <b style="font-size:13px;font-weight:800">Daftar Kategori</b>
+        <b style="font-size:14.3px;font-weight:800">Daftar Kategori</b>
         <span class="small" style="font-weight:700">Edit / hapus</span>
       </div>
       <div id="categoryList" class="list"></div>
@@ -309,15 +307,15 @@
           <h3>Pengurangan Cash</h3>
           <small class="small" style="color:var(--blue);font-weight:700;display:block;margin-top:2px">QRIS &amp; Tabungan tidak dihitung pengeluaran bisnis</small>
         </div>
-        <button class="x" style="font-size:24px" onclick="closeCashOutModal()">×</button>
+        <button class="x" style="font-size:26.4px" onclick="closeCashOutModal()">×</button>
       </div>
 
       <div style="background:var(--blue-light);border:1px solid #bfdbfe;border-radius:var(--r-lg);padding:12px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:12px">
         <div>
-          <div style="font-size:10px;font-weight:800;color:var(--blue);margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px">Cash di Tangan Hari Ini</div>
-          <div id="cashOutModalFisikTotal" class="num" style="font-size:24px;font-weight:500;color:var(--blue)">Rp 0</div>
+          <div style="font-size:11px;font-weight:800;color:var(--blue);margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px">Cash di Tangan Hari Ini</div>
+          <div id="cashOutModalFisikTotal" class="num" style="font-size:26.4px;font-weight:500;color:var(--blue)">Rp 0</div>
         </div>
-        <div style="text-align:right;font-size:11px;color:var(--ink2);font-weight:700;line-height:2">
+        <div style="text-align:right;font-size:12.1px;color:var(--ink2);font-weight:700;line-height:2">
           <div>QRIS: <span id="cashOutModalQris" class="num" style="color:var(--blue)">Rp 0</span></div>
           <div>Tabungan: <span id="cashOutModalTabungan" class="num" style="color:#854d0e">Rp 0</span></div>
         </div>
@@ -338,8 +336,8 @@
       </div>
 
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <b style="font-size:13px;font-weight:800">📋 Cash Keluar Hari Ini</b>
-        <span id="cashOutTodayTotal" class="num" style="font-size:14px;color:var(--blue);font-weight:500">Rp 0</span>
+        <b style="font-size:14.3px;font-weight:800">📋 Cash Keluar Hari Ini</b>
+        <span id="cashOutTodayTotal" class="num" style="font-size:15.4px;color:var(--blue);font-weight:500">Rp 0</span>
       </div>
       <div id="cashOutTodayList" style="max-height:40vh;overflow-y:auto"></div>
       <button class="btn secondary" onclick="closeCashOutModal()" style="margin-top:14px">Tutup</button>
@@ -354,7 +352,7 @@
           <h3 id="cashDrawerModalTitle">Cek Cash Fisik Hari Ini</h3>
           <small class="small" style="color:var(--blue);font-weight:700;display:block;margin-top:2px">Bandingkan cash aplikasi dengan cash fisik hari ini. Selisih masuk kategori khusus.</small>
         </div>
-        <button class="x" style="font-size:24px" onclick="closeCashDrawerAuditModal()">&times;</button>
+        <button class="x" style="font-size:26.4px" onclick="closeCashDrawerAuditModal()">&times;</button>
       </div>
 
       <div class="cash-drawer-summary">
@@ -396,7 +394,7 @@
           <h3>Pinjam Uang</h3>
           <small class="small" style="color:#92400e;font-weight:700;display:block;margin-top:2px">Menambah Saldo Bersih.</small>
         </div>
-        <button class="x" style="font-size:24px" onclick="closeDebtBorrowModal()">×</button>
+        <button class="x" style="font-size:26.4px" onclick="closeDebtBorrowModal()">×</button>
       </div>
       <div class="field"><input type="date" id="debtBorrowDate"></div>
       <div class="field"><input type="text" id="debtBorrowParty" placeholder="Nama orang / sumber hutang"></div>
@@ -420,23 +418,23 @@
           <h3>Riwayat Hutang Uang</h3>
           <small class="small" style="color:#92400e;font-weight:700;display:block;margin-top:2px">Netral dari pendapatan, pengeluaran, laba, dan zakat.</small>
         </div>
-        <button class="x" style="font-size:24px" onclick="closeDebtModal()">×</button>
+        <button class="x" style="font-size:26.4px" onclick="closeDebtModal()">×</button>
       </div>
 
       <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:var(--r-lg);padding:12px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:12px">
         <div>
-          <div style="font-size:10px;font-weight:800;color:#92400e;margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px">Sisa Hutang Aktif</div>
-          <div id="debtModalActiveTotal" class="num" style="font-size:24px;font-weight:500;color:#92400e">Rp 0</div>
+          <div style="font-size:11px;font-weight:800;color:#92400e;margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px">Sisa Hutang Aktif</div>
+          <div id="debtModalActiveTotal" class="num" style="font-size:26.4px;font-weight:500;color:#92400e">Rp 0</div>
         </div>
-        <div style="text-align:right;font-size:11px;color:var(--ink2);font-weight:700;line-height:2">
+        <div style="text-align:right;font-size:12.1px;color:var(--ink2);font-weight:700;line-height:2">
           <div>Pinjam: <span id="debtModalBorrowed" class="num" style="color:#92400e">Rp 0</span></div>
           <div>Bayar: <span id="debtModalPaid" class="num" style="color:#15803d">Rp 0</span></div>
         </div>
       </div>
 
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <b style="font-size:13px;font-weight:800">Riwayat Hutang</b>
-        <span id="debtHistoryCount" class="num" style="font-size:12px;color:#92400e;font-weight:500">0 data</span>
+        <b style="font-size:14.3px;font-weight:800">Riwayat Hutang</b>
+        <span id="debtHistoryCount" class="num" style="font-size:13.2px;color:#92400e;font-weight:500">0 data</span>
       </div>
       <div id="debtHistoryList" style="max-height:40vh;overflow-y:auto"></div>
       <button class="btn secondary" onclick="closeDebtModal()" style="margin-top:14px">Tutup</button>
@@ -463,8 +461,8 @@
         <button class="btn" style="background:var(--orange)" onclick="addOpsExpense()">Simpan</button>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <b style="font-size:13px;font-weight:800">Operasional Hari Ini</b>
-        <span id="opsTodayTotal" class="num" style="font-size:13px;color:var(--orange);font-weight:500">Rp 0</span>
+        <b style="font-size:14.3px;font-weight:800">Operasional Hari Ini</b>
+        <span id="opsTodayTotal" class="num" style="font-size:14.3px;color:var(--orange);font-weight:500">Rp 0</span>
       </div>
       <div id="opsTodayList" class="list" style="max-height:35vh;overflow-y:auto"></div>
       <button class="btn secondary" onclick="closeOpsModal()" style="margin-top:12px">Tutup</button>
@@ -482,8 +480,8 @@
         <button class="x" onclick="closeExpenseListModal()">×</button>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--red-light);border-radius:var(--r);margin-bottom:12px">
-        <span style="font-size:12px;font-weight:800;color:var(--red)">Total Pengeluaran</span>
-        <b id="expenseListTotal" class="num red" style="font-size:16px">Rp 0</b>
+        <span style="font-size:13.2px;font-weight:800;color:var(--red)">Total Pengeluaran</span>
+        <b id="expenseListTotal" class="num red" style="font-size:17.6px">Rp 0</b>
       </div>
       <div id="expenseListContent" class="list" style="max-height:55vh;overflow-y:auto"></div>
       <button class="btn secondary" onclick="closeExpenseListModal()" style="margin-top:14px">Tutup</button>
@@ -501,8 +499,8 @@
         <button class="x" onclick="closeManualIncomeListModal()">×</button>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#f0fdf4;border-radius:var(--r);margin-bottom:12px;border:1px solid #bbf7d0">
-        <span style="font-size:12px;font-weight:800;color:#166534">Total</span>
-        <b id="manualIncomeListTotal" class="num" style="font-size:16px;color:#166534">Rp 0</b>
+        <span style="font-size:13.2px;font-weight:800;color:#166534">Total</span>
+        <b id="manualIncomeListTotal" class="num" style="font-size:17.6px;color:#166534">Rp 0</b>
       </div>
       <div id="manualIncomeListContent" class="list" style="max-height:55vh;overflow-y:auto"></div>
       <button class="btn secondary" onclick="closeManualIncomeListModal()" style="margin-top:14px">Tutup</button>
@@ -517,13 +515,13 @@
           <h3>Beli Tabungan Emas</h3>
           <small id="goldBuyPriceInfo" class="small" style="color:#8a5b00;font-weight:800;display:block;margin-top:2px">Harga Pegadaian dimuat...</small>
         </div>
-        <button class="x" style="font-size:24px" onclick="closeGoldBuyModal()">×</button>
+        <button class="x" style="font-size:26.4px" onclick="closeGoldBuyModal()">×</button>
       </div>
 
       <div class="gold-preview-card">
         <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
-          <span style="font-size:10px;font-weight:900;color:#8a5b00;text-transform:uppercase;letter-spacing:.4px">Harga Beli Pegadaian</span>
-          <b id="goldBuyPricePerGram" class="num" style="font-size:17px;color:#805300">Rp 0</b>
+          <span style="font-size:11px;font-weight:900;color:#8a5b00;text-transform:uppercase;letter-spacing:.4px">Harga Beli Pegadaian</span>
+          <b id="goldBuyPricePerGram" class="num" style="font-size:18.7px;color:#805300">Rp 0</b>
         </div>
         <div id="goldBuySource" class="small" style="margin-top:4px;color:#8a5b00;font-weight:700">Sumber: -</div>
       </div>
@@ -635,7 +633,10 @@
 
       <!-- Hero Saldo -->
       <div class="hero">
-        <div class="label">Saldo Bersih · Semua Data Supabase</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div class="label">Saldo Bersih · Semua Data Supabase</div>
+          <button id="fontSwitchBtn" type="button" onclick="toggleAppFont()">Aa Font</button>
+        </div>
         <div id="netBalance" class="value num">Rp 0</div>
         <div class="mini">
           <span>Masuk <b id="totalIncome">Rp 0</b></span>
@@ -649,7 +650,7 @@
         <div style="background:#e9d5ff; border-radius:99px; height:6px; width:100%; overflow:hidden;">
           <div id="miniSalaryFill" style="background:var(--purple); height:100%; width:0%; transition:width 0.4s ease; border-radius:99px;"></div>
         </div>
-        <span id="miniSalaryPct" style="font-size:12px; font-weight:700; color:var(--purple); min-width:32px; text-align:right;">0%</span>
+        <span id="miniSalaryPct" style="font-size:13.2px; font-weight:700; color:var(--purple); min-width:32px; text-align:right;">0%</span>
       </div>
 
       <div class="section-divider"><span>Section Utama</span></div>
@@ -704,7 +705,7 @@
       <!-- Total Dana Darurat Terkumpul -->
       <div id="emergencyFundTotalCard" class="stat" style="margin-bottom:8px;border-color:#bfdbfe;background:var(--blue-light)">
         <span>Total Dana Darurat Terkumpul</span>
-        <b id="emergencyFundTotalSavedDisplay" class="num" style="color:var(--blue);font-size:15px">Rp 0</b>
+        <b id="emergencyFundTotalSavedDisplay" class="num" style="color:var(--blue);font-size:16.5px">Rp 0</b>
       </div>
 
       <!-- Harga Emas Real-Time -->
@@ -782,18 +783,18 @@
         <div class="stat" onclick="showExpenseListTodayModal()" style="cursor:pointer;border-color:#ffd7d0;background:#fffaf9">
           <span>Pengeluaran Hari Ini</span>
           <b id="spendingLimit" class="red num">Rp 0</b>
-          <div style="font-size:9px;color:var(--red);font-weight:700;margin-top:3px">Tap untuk detail</div>
+          <div style="font-size:9.9px;color:var(--red);font-weight:700;margin-top:3px">Tap untuk detail</div>
         </div>
       </div>
 
       <!-- Sisa Operasional -->
       <div id="operationalCard" class="ops-status-card safe">
         <div style="min-width:0">
-          <b style="font-size:13px;font-weight:800">Sisa Operasional</b>
+          <b style="font-size:14.3px;font-weight:800">Sisa Operasional</b>
           <div class="small" style="margin-top:2px">Ikut filter Ringkasan Laba · Limit 20%: <span id="operationalTotal">Rp 0</span> · Terpakai: <span id="operationalSpent">Rp 0</span></div>
           <div id="limitWarning" class="small red" style="font-weight:800;margin-top:4px"></div>
         </div>
-        <b id="operationalUsed" class="num" style="font-size:16px;white-space:nowrap;font-family:var(--mono);font-weight:500">Rp 0</b>
+        <b id="operationalUsed" class="num" style="font-size:17.6px;white-space:nowrap;font-family:var(--mono);font-weight:500">Rp 0</b>
       </div>
 
       <!-- Zakat Mal -->
@@ -801,7 +802,7 @@
         <div class="zakat-header" onclick="toggleHomeSection('zakatMalCard')" style="cursor:pointer">
           <div>
             <div class="section-title" style="margin:0 0 4px">Zakat Mal</div>
-            <div id="zakatAmountLarge" class="num gold" style="font-size:20px;font-weight:500">Rp 0</div>
+            <div id="zakatAmountLarge" class="num gold" style="font-size:22px;font-weight:500">Rp 0</div>
             <div id="zakatPaymentStatusText" class="small" style="margin-top:3px">Menunggu</div>
           </div>
           <div class="section-action-stack" onclick="event.stopPropagation()">
@@ -827,7 +828,7 @@
         <div class="zakat-header" onclick="toggleHomeSection('emergencyFundCard')" style="cursor:pointer">
           <div>
             <div class="section-title" style="margin:0 0 4px;color:var(--blue)">Dana Darurat</div>
-            <div id="emergencyFundAmountLarge" class="num blue" style="font-size:20px;font-weight:500">Rp 0</div>
+            <div id="emergencyFundAmountLarge" class="num blue" style="font-size:22px;font-weight:500">Rp 0</div>
             <div id="emergencyFundStatusText" class="small" style="margin-top:3px;color:var(--blue);font-weight:700">Menunggu</div>
           </div>
           <div class="section-action-stack" onclick="event.stopPropagation()">
@@ -848,7 +849,7 @@
         <div class="zakat-header" onclick="toggleHomeSection('salaryFundCard')" style="cursor:pointer">
           <div style="min-width:0;flex:1">
             <div class="section-title" style="margin:0 0 4px;color:#7c3aed">Dana Gaji Karyawan</div>
-            <div id="salaryFundAmountLarge" class="num" style="font-size:20px;font-weight:500;color:#7c3aed">Rp 0</div>
+            <div id="salaryFundAmountLarge" class="num" style="font-size:22px;font-weight:500;color:#7c3aed">Rp 0</div>
             <div id="salaryFundStatusText" class="small" style="margin-top:3px;color:#7c3aed;font-weight:700">Set target dulu</div>
           </div>
           <div class="section-action-stack" onclick="event.stopPropagation()">
@@ -880,20 +881,20 @@
       <div id="autoDebitCard" class="zakat-card home-section is-collapsed" style="border-color:#fde68a;background:#fffbeb">
         <div class="zakat-header" onclick="toggleHomeSection('autoDebitCard')" style="cursor:pointer">
           <div style="min-width:0;flex:1">
-            <div class="section-title" style="margin:0 0 4px;color:#b45309">Auto Debet Harian</div>
-            <div id="autoDebitAmountLarge" class="num" style="font-size:20px;font-weight:500;color:#b45309">Rp 0 / hari</div>
-            <div id="autoDebitStatusText" class="small" style="margin-top:3px;color:#b45309;font-weight:700">Nonaktif</div>
+            <div class="section-title" style="margin:0 0 4px;color:#000">Auto Debet Harian</div>
+            <div id="autoDebitAmountLarge" class="num" style="font-size:22px;font-weight:500;color:#000">Rp 0 / hari</div>
+            <div id="autoDebitStatusText" class="small" style="margin-top:3px;color:#000;font-weight:700">Nonaktif</div>
+          </div>
+          <div class="section-action-stack" onclick="event.stopPropagation()">
+            <button id="openAutoDebitBtn" class="btn" style="width:auto;min-width:90px;padding:10px;background:#b45309" onclick="openAutoDebitModal()">Atur</button>
           </div>
         </div>
         <div class="home-section-body">
           <div class="zakat-grid">
-            <div class="stat"><span>Terpotong Bulan Ini</span><b id="autoDebitMonthTotal" class="num" style="color:#b45309">Rp 0</b></div>
-            <div class="stat"><span>Terpotong Semua</span><b id="autoDebitAllTotal" class="num" style="color:#b45309">Rp 0</b></div>
+            <div class="stat"><span style="color:#000">Terpotong Bulan Ini</span><b id="autoDebitMonthTotal" class="num" style="color:#000">Rp 0</b></div>
+            <div class="stat"><span style="color:#000">Terpotong Semua</span><b id="autoDebitAllTotal" class="num" style="color:#000">Rp 0</b></div>
           </div>
-          <div style="margin-top:8px">
-            <button id="openAutoDebitBtn" class="btn" onclick="event.stopPropagation();openAutoDebitModal()">Atur</button>
-          </div>
-          <div id="autoDebitBasisInfo" class="small" style="margin-top:10px;padding-top:10px;border-top:1px solid #fde68a;color:#b45309;font-weight:700">Potong Saldo Bersih otomatis tiap hari, seperti auto debet ATM. Ganti nominal tidak mengubah potongan yang sudah lewat.</div>
+          <div id="autoDebitBasisInfo" class="small" style="margin-top:10px;padding-top:10px;border-top:1px solid #fde68a;color:#000;font-weight:700">Potong Saldo Bersih otomatis tiap hari, seperti auto debet ATM. Ganti nominal tidak mengubah potongan yang sudah lewat.</div>
         </div>
       </div>
 
@@ -912,8 +913,8 @@
         </div>
         <div class="home-section-body">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;margin-bottom:10px;border-top:1px solid #fde68a;padding-top:12px">
-            <b style="font-size:13px;font-weight:800;color:#92400e">Daftar Hutang Berjalan</b>
-            <span id="debtPersonListCount" class="num" style="font-size:12px;color:#92400e;font-weight:500">0 data</span>
+            <b style="font-size:14.3px;font-weight:800;color:#92400e">Daftar Hutang Berjalan</b>
+            <span id="debtPersonListCount" class="num" style="font-size:13.2px;color:#92400e;font-weight:500">0 data</span>
           </div>
           <div id="debtPersonList" class="list" style="margin-bottom:10px"></div>
           <div class="debt-note">Tidak masuk pendapatan, pengeluaran, laba, atau zakat. Hanya mutasi Saldo Bersih dan sisa hutang.</div>
@@ -948,8 +949,8 @@
         </div>
         <div class="home-section-body">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;margin-bottom:10px;border-top:1px solid #fecdd3;padding-top:12px">
-            <b style="font-size:13px;font-weight:800;color:#be123c">Daftar Piutang Berjalan</b>
-            <span id="piutangListCount" class="num" style="font-size:12px;color:#be123c;font-weight:500">0 data</span>
+            <b style="font-size:14.3px;font-weight:800;color:#be123c">Daftar Piutang Berjalan</b>
+            <span id="piutangListCount" class="num" style="font-size:13.2px;color:#be123c;font-weight:500">0 data</span>
           </div>
           <div id="piutangList" class="list" style="margin-bottom:10px"></div>
         </div>
@@ -996,12 +997,12 @@
         <div class="stat" onclick="showExpenseListModalFiltered()" style="cursor:pointer;border-color:#ffd7d0;background:#fffaf9">
           <span id="expenseFilteredLabel">Pengeluaran Hari Ini</span>
           <b id="expenseFilteredSummary" class="red num">Rp 0</b>
-          <div style="font-size:9px;color:var(--red);font-weight:700;margin-top:3px">Tap untuk detail</div>
+          <div style="font-size:9.9px;color:var(--red);font-weight:700;margin-top:3px">Tap untuk detail</div>
         </div>
         <div class="stat" onclick="showExpenseListModal()" style="cursor:pointer;border-color:#ffd7d0;background:#fffaf9">
           <span>Total Semua Pengeluaran</span>
           <b id="expenseAllSummary" class="red num">Rp 0</b>
-          <div style="font-size:9px;color:var(--red);font-weight:700;margin-top:3px">Tap untuk semua</div>
+          <div style="font-size:9.9px;color:var(--red);font-weight:700;margin-top:3px">Tap untuk semua</div>
         </div>
       </div>
 
@@ -1013,7 +1014,7 @@
       <div class="card danger-card" style="margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px">
           <div>
-            <b style="color:var(--red);font-size:13px;font-weight:800">Hapus Semua Data Full</b>
+            <b style="color:var(--red);font-size:14.3px;font-weight:800">Hapus Semua Data Full</b>
             <div class="small" style="margin-top:3px">Hapus semua transaksi manual, Server Pusat sync/LOCK, cash out, ops, zakat, dan audit cash fisik.</div>
           </div>
           <span class="lock-badge" style="background:var(--red-light);color:var(--red);border-color:#ffd7d0">PIN</span>
@@ -1024,7 +1025,7 @@
 
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <b id="currentPeriodLabel" style="font-size:13px;font-weight:800">Riwayat</b>
+          <b id="currentPeriodLabel" style="font-size:14.3px;font-weight:800">Riwayat</b>
           <button class="tab" style="color:var(--red)" onclick="requestClearAll()">Reset Manual</button>
         </div>
         <div id="transactionList" class="list"></div>
@@ -1038,7 +1039,7 @@
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
           <div>
             <div class="section-title" style="color:var(--blue)">Riwayat Cek Cash Fisik</div>
-            <b style="font-size:14px;font-weight:800">Audit Cash Fisik</b>
+            <b style="font-size:15.4px;font-weight:800">Audit Cash Fisik</b>
             <div class="small" style="margin-top:3px">Status dibandingkan ke patokan aplikasi sebelum transaksi selisih kas.</div>
           </div>
           <button class="mini-btn" onclick="openCashDrawerAuditModal()">+ Cek Cash</button>
@@ -1060,7 +1061,7 @@
 
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px">
-          <b style="font-size:13px;font-weight:800">Data Cek Cash Fisik</b>
+          <b style="font-size:14.3px;font-weight:800">Data Cek Cash Fisik</b>
           <span id="cashDrawerHistoryCount" class="small" style="font-weight:800;color:var(--blue)">0 data</span>
         </div>
         <div id="cashDrawerHistoryList"></div>
@@ -1073,7 +1074,7 @@
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
           <div>
             <div class="section-title" style="color:var(--green)">Laporan Keuangan Rinci</div>
-            <b style="font-size:14px;font-weight:800">Ringkasan + Pengeluaran per Kategori</b>
+            <b style="font-size:15.4px;font-weight:800">Ringkasan + Pengeluaran per Kategori</b>
             <div class="small" style="margin-top:3px">Cash out QRIS/Tabungan bukan pengeluaran bisnis.</div>
           </div>
           <button class="mini-btn" onclick="openCategoryModal()">Kategori</button>
@@ -1104,7 +1105,7 @@
 
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px">
-          <b style="font-size:13px;font-weight:800">Pengeluaran per Kategori</b>
+          <b style="font-size:14.3px;font-weight:800">Pengeluaran per Kategori</b>
           <span id="reportPeriodLabel" class="small" style="font-weight:800;color:var(--green)">Bulan Ini</span>
         </div>
         <div id="reportCategoryList"></div>
@@ -1113,7 +1114,7 @@
 
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px">
-          <b style="font-size:13px;font-weight:800">Detail Transaksi</b>
+          <b style="font-size:14.3px;font-weight:800">Detail Transaksi</b>
           <span id="reportCount" class="small">0 data</span>
         </div>
         <div id="reportDetailList" class="report-detail-list list"></div>
@@ -1132,7 +1133,7 @@
         <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
           <div>
             <div class="section-title" style="color:var(--blue)">Halaman Server Pusat</div>
-            <b style="font-size:14px;font-weight:800">Data Kasir Khusus</b>
+            <b style="font-size:15.4px;font-weight:800">Data Kasir Khusus</b>
             <div class="small" style="margin-top:3px">Cek, audit, dan upload omset Server Pusat ke Supabase. Hari ini tetap dikunci.</div>
           </div>
           <span class="pill" style="background:#dbeafe;color:var(--blue)">READ ONLY</span>
@@ -1142,7 +1143,7 @@
       <!-- Total Pendapatan Manual -->
       <div id="manualIncomeTotalCard" class="stat" style="margin-bottom:12px;border-color:#bbf7d0;background:#f0fdf4;cursor:pointer" onclick="showManualIncomeListModalFiltered()">
         <span>Total Pendapatan (Luar Server)</span>
-        <b id="manualIncomeTotalDisplay" class="num" style="color:#166534;font-size:15px">Rp 0</b>
+        <b id="manualIncomeTotalDisplay" class="num" style="color:#166534;font-size:16.5px">Rp 0</b>
       </div>
 
       <div id="monthValidityCard" class="month-valid-card idle">
@@ -1150,7 +1151,7 @@
           <div id="monthValidityTitle" class="month-valid-title">Validasi Bulan</div>
           <div id="monthValidityDesc" class="month-valid-desc">Klik cek untuk memastikan semua omset Server Pusat bulan ini sudah masuk Supabase.</div>
         </div>
-        <button id="btnCheckMonthValid" class="btn secondary" style="width:auto;min-width:80px;padding:8px 12px;min-height:38px;border-radius:var(--r-sm);font-size:12px" onclick="checkMonthValidity()">Cek</button>
+        <button id="btnCheckMonthValid" class="btn secondary" style="width:auto;min-width:80px;padding:8px 12px;min-height:38px;border-radius:var(--r-sm);font-size:13.2px" onclick="checkMonthValidity()">Cek</button>
       </div>
 
       <div id="rangeSelector" class="card hidden">
@@ -1163,7 +1164,7 @@
       <div id="firebaseUploadCard" class="card firebase-upload-card" style="margin-bottom:10px">
         <div class="firebase-upload-head">
           <div>
-            <b style="font-size:13px;font-weight:800">Omset Kasir Server Pusat</b>
+            <b style="font-size:14.3px;font-weight:800">Omset Kasir Server Pusat</b>
             <div class="small" style="margin-top:2px">Sync manual dari Server Pusat ke Kas Pribadi</div>
           </div>
           <span id="firebaseUploadStatus" class="firebase-status st-pending">Memuat</span>
@@ -1175,7 +1176,7 @@
         <div class="firebase-row">
           <div>
             <div class="firebase-label">Total dari Server Pusat</div>
-            <div id="firebaseUploadTotal" class="num blue" style="font-size:22px;font-family:var(--mono);font-weight:500">Rp 0</div>
+            <div id="firebaseUploadTotal" class="num blue" style="font-size:24.2px;font-family:var(--mono);font-weight:500">Rp 0</div>
             <div id="firebaseUploadInfo" class="small" style="margin-top:2px">Belum ada data</div>
           </div>
           <button id="btnUploadFirebaseIncome" class="btn" style="width:auto;min-width:100px;padding:10px" onclick="uploadFirebaseIncome()">Sync</button>
@@ -1187,7 +1188,7 @@
       <div id="firebasePendingCard" class="card" style="margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px">
           <div>
-            <b style="font-size:13px;font-weight:800">Cek Belum Sync</b>
+            <b style="font-size:14.3px;font-weight:800">Cek Belum Sync</b>
             <div class="small" style="margin-top:2px">Scan pendapatan Server Pusat lama yang belum/salah sync ke Kas Pribadi</div>
           </div>
           <span id="pendingScanStatus" class="firebase-status st-pending">Idle</span>
