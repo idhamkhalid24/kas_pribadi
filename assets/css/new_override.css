@@ -76,7 +76,7 @@ body::before { display: none !important; }
   padding: 24px 16px !important;
 }
 .hero .label { color: rgba(255,255,255,0.8) !important; }
-.hero .value { color: white !important; font-size: 28px !important; }
+.hero .value { color: white !important; font-size: 30.8px !important; }
 .hero .mini span { background: rgba(255,255,255,0.15) !important; box-shadow: none !important; color: white !important; border: none !important; }
 
 /* Core Layout Shapes */
@@ -273,8 +273,8 @@ input:focus, select:focus, textarea:focus {
   padding: 8px 10px !important;
   margin-bottom: 8px !important;
 }
-#emergencyFundTotalCard span { font-size: 10px !important; }
-#emergencyFundTotalCard b { font-size: 13px !important; }
+#emergencyFundTotalCard span { font-size: 11px !important; }
+#emergencyFundTotalCard b { font-size: 14.3px !important; }
 
 /* Rapatkan spacing umum di Home agar terasa lebih ringkas */
 #pageHome .hero { margin-bottom: 8px !important; padding: 14px !important; }
@@ -310,7 +310,7 @@ input:focus, select:focus, textarea:focus {
   min-width: 0 !important;
   width: auto !important;
   padding: 0 14px !important;
-  font-size: 11px !important;
+  font-size: 12.1px !important;
   font-weight: 700 !important;
   border-radius: 999px !important;
   line-height: 28px !important;
@@ -318,7 +318,7 @@ input:focus, select:focus, textarea:focus {
 /* Rapikan section toggle button di salaryFundCard */
 #salaryFundCard .section-toggle {
   padding: 3px 10px !important;
-  font-size: 10px !important;
+  font-size: 11px !important;
   min-height: 0 !important;
 }
 
@@ -363,7 +363,7 @@ input:focus, select:focus, textarea:focus {
   min-width: 0 !important;
   width: auto !important;
   padding: 0 14px !important;
-  font-size: 11px !important;
+  font-size: 12.1px !important;
   font-weight: 700 !important;
   border-radius: 999px !important;
   line-height: 28px !important;
@@ -377,7 +377,7 @@ input:focus, select:focus, textarea:focus {
   min-width: 0 !important;
   width: auto !important;
   padding: 0 14px !important;
-  font-size: 11px !important;
+  font-size: 12.1px !important;
   font-weight: 700 !important;
   border-radius: 999px !important;
   line-height: 28px !important;
@@ -402,7 +402,7 @@ input:focus, select:focus, textarea:focus {
 /* Rapikan section toggle button di salaryFundCard */
 #salaryFundCard .section-toggle {
   padding: 3px 10px !important;
-  font-size: 10px !important;
+  font-size: 11px !important;
   min-height: 0 !important;
 }
 
@@ -422,7 +422,7 @@ input:focus, select:focus, textarea:focus {
   color: #fff !important;
   text-shadow: 1px 1px 0 #000 !important;
   font-weight: 900 !important;
-  font-size: 14px !important;
+  font-size: 15.4px !important;
 }
 .memo-brutalist small {
   color: #FFE0CC !important;
@@ -443,14 +443,14 @@ input:focus, select:focus, textarea:focus {
   color: #fff !important;
   text-shadow: 1px 1px 0 #000 !important;
   font-weight: 900 !important;
-  font-size: 14px !important;
+  font-size: 15.4px !important;
 }
 .hutang-brutalist small {
   color: #FFCCCC !important;
   font-weight: bold !important;
 }
 .hutang-brutalist .num {
-  font-size: 18px !important;
+  font-size: 19.8px !important;
   color: #fff !important;
   text-shadow: 1px 1px 0 #000 !important;
   font-weight: 900 !important;
@@ -466,38 +466,38 @@ input:focus, select:focus, textarea:focus {
 .ad-switch input:checked + .ad-slider{background:#16a34a}
 .ad-switch input:checked + .ad-slider:before{transform:translateX(20px)}
 
-/* ===== Perkecil ~40% semua card ringkasan di Home:
-   Zakat Mal, Dana Darurat, Dana Gaji Karyawan, Auto Debet Harian,
-   Hutang Uang Aktif, Buku Piutang & Kasbon ===== */
+/* ===== Card ringkasan di Home (Zakat Mal, Dana Darurat, Dana Gaji Karyawan,
+   Auto Debet Harian, Hutang Uang Aktif, Buku Piutang & Kasbon):
+   dinaikkan ~20% dari ukuran kecil sebelumnya ===== */
 #pageHome .zakat-card,
 #pageHome .debt-card {
-  padding: 7px !important;
-  margin-bottom: 6px !important;
+  padding: 8.5px !important;
+  margin-bottom: 7px !important;
 }
-#pageHome .zakat-header { margin-bottom: 6px !important; gap: 6px !important; }
-#pageHome .zakat-grid { gap: 5px !important; margin-top: 6px !important; }
-#pageHome .home-section .home-section-body { margin-top: 6px !important; padding-top: 5px !important; }
+#pageHome .zakat-header { margin-bottom: 7px !important; gap: 7px !important; }
+#pageHome .zakat-grid { gap: 6px !important; margin-top: 7px !important; }
+#pageHome .home-section .home-section-body { margin-top: 7px !important; padding-top: 6px !important; }
 
 /* Judul kartu */
-#pageHome .zakat-card .section-title { font-size: 9px !important; margin: 0 0 3px !important; }
-#pageHome .debt-title { font-size: 8px !important; margin-bottom: 1px !important; }
+#pageHome .zakat-card .section-title { font-size: 12.1px !important; margin: 0 0 4px !important; }
+#pageHome .debt-title { font-size: 11px !important; margin-bottom: 1px !important; }
 
 /* Angka besar (Rp ...) */
 #pageHome #zakatAmountLarge,
 #pageHome #emergencyFundAmountLarge,
 #pageHome #salaryFundAmountLarge,
 #pageHome #autoDebitAmountLarge {
-  font-size: 13px !important;
+  font-size: 17.6px !important;
 }
-#pageHome .debt-amount { font-size: 13px !important; }
+#pageHome .debt-amount { font-size: 17.6px !important; }
 
 /* Teks keterangan kecil di bawah angka */
 #pageHome .zakat-card .small,
 #pageHome .debt-card .small,
 #pageHome #debtTodayInfo,
 #pageHome .debt-note {
-  font-size: 9.5px !important;
-  margin-top: 2px !important;
+  font-size: 12.7px !important;
+  margin-top: 3px !important;
   line-height: 1.3 !important;
 }
 
@@ -506,17 +506,41 @@ input:focus, select:focus, textarea:focus {
 #pageHome .debt-card .stat b,
 #pageHome .grid2.debt-extra .stat b,
 #pageHome .stat.debt-extra b {
-  font-size: 11px !important;
+  font-size: 14.3px !important;
 }
 #pageHome .zakat-card .stat span,
 #pageHome .debt-card .stat span,
 #pageHome .grid2.debt-extra .stat span,
 #pageHome .stat.debt-extra span {
-  font-size: 8px !important;
+  font-size: 10.5px !important;
 }
 
 /* Tombol mini Pinjam/Catat di card Hutang & Piutang */
 #pageHome .debt-actions .debt-mini-btn {
-  font-size: 9px !important;
-  padding: 4px 7px !important;
+  font-size: 11.6px !important;
+  padding: 5px 8px !important;
 }
+
+/* ===== Fitur Ganti Font Aplikasi (Kids Word <-> Font HP/Sistem) ===== */
+body.font-mode-system {
+  --font: var(--font-system) !important;
+  --mono: var(--font-system) !important;
+}
+#fontSwitchBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 26px;
+  height: 26px;
+  padding: 0 11px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+#fontSwitchBtn:active { opacity: .8; }
