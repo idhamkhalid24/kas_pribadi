@@ -2765,7 +2765,11 @@ function render(){
   renderAutoDebitSection();
 
   const over=opSpent>opProfit&&opProfit>0;
-  $('operationalCard').className='card '+(over?'danger-card':'safe-card');
+  const opCard=$('operationalCard');
+  if(opCard){
+    opCard.classList.remove('safe','danger');
+    opCard.classList.add(over?'danger':'safe');
+  }
   $('limitWarning').innerText=over?'Over budget: pengeluaran lebih dari 20% omset periode ini':'';
   $('statusText').innerText=over?'Bahaya':'Aman';
   $('statusBadge').style.background=over?'#fff0ee':'#e9f7ef';
@@ -4768,18 +4772,29 @@ function scheduleFinanceRealtimeRefresh(){
 }
 
 /* ===== Fitur Ganti Font Aplikasi ===== */
+const FONT_MODES = [
+  { key: 'custom',   label: 'Aa Kids',    toastName: 'Kids Word' },
+  { key: 'opensans', label: 'Aa OpenSans',toastName: 'Open Sans' },
+  { key: 'misans',   label: 'Aa MiSans',  toastName: 'MI Sans' },
+  { key: 'system',   label: 'Aa HP',      toastName: 'Font HP' }
+];
 function applyFontMode(){
   const mode = localStorage.getItem('appFontMode') || 'custom';
-  document.body.classList.toggle('font-mode-system', mode === 'system');
+  document.body.classList.remove('font-mode-system','font-mode-opensans','font-mode-misans');
+  if(mode === 'system') document.body.classList.add('font-mode-system');
+  if(mode === 'opensans') document.body.classList.add('font-mode-opensans');
+  if(mode === 'misans') document.body.classList.add('font-mode-misans');
   const btn = document.getElementById('fontSwitchBtn');
-  if(btn) btn.textContent = mode === 'system' ? 'Aa HP' : 'Aa Kids';
+  const found = FONT_MODES.find(m => m.key === mode) || FONT_MODES[0];
+  if(btn) btn.textContent = found.label;
 }
 function toggleAppFont(){
   const current = localStorage.getItem('appFontMode') || 'custom';
-  const next = current === 'system' ? 'custom' : 'system';
-  localStorage.setItem('appFontMode', next);
+  const idx = FONT_MODES.findIndex(m => m.key === current);
+  const next = FONT_MODES[(idx + 1) % FONT_MODES.length];
+  localStorage.setItem('appFontMode', next.key);
   applyFontMode();
-  showToast(next === 'system' ? 'Font diganti ke Font HP' : 'Font diganti ke Kids Word');
+  showToast('Font diganti ke ' + next.toastName);
 }
 applyFontMode();
 
