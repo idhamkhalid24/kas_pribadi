@@ -4767,6 +4767,22 @@ function scheduleFinanceRealtimeRefresh(){
   },650);
 }
 
+/* ===== Fitur Ganti Font Aplikasi ===== */
+function applyFontMode(){
+  const mode = localStorage.getItem('appFontMode') || 'custom';
+  document.body.classList.toggle('font-mode-system', mode === 'system');
+  const btn = document.getElementById('fontSwitchBtn');
+  if(btn) btn.textContent = mode === 'system' ? 'Aa HP' : 'Aa Kids';
+}
+function toggleAppFont(){
+  const current = localStorage.getItem('appFontMode') || 'custom';
+  const next = current === 'system' ? 'custom' : 'system';
+  localStorage.setItem('appFontMode', next);
+  applyFontMode();
+  showToast(next === 'system' ? 'Font diganti ke Font HP' : 'Font diganti ke Kids Word');
+}
+applyFontMode();
+
 async function initApp(){try{if(!initSupabase())return;
   // Tampilkan loading saat fetch Supabase
   const nb=$('netBalance');if(nb){nb.innerText='Memuat...';nb.style.opacity='0.5';}
