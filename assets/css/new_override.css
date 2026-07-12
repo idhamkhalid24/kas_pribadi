@@ -526,6 +526,14 @@ body.font-mode-system {
   --font: var(--font-system) !important;
   --mono: var(--font-system) !important;
 }
+body.font-mode-opensans {
+  --font: var(--font-opensans) !important;
+  --mono: var(--font-opensans) !important;
+}
+body.font-mode-misans {
+  --font: var(--font-misans) !important;
+  --mono: var(--font-misans) !important;
+}
 #fontSwitchBtn {
   display: inline-flex;
   align-items: center;
