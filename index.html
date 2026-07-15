@@ -80,7 +80,7 @@
       </div>
 
       <!-- Status Strip: Terkumpul / Target / Kurang -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:6px">
         <div style="background:#f5f3ff;border-radius:10px;padding:10px 8px;text-align:center">
           <div style="font-size:9.9px;color:#a78bfa;font-weight:800;letter-spacing:.3px;margin-bottom:4px">TERKUMPUL</div>
           <div id="salaryModalSaved" class="num" style="font-size:14.3px;font-weight:800;color:#7c3aed">Rp 0</div>
@@ -94,6 +94,9 @@
           <div id="salaryModalDue" class="num" style="font-size:14.3px;font-weight:800;color:#ef4444">Rp 0</div>
         </div>
       </div>
+
+      <!-- Bonus info breakdown -->
+      <div id="salaryModalBonusInfo" style="display:none;font-size:11.5px;text-align:center;margin-bottom:8px;padding:5px 10px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0"></div>
 
       <!-- Progress Bar -->
       <div style="margin-bottom:10px">
@@ -875,6 +878,8 @@
               <span id="salaryFundProgressPct" class="small" style="font-weight:800;color:#7c3aed">0%</span>
               <span id="salaryFundProgressLabel" class="small" style="color:#6b7280">Target: Rp 0</span>
             </div>
+            <!-- Bonus breakdown line -->
+            <div id="salaryFundBonusLine" class="small" style="display:none;margin-top:3px;color:#6b7280;font-size:11px"></div>
           </div>
           <div class="zakat-grid" style="margin-top:8px">
             <div class="stat"><span>Terkumpul Bulan Ini</span><b id="salaryFundSavedDisplay" class="num" style="color:#7c3aed">Rp 0</b></div>
@@ -1226,6 +1231,6 @@
     <button id="nav-firebase" onclick="goPage('firebase')">🌐 Server</button>
   </nav>
 
-<script src="assets/js/app.js?v=autodebit-fix2-20260712"></script>
+<script src="assets/js/app.js?v=salary-bonus-del-20260715"></script>
 </body>
 </html>

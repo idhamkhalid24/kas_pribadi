@@ -1216,11 +1216,26 @@ function getSalaryFundTarget(monthKey){
   const mk=monthKey||getSalaryFundMonthKey();
   const found=salaryTargets.find(t=>t.month_key===mk);
   if(found) return Math.round(Number(found.target_amount||0));
-  // Fallback: if user hasn't set this month, maybe fallback to previous logic or 0
-  // but to keep it simple, return 0 so they are forced to set it each month, OR
-  // find the latest target set and use that as default.
-  // We'll just return 0 for strict monthly targets.
   return 0;
+}
+// Ambil jumlah yang sudah disisihkan untuk fase bonus (tidak masuk expense)
+function getBonusSaved(monthKey){
+  const mk=monthKey||getSalaryFundMonthKey();
+  const found=salaryTargets.find(t=>t.month_key===mk);
+  return found?Math.max(0,Math.round(Number(found.bonus_saved||0))):0;
+}
+// Tambah jumlah bonus_saved ke salary_targets (bukan expense transaction)
+async function addBonusSaved(amount){
+  const mk=getSalaryFundMonthKey();
+  if(!supabaseClient)return;
+  const current=getBonusSaved(mk);
+  const newVal=current+Math.round(Number(amount||0));
+  const payload={owner_id:OWNER_ID,month_key:mk,bonus_saved:newVal,updated_at:new Date().toISOString()};
+  const {error}=await supabaseClient.from('salary_targets').upsert(payload,{onConflict:'owner_id,month_key'});
+  if(error)throw new Error(error.message);
+  let existing=salaryTargets.find(t=>t.month_key===mk);
+  if(existing)existing.bonus_saved=newVal;
+  else salaryTargets.push(payload);
 }
 async function setSalaryFundTarget(amount){
   const n=Math.round(Number(amount||0));
@@ -1245,10 +1260,35 @@ function getSalaryFundTxForMonth(monthKey){
 function getSalaryFundSaved(monthKey){
   return roundRp(getSalaryFundTxForMonth(monthKey||getSalaryFundMonthKey()).reduce((sum,t)=>sum+Number(t.amount||0),0));
 }
+// Ambil nilai AUTO-BONUS-STAFF real-time untuk bulan tertentu
+function getAutoStaffBonus(monthKey){
+  const mk=monthKey||getSalaryFundMonthKey();
+  const tx=(transactions||[]).find(t=>String(t.description||'').startsWith(`[AUTO-BONUS-STAFF:${mk}]`));
+  return tx?Math.max(0,Math.round(Number(tx.amount||0))):0;
+}
+// Hitung sisa yang perlu dikumpul:
+// - Jika target gaji belum lunas: sisaTargetGaji + autoBonus (bonus selalu masuk hitungan penuh)
+// - Jika target gaji sudah lunas: sisaBonus saja (dikurangi kelebihan manual savings)
 function getSalaryFundDue(monthKey){
-  const target=getSalaryFundTarget();
+  const mk=monthKey||getSalaryFundMonthKey();
+  const target=getSalaryFundTarget(mk);
   if(target<=0)return 0;
-  return Math.max(0,roundRp(target-getSalaryFundSaved(monthKey||getSalaryFundMonthKey())));
+  const {totalDue}=getSalaryFundDueDetail(mk);
+  return totalDue;
+}
+// Detail breakdown untuk keperluan render
+function getSalaryFundDueDetail(monthKey){
+  const mk=monthKey||getSalaryFundMonthKey();
+  const target=getSalaryFundTarget(mk);
+  const saved=getSalaryFundSaved(mk);
+  const autoBonus=getAutoStaffBonus(mk);
+  const bonusSaved=getBonusSaved(mk); // disisihkan di fase bonus (tidak masuk expense)
+  const sisaTargetGaji=Math.max(0,target-saved);
+  // sisaBonus: dikurangi bonus_saved (catatan fisik, bukan expense)
+  const sisaBonus=Math.max(0,autoBonus-bonusSaved);
+  const totalDue=roundRp(sisaTargetGaji+sisaBonus);
+  const totalTarget=roundRp(target+autoBonus);
+  return {target,autoBonus,saved,bonusSaved,sisaTargetGaji,sisaBonus,totalDue,totalTarget};
 }
 function getSalaryDaysLeft(){
   const today=getLocalDateString();
@@ -1307,15 +1347,28 @@ async function getSalaryCategory(){
 function renderSalaryFundSection(){
   const monthKey=getSalaryFundMonthKey();
   const target=getSalaryFundTarget();
+  const autoBonus=getAutoStaffBonus(monthKey);
+  const totalTarget=roundRp(target+autoBonus);
   const saved=getSalaryFundSaved(monthKey);
   const due=getSalaryFundDue(monthKey);
   const detail=getSalaryDailyHintDetail(monthKey);
   const {hint,cashFisik,capped,boosted,daysLeft}=detail;
-  const pct=target>0?Math.min(100,Math.round((saved/target)*100)):0;
+  // Progress berdasarkan total target (gaji + bonus)
+  const pct=totalTarget>0?Math.min(100,Math.round(((totalTarget-due)/totalTarget)*100)):0;
   if($('salaryFundAmountLarge'))$('salaryFundAmountLarge').innerText=formatRupiah(saved);
   if($('salaryFundProgressFill'))$('salaryFundProgressFill').style.width=pct+'%';
   if($('salaryFundProgressPct'))$('salaryFundProgressPct').innerText=pct+'%';
-  if($('salaryFundProgressLabel'))$('salaryFundProgressLabel').innerText='Target: '+formatRupiah(target);
+  if($('salaryFundProgressLabel'))$('salaryFundProgressLabel').innerText='Target: '+formatRupiah(totalTarget);
+  // Tampilkan breakdown bonus di bawah progress (elemen terpisah)
+  const bonusLineEl=$('salaryFundBonusLine');
+  if(bonusLineEl){
+    if(autoBonus>0){
+      bonusLineEl.innerHTML='Gaji <b>'+formatRupiah(target)+'</b> + Bonus Staff <b style="color:#059669">'+formatRupiah(autoBonus)+'</b> <span style="font-size:10px;background:#d1fae5;color:#065f46;border-radius:4px;padding:1px 4px">real-time</span>';
+      bonusLineEl.style.display='block';
+    }else{
+      bonusLineEl.style.display='none';
+    }
+  }
   
   if($('miniSalaryPct'))$('miniSalaryPct').innerText=pct+'%';
   if($('miniSalaryFill'))$('miniSalaryFill').style.width=pct+'%';
@@ -1358,27 +1411,54 @@ function renderSalaryFundSection(){
 function renderSalaryFundModal(){
   const monthKey=getSalaryFundMonthKey();
   const target=getSalaryFundTarget();
+  const autoBonus=getAutoStaffBonus(monthKey);
+  const totalTarget=roundRp(target+autoBonus);
   const saved=getSalaryFundSaved(monthKey);
   const due=getSalaryFundDue(monthKey);
+  const dueDetail=getSalaryFundDueDetail(monthKey);
   const detail=getSalaryDailyHintDetail(monthKey);
   const {hint,idealDaily,cashFisik,capped,boosted,daysLeft}=detail;
-  const pct=target>0?Math.min(100,Math.round((saved/target)*100)):0;
+  // Progress: berapa persen total target yang sudah tercapai
+  const pct=totalTarget>0?Math.min(100,Math.round(((totalTarget-due)/totalTarget)*100)):0;
   if($('salaryModalMonthKey'))$('salaryModalMonthKey').innerText=monthKey;
   if($('salaryModalSaved'))$('salaryModalSaved').innerText=formatRupiah(saved);
-  if($('salaryModalTarget'))$('salaryModalTarget').innerText=formatRupiah(target);
+  // TARGET tampilkan total (gaji + bonus)
+  if($('salaryModalTarget'))$('salaryModalTarget').innerText=formatRupiah(totalTarget);
   if($('salaryModalDue'))$('salaryModalDue').innerText=formatRupiah(due);
   if($('salaryModalProgressFill'))$('salaryModalProgressFill').style.width=pct+'%';
+  // Tampilkan info breakdown bonus staff
+  const bonusInfoEl=$('salaryModalBonusInfo');
+  if(bonusInfoEl){
+    if(autoBonus>0){
+      const gajiOk=saved>=target&&target>0;
+      bonusInfoEl.innerHTML=`<span style="color:#6d28d9;font-weight:700">Gaji: ${formatRupiah(target)}</span> <span style="color:#9ca3af">+</span> <span style="color:#059669;font-weight:700">Bonus Staff: ${formatRupiah(autoBonus)} <span style="font-size:10px;background:#d1fae5;color:#065f46;border-radius:4px;padding:1px 4px">real-time</span></span>`;
+      bonusInfoEl.style.display='block';
+    }else if(target>0){
+      bonusInfoEl.innerHTML=`<span style="color:#6d28d9;font-weight:700">Gaji: ${formatRupiah(target)}</span> <span style="color:#9ca3af;font-size:11px">(Belum ada Bonus Staff bulan ini)</span>`;
+      bonusInfoEl.style.display='block';
+    }else{
+      bonusInfoEl.style.display='none';
+    }
+  }
   const hintBox=$('salaryModalHintBox'),hintTxt=$('salaryModalHintText');
   if(hintBox&&hintTxt){
     if(target>0&&due>0){
       if(hint>0){
-        let msg="Sisihkan "+formatRupiah(hint)+" hari ini";
-        if(capped){
-          msg+=" \xb7 Disesuaikan dari cash fisik "+formatRupiah(cashFisik)+" (10%). Idealnya "+formatRupiah(idealDaily)+"/hari, tapi tidak perlu dipaksakan.";
-        }else if(boosted){
-          msg+=" \xb7 Lagi ramai (cash fisik "+formatRupiah(cashFisik)+"), dinaikkan dari "+formatRupiah(idealDaily)+"/hari biar target kekejar lebih cepat.";
+        const gajiLunas=saved>=target;
+        let msg;
+        if(gajiLunas){
+          // Target gaji sudah lunas, saran dari sisa bonus
+          msg="Sisihkan "+formatRupiah(hint)+" hari ini \xb7 (Target gaji sudah lunas! Sisa dari Bonus Staff: "+formatRupiah(dueDetail.sisaBonus)+")";
         }else{
-          msg+=" \xb7 Sesuai target harian agar tercapai dalam "+daysLeft+" hari (cash fisik hari ini: "+formatRupiah(cashFisik)+", cukup untuk itu).";
+          // Target gaji belum lunas: breakdown saran
+          msg="Sisihkan "+formatRupiah(hint)+" hari ini \xb7 (Sisa gaji: "+formatRupiah(dueDetail.sisaTargetGaji)+" + Bonus staff: "+formatRupiah(autoBonus)+")";
+        }
+        if(capped){
+          msg+=" \xb7 Disesuaikan dari cash fisik "+formatRupiah(cashFisik)+" (10%). Idealnya "+formatRupiah(idealDaily)+"/hari.";
+        }else if(boosted){
+          msg+=" \xb7 Lagi ramai (cash fisik "+formatRupiah(cashFisik)+"), dinaikkan dari "+formatRupiah(idealDaily)+"/hari biar cepat kekejar.";
+        }else{
+          msg+=" \xb7 Sesuai target harian agar tercapai dalam "+daysLeft+" hari (cash fisik: "+formatRupiah(cashFisik)+").";
         }
         hintTxt.innerText=msg;
         hintBox.style.display='block';
@@ -1399,13 +1479,20 @@ function renderSalaryFundModal(){
   // Render riwayat penyisihan bulan ini
   const histList=$('salaryFundHistoryList'),histCount=$('salaryFundHistoryCount');
   const rows=getSalaryFundTxForMonth(monthKey).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
-  if(histCount)histCount.innerText=rows.length+' data';
+  const bonusSaved=dueDetail.bonusSaved||0;
+  const totalRows=rows.length+(bonusSaved>0?1:0);
+  if(histCount)histCount.innerText=totalRows+' data';
   if(histList){
-    if(!rows.length){
-      histList.innerHTML='<div class="empty" style="color:#7c3aed">Belum ada penyisihan bulan ini.</div>';
-    }else{
-      histList.innerHTML=rows.map(t=>`<div class="item" style="border-color:#e9d5ff;display:flex;justify-content:space-between;align-items:center"><div><b style="font-size:12px;color:#7c3aed">${escapeHtml(t.date)}</b><div class="small" style="color:#6b7280;margin-top:1px">Disisihkan</div></div><b class="num" style="color:#7c3aed">${formatRupiah(Number(t.amount||0))}</b></div>`).join('');
+    let html='';
+    if(bonusSaved>0){
+      html+=`<div class="item" style="border-color:#bbf7d0;background:#f0fdf4;display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="flex:1;min-width:0"><b style="font-size:12px;color:#059669">Fase Bonus (Akumulasi)</b><div class="small" style="color:#059669;margin-top:1px">Disisihkan untuk Bonus Staff (tidak masuk pengeluaran)</div></div><b class="num" style="color:#059669">${formatRupiah(bonusSaved)}</b><button onclick="resetBonusSaved()" title="Hapus catatan bonus" style="flex-shrink:0;background:transparent;border:1.5px solid #6ee7b7;color:#059669;border-radius:50%;width:28px;height:28px;font-size:15px;cursor:pointer;line-height:1;padding:0" onmouseover="this.style.background='#d1fae5'" onmouseout="this.style.background='transparent'">&times;</button></div>`;
     }
+    if(!rows.length&&!bonusSaved){
+      html='<div class="empty" style="color:#7c3aed">Belum ada penyisihan bulan ini.</div>';
+    }else{
+      html+=rows.map(t=>`<div class="item" style="border-color:#e9d5ff;display:flex;justify-content:space-between;align-items:center"><div><b style="font-size:12px;color:#7c3aed">${escapeHtml(t.date)}</b><div class="small" style="color:#6b7280;margin-top:1px">Disisihkan</div></div><b class="num" style="color:#7c3aed">${formatRupiah(Number(t.amount||0))}</b></div>`).join('');
+    }
+    histList.innerHTML=html;
   }
 }
 function openSalaryFundModal(){
@@ -1413,6 +1500,24 @@ function openSalaryFundModal(){
   const modal=$('salaryFundModal');
   if(modal)modal.classList.remove('hidden');
   bindGlobalKeyboardFix();
+}
+async function resetBonusSaved(){
+  if(!confirm('Hapus catatan Fase Bonus sebesar ini? Sisa bonus staff akan kembali penuh.'))return;
+  const mk=getSalaryFundMonthKey();
+  if(!supabaseClient)return;
+  try{
+    const payload={owner_id:OWNER_ID,month_key:mk,bonus_saved:0,updated_at:new Date().toISOString()};
+    const {error}=await supabaseClient.from('salary_targets').upsert(payload,{onConflict:'owner_id,month_key'});
+    if(error)throw new Error(error.message);
+    const existing=salaryTargets.find(t=>t.month_key===mk);
+    if(existing)existing.bonus_saved=0;
+    await loadSalaryTargets();
+    renderSalaryFundSection();
+    renderSalaryFundModal();
+    showToast('Catatan bonus dihapus');
+  }catch(e){
+    showToast('Gagal hapus: '+(e.message||e),4000);
+  }
 }
 function closeSalaryFundModal(){
   const modal=$('salaryFundModal');
@@ -1445,28 +1550,45 @@ async function saveSalaryFundEntry(){
   const amount=getActualAmount(amtInp.value);
   if(amount<=0){showToast('Isi nominal yang disisihkan');amtInp.focus();return;}
   const monthKey=getSalaryFundMonthKey();
+  const target=getSalaryFundTarget(monthKey);
+  const saved=getSalaryFundSaved(monthKey);
   const btn=$('saveSalaryFundBtn');
   if(btn){btn.disabled=true;btn.innerText='Menyimpan...';}
   try{
-    const cat=await getSalaryCategory();
-    const desc=`${SALARY_FUND_PREFIX}${monthKey}] Sisihkan Dana Gaji`;
-    const tx={
-      id:Date.now()+Math.floor(Math.random()*999),
-      date:getLocalDateString(),
-      description:desc,
-      amount,
-      type:'expense',
-      category_id:cat?Number(cat.id):null,
-      category_name:cat?cat.name:SALARY_CATEGORY_NAME
-    };
-    await saveTransaction(tx);
-    await loadTransactions();
-    render();
-    renderSalaryFundSection();
-    renderSalaryFundModal();
-    if(amtInp){amtInp.value='';}
-    if($('salaryFundAmountPreview'))$('salaryFundAmountPreview').innerText='';
-    showToast('Penyisihan tersimpan: '+formatRupiah(amount));
+    // Cek apakah target gaji sudah tercapai
+    const gajiSudahLunas=(target>0&&saved>=target);
+    if(gajiSudahLunas){
+      // Fase bonus: simpan ke bonus_saved di salary_targets, BUKAN expense transaction
+      // (auto bonus sudah otomatis terhitung sebagai pengeluaran, jangan double)
+      await addBonusSaved(amount);
+      await loadSalaryTargets();
+      renderSalaryFundSection();
+      renderSalaryFundModal();
+      if(amtInp){amtInp.value='';}
+      if($('salaryFundAmountPreview'))$('salaryFundAmountPreview').innerText='';
+      showToast('Dicatat: Rp '+formatRupiah(amount)+' untuk Bonus Staff (bukan pengeluaran)');
+    }else{
+      // Fase gaji: simpan sebagai expense transaction seperti biasa
+      const cat=await getSalaryCategory();
+      const desc=`${SALARY_FUND_PREFIX}${monthKey}] Sisihkan Dana Gaji`;
+      const tx={
+        id:Date.now()+Math.floor(Math.random()*999),
+        date:getLocalDateString(),
+        description:desc,
+        amount,
+        type:'expense',
+        category_id:cat?Number(cat.id):null,
+        category_name:cat?cat.name:SALARY_CATEGORY_NAME
+      };
+      await saveTransaction(tx);
+      await loadTransactions();
+      render();
+      renderSalaryFundSection();
+      renderSalaryFundModal();
+      if(amtInp){amtInp.value='';}
+      if($('salaryFundAmountPreview'))$('salaryFundAmountPreview').innerText='';
+      showToast('Penyisihan tersimpan: '+formatRupiah(amount));
+    }
   }catch(e){
     showToast('Gagal simpan penyisihan: '+(e.message||e),5000);
   }finally{
