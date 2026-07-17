@@ -1260,11 +1260,30 @@ function getSalaryFundTxForMonth(monthKey){
 function getSalaryFundSaved(monthKey){
   return roundRp(getSalaryFundTxForMonth(monthKey||getSalaryFundMonthKey()).reduce((sum,t)=>sum+Number(t.amount||0),0));
 }
-// Ambil nilai AUTO-BONUS-STAFF real-time untuk bulan tertentu
+// Total nominal memo "ambil bonus" (withdrawal staff) dalam bulan tertentu.
+// Memo disimpan sbg transaksi amount=0 (murni display, tidak masuk hitungan kategori/expense),
+// jadi nominalnya diambil dari teks deskripsi: "Memo {nama} ambil bonus {Rp xxx}"
+function getMemoWithdrawnForMonth(monthKey){
+  const mk=monthKey||getSalaryFundMonthKey();
+  return (transactions||[]).filter(t=>{
+    const d=String(t.description||'');
+    return d.startsWith('Memo ')&&d.includes('ambil bonus')&&String(t.date||'').startsWith(mk);
+  }).reduce((sum,t)=>{
+    const m=String(t.description||'').match(/ambil bonus\s*Rp\s*([\d.,]+)/i);
+    if(!m)return sum;
+    const num=Number(m[1].replace(/[.,]/g,''));
+    return sum+(isNaN(num)?0:num);
+  },0);
+}
+// Ambil nilai AUTO-BONUS-STAFF real-time untuk bulan tertentu.
+// Dikurangi memo (bonus yang sudah diambil langsung staff) khusus untuk kebutuhan
+// Sisihkan Gaji / Dana Gaji Karyawan -- TIDAK mempengaruhi kategori/expense Gaji & Bonus.
 function getAutoStaffBonus(monthKey){
   const mk=monthKey||getSalaryFundMonthKey();
   const tx=(transactions||[]).find(t=>String(t.description||'').startsWith(`[AUTO-BONUS-STAFF:${mk}]`));
-  return tx?Math.max(0,Math.round(Number(tx.amount||0))):0;
+  const gross=tx?Math.max(0,Math.round(Number(tx.amount||0))):0;
+  const withdrawn=getMemoWithdrawnForMonth(mk);
+  return Math.max(0,roundRp(gross-withdrawn));
 }
 // Hitung sisa yang perlu dikumpul:
 // - Jika target gaji belum lunas: sisaTargetGaji + autoBonus (bonus selalu masuk hitungan penuh)
