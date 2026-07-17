@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>alfajri Finance v27</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Latin/MiSansLatin-Medium.min.css" />
+  <link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Latin/MiSansLatin-Bold.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="assets/css/style.css?v=modern-banking-fix11-20260622">
+  <link rel="stylesheet" href="assets/css/new_override.css?v=shrink40-20260712">
+</head>
+<body>
+  <!-- ====== MODALS ====== -->
+
+  <!-- Modal Auto Debet Harian -->
+  <div id="autoDebitModal" class="modal hidden">
+    <div class="box" style="max-width:420px;width:100%">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:16px">
+        <div>
+          <h3 style="color:#b45309;margin-bottom:2px">Auto Debet Harian</h3>
+          <span style="font-size:12.1px;font-weight:700;color:#d97706">Potong Saldo Bersih otomatis tiap hari</span>
+        </div>
+        <button class="x" style="font-size:26.4px;flex-shrink:0" onclick="closeAutoDebitModal()">×</button>
+      </div>
+
+      <!-- Toggle aktif/nonaktif -->
+      <div style="display:flex;justify-content:space-between;align-items:center;background:#fffbeb;border-radius:10px;padding:12px;margin-bottom:14px">
+        <div>
+          <div style="font-size:14.3px;font-weight:800;color:#374151">Status Auto Debet</div>
+          <div id="autoDebitModalStatus" class="small" style="color:#b45309;font-weight:700;margin-top:2px">Nonaktif</div>
+        </div>
+        <label class="ad-switch">
+          <input type="checkbox" id="autoDebitToggleInput" onchange="toggleAutoDebit(this.checked)">
+          <span class="ad-slider"></span>
+        </label>
+      </div>
+
+      <!-- Nominal -->
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <label style="font-size:13.2px;font-weight:800;color:#374151">💸 Nominal per Hari</label>
+          <span id="autoDebitAmountPreview" style="font-size:13.2px;font-weight:700;color:#b45309"></span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <input type="number" id="autoDebitAmountInput" placeholder="Contoh: 10 = Rp 10.000" oninput="handleAutoDebitAmountPreview(this)" style="flex:1;border-color:#fde68a;font-size:14.3px">
+          <button onclick="saveAutoDebitAmount()" style="background:#b45309;color:white;border:none;border-radius:999px;padding:0 16px;font-size:13.2px;font-weight:700;cursor:pointer;white-space:nowrap;min-height:44px">Simpan</button>
+        </div>
+        <div style="margin-top:5px;font-size:12.1px;color:#d97706;font-weight:600">Potongan yang sudah lewat TIDAK ikut berubah. Nominal baru cuma berlaku mulai hari ini &amp; seterusnya.</div>
+      </div>
+
+      <div style="border-top:1px solid #fde68a;margin:14px 0"></div>
+
+      <!-- Riwayat -->
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <b style="font-size:13.2px;font-weight:800;color:#374151">Riwayat Auto Debet</b>
+          <span id="autoDebitHistoryCount" style="font-size:12.1px;font-weight:700;color:#d97706">0 data</span>
+        </div>
+        <div id="autoDebitHistoryList" style="max-height:28vh;overflow-y:auto"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Dana Gaji -->
+  <div id="salaryFundModal" class="modal hidden">
+    <div class="box" style="max-width:420px;width:100%">
+
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:16px">
+        <div>
+          <h3 style="color:#7c3aed;margin-bottom:2px">Dana Gaji</h3>
+          <span id="salaryModalMonthKey" style="font-size:12.1px;font-weight:700;color:#a78bfa"></span>
+        </div>
+        <button class="x" style="font-size:26.4px;flex-shrink:0" onclick="closeSalaryFundModal()">×</button>
+      </div>
+
+      <!-- Status Strip: Terkumpul / Target / Kurang -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:6px">
+        <div style="background:#f5f3ff;border-radius:10px;padding:10px 8px;text-align:center">
+          <div style="font-size:9.9px;color:#a78bfa;font-weight:800;letter-spacing:.3px;margin-bottom:4px">TERKUMPUL</div>
+          <div id="salaryModalSaved" class="num" style="font-size:14.3px;font-weight:800;color:#7c3aed">Rp 0</div>
+        </div>
+        <div style="background:#f5f3ff;border-radius:10px;padding:10px 8px;text-align:center">
+          <div style="font-size:9.9px;color:#a78bfa;font-weight:800;letter-spacing:.3px;margin-bottom:4px">TARGET</div>
+          <div id="salaryModalTarget" class="num" style="font-size:14.3px;font-weight:800;color:#374151">Rp 0</div>
+        </div>
+        <div style="background:#fff1f2;border-radius:10px;padding:10px 8px;text-align:center">
+          <div style="font-size:9.9px;color:#fca5a5;font-weight:800;letter-spacing:.3px;margin-bottom:4px">KURANG</div>
+          <div id="salaryModalDue" class="num" style="font-size:14.3px;font-weight:800;color:#ef4444">Rp 0</div>
+        </div>
+      </div>
+
+      <!-- Bonus info breakdown -->
+      <div id="salaryModalBonusInfo" style="display:none;font-size:11.5px;text-align:center;margin-bottom:8px;padding:5px 10px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0"></div>
+
+      <!-- Progress Bar -->
+      <div style="margin-bottom:10px">
+        <div class="salary-fund-progress-bar" style="height:7px">
+          <div id="salaryModalProgressFill" class="salary-fund-progress-fill" style="width:0%"></div>
+        </div>
+      </div>
+
+      <!-- Saran hari ini -->
+      <div id="salaryModalHintBox" style="background:#f5f3ff;border-radius:10px;padding:10px 12px;margin-bottom:14px;display:none">
+        <div style="font-size:11px;font-weight:800;color:#7c3aed;margin-bottom:3px">💡 Saran hari ini</div>
+        <div id="salaryModalHintText" style="font-size:13.2px;color:#6d28d9;font-weight:600;line-height:1.5"></div>
+      </div>
+
+      <!-- Divider -->
+      <div style="border-top:1px solid #ede9fe;margin-bottom:14px"></div>
+
+      <!-- Target Gaji -->
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <label style="font-size:13.2px;font-weight:800;color:#374151">🎯 Target Gaji / Bulan</label>
+          <span id="salaryFundTargetPreview" style="font-size:13.2px;font-weight:700;color:#7c3aed"></span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <input type="number" id="salaryFundTargetInput" placeholder="Contoh: 3000 = Rp 3.000.000" oninput="handleSalaryTargetPreview(this)" style="flex:1;border-color:#e9d5ff;font-size:14.3px">
+          <button onclick="saveSalaryFundTarget()" style="background:#7c3aed;color:white;border:none;border-radius:999px;padding:0 16px;font-size:13.2px;font-weight:700;cursor:pointer;white-space:nowrap;min-height:44px">Simpan</button>
+        </div>
+      </div>
+
+      <!-- Sisihkan Sekarang -->
+      <div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <label style="font-size:13.2px;font-weight:800;color:#374151">Sisihkan Sekarang</label>
+          <span id="salaryFundAmountPreview" style="font-size:13.2px;font-weight:700;color:#7c3aed"></span>
+        </div>
+        <input type="number" id="salaryFundAmountInput" placeholder="Contoh: 100 = Rp 100.000" oninput="handleSalaryAmountPreview(this)" style="width:100%;border-color:#e9d5ff;font-size:14.3px;box-sizing:border-box">
+        <div style="margin-top:5px;font-size:12.1px;color:#a78bfa;font-weight:600">Masuk Riwayat → kategori <b style="color:#7c3aed">Gaji &amp; Bonus</b></div>
+      </div>
+
+      <!-- Tombol Aksi -->
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button onclick="closeSalaryFundModal()" style="flex:1;background:transparent;border:1.5px solid #e9d5ff;color:#7c3aed;border-radius:999px;min-height:46px;font-weight:700;font-size:14.3px;cursor:pointer">Batal</button>
+        <button id="saveSalaryFundBtn" onclick="saveSalaryFundEntry()" style="flex:2;background:#7c3aed;color:white;border:none;border-radius:999px;min-height:46px;font-weight:800;font-size:15.4px;cursor:pointer">💾 Sisihkan</button>
+      </div>
+
+      <!-- Riwayat -->
+      <div style="border-top:1px solid #ede9fe;padding-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <b style="font-size:13.2px;font-weight:800;color:#374151">Riwayat Bulan Ini</b>
+          <span id="salaryFundHistoryCount" style="font-size:12.1px;font-weight:700;color:#a78bfa">0 data</span>
+        </div>
+        <div id="salaryFundHistoryList" style="max-height:28vh;overflow-y:auto"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="passwordModal" class="modal hidden">
+    <div class="box">
+      <h3 style="margin-bottom:6px;text-align:center">Verifikasi PIN</h3>
+      <p class="small" style="text-align:center;margin-bottom:14px">Masukkan PIN untuk hapus transaksi</p>
+      <input type="password" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" id="confirmPasswordInput" placeholder="PIN" maxlength="8" style="text-align:center;font-size:28.6px;letter-spacing:8px;font-family:var(--mono)">
+      <div class="row" style="margin-top:12px">
+        <button class="btn secondary" onclick="closePasswordModal()">Batal</button>
+        <button id="btnConfirmAction" class="btn">Lanjut</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="zakatHistoryModal" class="modal hidden">
+    <div class="box">
+      <h3 style="margin-bottom:14px;text-align:center">Riwayat Zakat</h3>
+      <div id="zakatHistoryList"></div>
+      <button class="btn gold" onclick="closeZakatHistoryModal()" style="margin-top:14px">Tutup</button>
+    </div>
+  </div>
+
+  <div id="backupOptionModal" class="modal hidden">
+    <div class="box">
+      <h3 style="margin-bottom:14px;text-align:center">Backup</h3>
+      <div class="compact-actions">
+        <button class="btn secondary" onclick="exportToFile()">File JSON</button>
+        <button class="btn secondary" onclick="copyToClipboard()">Salin</button>
+        <button class="btn secondary" onclick="showImportModal()">Import</button>
+        <button class="btn secondary" onclick="closeBackupModal()">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="importModal" class="modal hidden">
+    <div class="box">
+      <h3 style="margin-bottom:14px;text-align:center">Import JSON</h3>
+      <textarea id="importDataText" rows="7" placeholder="Tempel data JSON di sini..."></textarea>
+      <div class="row" style="margin-top:16px">
+        <button class="btn secondary" onclick="closeCashDrawerAuditModal()">Tutup</button>
+        <button class="btn" onclick="saveCashDrawerAudit()">Simpan Hasil Cek</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Piutang -->
+  <div id="piutangModal" class="modal hidden">
+    <div class="box" style="max-width:400px;width:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px">
+        <div>
+          <h3>Catat Piutang Baru</h3>
+          <small class="small" style="display:block;margin-top:2px">Uang yang dipinjamkan. Saldo bersih akan BERKURANG.</small>
+        </div>
+        <button class="x" style="font-size:26.4px" onclick="closePiutangModal()">×</button>
+      </div>
+      <div class="field"><input type="text" id="piutangName" placeholder="Nama Peminjam"></div>
+      <div class="field"><input type="text" id="piutangDesc" placeholder="Keterangan (opsional)"></div>
+      <div class="field amount-wrap">
+        <input type="number" id="piutangAmount" placeholder="Nominal Pinjaman" oninput="handlePiutangPreview(this)">
+        <span id="piutangAmountPreview" class="preview"></span>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn secondary" onclick="closePiutangModal()">Batal</button>
+        <button class="btn" style="background:#e11d48" onclick="savePiutang()">Simpan Piutang</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Pembayaran Piutang -->
+  <!-- Modal Simple Bayar Hutang -->
+  <div id="debtPaymentModal" class="modal hidden">
+    <div class="box" style="max-width:340px;width:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div>
+          <h3>Catat Pembayaran</h3>
+          <small class="small" style="display:block;margin-top:2px;color:var(--ink2)">Bayar hutang. Saldo bersih akan BERKURANG.</small>
+        </div>
+        <button class="x" style="font-size:26.4px" onclick="closeDebtPaymentModal()">×</button>
+      </div>
+      <div style="background:#f8fafc;padding:12px;border-radius:8px;margin-bottom:12px">
+        <div class="small" style="color:var(--ink2);margin-bottom:4px">Kreditur: <b id="debtPaymentName" style="color:var(--ink);text-transform:capitalize"></b></div>
+        <div class="small" style="color:var(--ink2)">Sisa Hutang: <b id="debtPaymentRemain" class="num" style="color:#92400e"></b></div>
+      </div>
+      <input type="hidden" id="debtPaymentPersonName">
+      <div class="field amount-wrap">
+        <input type="number" id="debtPaymentAmount" placeholder="Nominal" oninput="handleDebtPaymentPreview(this)">
+        <span id="debtPaymentPreview" class="preview"></span>
+      </div>
+      <div class="row" style="grid-template-columns:.8fr 1.2fr">
+        <button class="btn secondary" onclick="closeDebtPaymentModal()">Batal</button>
+        <button class="btn" style="background:#15803d;white-space:nowrap;font-size:15.4px;padding-left:8px;padding-right:8px" onclick="saveDebtPaymentSimple()">Catat Pembayaran</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="piutangPaymentModal" class="modal hidden">
+    <div class="box" style="max-width:400px;width:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px">
+        <div>
+          <h3>Catat Pembayaran</h3>
+          <small class="small" style="display:block;margin-top:2px">Cicilan/pelunasan. Saldo bersih akan BERTAMBAH.</small>
+        </div>
+        <button class="x" style="font-size:26.4px" onclick="closePiutangPaymentModal()">×</button>
+      </div>
+      <input type="hidden" id="piutangPaymentId">
+      <div style="background:#f1f5f9;padding:12px;border-radius:var(--r);margin-bottom:12px">
+        <div style="font-size:13.2px;color:var(--ink2);margin-bottom:4px">Peminjam: <b id="piutangPaymentName" style="color:var(--ink)">-</b></div>
+        <div style="font-size:13.2px;color:var(--ink2)">Sisa Hutang: <b id="piutangPaymentRemain" class="num" style="color:#e11d48">-</b></div>
+      </div>
+      <div class="field amount-wrap">
+        <input type="number" id="piutangPaymentAmount" placeholder="Nominal Dibayar" oninput="handlePiutangPaymentPreview(this)">
+        <span id="piutangPaymentPreview" class="preview"></span>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn secondary" onclick="closePiutangPaymentModal()">Batal</button>
+        <button class="btn" style="background:var(--green)" onclick="savePiutangPayment()">Catat Pembayaran</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="app">
+  <div id="categoryModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="categoryModalTitle">
+    <div class="box" style="max-width:420px;width:100%;border-radius:var(--r-xl)">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px">
+        <div>
+          <h3 id="categoryModalTitle">Kategori Pengeluaran</h3>
+          <small class="small" style="margin-top:3px;display:block">Tambah, edit, hapus kategori. Data lama otomatis masuk Lainnya.</small>
+        </div>
+        <button class="x" onclick="closeCategoryModal()" type="button">×</button>
+      </div>
+
+      <div class="category-form-card">
+        <div class="category-form-title">
+          <b>Form Kategori</b>
+          <span class="lock-badge" style="margin-left:0">WAJIB ISI NAMA</span>
+        </div>
+        <input type="hidden" id="categoryEditId">
+        <label for="categoryNameInput">Nama Kategori</label>
+        <input type="text" id="categoryNameInput" placeholder="Contoh: Makan, Listrik, Plastik, Bensin" autocomplete="off">
+        <div class="category-form-actions">
+          <button class="btn secondary" onclick="resetCategoryForm()" type="button">Reset</button>
+          <button id="btnSaveCategory" class="btn" onclick="saveCategoryFromModal()" type="button">Simpan Kategori</button>
+        </div>
+        <div class="small" style="margin-top:8px;color:var(--green);font-weight:700">Setelah disimpan, kategori langsung muncul di pilihan pengeluaran.</div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px">
+        <b style="font-size:14.3px;font-weight:800">Daftar Kategori</b>
+        <span class="small" style="font-weight:700">Edit / hapus</span>
+      </div>
+      <div id="categoryList" class="list"></div>
+      <button class="btn secondary" onclick="closeCategoryModal()" style="margin-top:14px" type="button">Tutup</button>
+    </div>
+  </div>
+
+  <!-- Modal Cash Out -->
+  <div id="cashOutModal" class="modal hidden">
+    <div class="box" style="max-width:420px;width:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px">
+        <div>
+          <h3>Pengurangan Cash</h3>
+          <small class="small" style="color:var(--blue);font-weight:700;display:block;margin-top:2px">QRIS &amp; Tabungan tidak dihitung pengeluaran bisnis</small>
+        </div>
+        <button class="x" style="font-size:26.4px" onclick="closeCashOutModal()">×</button>
+      </div>
+
+      <div style="background:var(--blue-light);border:1px solid #bfdbfe;border-radius:var(--r-lg);padding:12px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <div>
+          <div style="font-size:11px;font-weight:800;color:var(--blue);margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px">Cash di Tangan Hari Ini</div>
+          <div id="cashOutModalFisikTotal" class="num" style="font-size:26.4px;font-weight:500;color:var(--blue)">Rp 0</div>
+        </div>
+        <div style="text-align:right;font-size:12.1px;color:var(--ink2);font-weight:700;line-height:2">
+          <div>QRIS: <span id="cashOutModalQris" class="num" style="color:var(--blue)">Rp 0</span></div>
+          <div>Tabungan: <span id="cashOutModalTabungan" class="num" style="color:#854d0e">Rp 0</span></div>
+        </div>
+      </div>
+
+      <div class="cashout-type-row">
+        <button id="cashout-type-qris" class="cashout-type-btn active" onclick="setCashOutType('qris')">📱 QRIS</button>
+        <button id="cashout-type-tabungan" class="cashout-type-btn" onclick="setCashOutType('tabungan')">🏦 Tabungan</button>
+      </div>
+      <div class="field"><input type="text" id="cashOutDesc" placeholder="Keterangan (opsional)"></div>
+      <div class="field amount-wrap">
+        <input type="number" id="cashOutAmount" placeholder="Nominal" oninput="handleCashOutPreview(this)">
+        <span id="cashOutAmountPreview" class="preview"></span>
+      </div>
+      <div class="row" style="margin-bottom:14px">
+        <button class="btn secondary" onclick="closeCashOutModal()">Batal</button>
+        <button class="btn" style="background:var(--blue)" onclick="addCashOut()">💾 Simpan</button>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <b style="font-size:14.3px;font-weight:800">📋 Cash Keluar Hari Ini</b>
+        <span id="cashOutTodayTotal" class="num" style="font-size:15.4px;color:var(--blue);font-weight:500">Rp 0</span>
+      </div>
+      <div id="cashOutTodayList" style="max-height:40vh;overflow-y:auto"></div>
+      <button class="btn secondary" onclick="closeCashOutModal()" style="margin-top:14px">Tutup</button>
+    </div>
+  </div>
+
+  <!-- Modal Cek Cash Fisik Hari Ini -->
+  <div id="cashDrawerAuditModal" class="modal hidden">
+    <div class="box" style="max-width:420px;width:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px">
+        <div>
+          <h3 id="cashDrawerModalTitle">Cek Cash Fisik Hari Ini</h3>
+          <small class="small" style="color:var(--blue);font-weight:700;display:block;margin-top:2px">Bandingkan cash aplikasi dengan cash fisik hari ini. Selisih masuk kategori khusus.</small>
+        </div>
+        <button class="x" style="font-size:26.4px" onclick="closeCashDrawerAuditModal()">&times;</button>
+      </div>
+
+      <div class="cash-drawer-summary">
+        <div>
+          <span>Patokan aplikasi</span>
+          <b id="cashDrawerExpectedAmount" class="num">Rp 0</b>
+        </div>
+        <div>
+          <span>Cash tampil sekarang</span>
+          <b id="cashDrawerBaseAmount" class="num">Rp 0</b>
+        </div>
+        <div>
+          <span>Selisih aktif</span>
+          <b id="cashDrawerCurrentAdjustment" class="num">Rp 0</b>
+        </div>
+      </div>
+
+      <div class="field amount-wrap">
+        <input type="number" min="0" inputmode="decimal" id="cashDrawerActualAmount" placeholder="Cash fisik hari ini" oninput="handleCashDrawerActualPreview(this)">
+        <span id="cashDrawerActualPreview" class="preview"></span>
+      </div>
+      <div class="small" style="margin:-5px 0 10px;color:var(--muted);font-weight:700">Contoh: isi 80 untuk Rp 80.000.</div>
+      <div class="field"><input type="text" id="cashDrawerNote" placeholder="Catatan (opsional)"></div>
+      <div id="cashDrawerStatusPreview" class="cash-drawer-preview empty">Isi cash fisik hari ini.</div>
+
+      <div class="cash-drawer-actions">
+        <button class="btn secondary" type="button" onclick="closeCashDrawerAuditModal()">Batal</button>
+        <button id="cashDrawerSaveBtn" class="btn" type="button" style="background:var(--blue)" onclick="saveCashDrawerAudit(false)">Simpan</button>
+        <button id="cashDrawerNotifyBtn" class="btn" type="button" style="background:var(--green)" onclick="saveCashDrawerAudit(true)">Kirim Notif</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Pinjam Uang (Baru) -->
+  <div id="debtBorrowModal" class="modal hidden">
+    <div class="box" style="max-width:320px;width:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px">
+        <div>
+          <h3>Pinjam Uang</h3>
+          <small class="small" style="color:#92400e;font-weight:700;display:block;margin-top:2px">Menambah Saldo Bersih.</small>
+        </div>
+        <button class="x" style="font-size:26.4px" onclick="closeDebtBorrowModal()">×</button>
+      </div>
+      <div class="field"><input type="date" id="debtBorrowDate"></div>
+      <div class="field"><input type="text" id="debtBorrowParty" placeholder="Nama orang / sumber hutang"></div>
+      <div class="field"><input type="text" id="debtBorrowNote" placeholder="Catatan (opsional)"></div>
+      <div class="field amount-wrap">
+        <input type="number" id="debtBorrowAmount" placeholder="Nominal" oninput="handleDebtBorrowPreview(this)">
+        <span id="debtBorrowPreview" class="preview"></span>
+      </div>
+      <div class="row" style="margin-bottom:14px">
+        <button class="btn secondary" onclick="closeDebtBorrowModal()">Batal</button>
+        <button class="btn" style="background:#a16207" onclick="saveDebtBorrowSimple()">Simpan Pinjaman</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Hutang (History) -->
+  <div id="debtModal" class="modal hidden">
+    <div class="box" style="max-width:420px;width:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px">
+        <div>
+          <h3>Riwayat Hutang Uang</h3>
+          <small class="small" style="color:#92400e;font-weight:700;display:block;margin-top:2px">Netral dari pendapatan, pengeluaran, laba, dan zakat.</small>
+        </div>
+        <button class="x" style="font-size:26.4px" onclick="closeDebtModal()">×</button>
+      </div>
+
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:var(--r-lg);padding:12px 14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <div>
+          <div style="font-size:11px;font-weight:800;color:#92400e;margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px">Sisa Hutang Aktif</div>
+          <div id="debtModalActiveTotal" class="num" style="font-size:26.4px;font-weight:500;color:#92400e">Rp 0</div>
+        </div>
+        <div style="text-align:right;font-size:12.1px;color:var(--ink2);font-weight:700;line-height:2">
+          <div>Pinjam: <span id="debtModalBorrowed" class="num" style="color:#92400e">Rp 0</span></div>
+          <div>Bayar: <span id="debtModalPaid" class="num" style="color:#15803d">Rp 0</span></div>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <b style="font-size:14.3px;font-weight:800">Riwayat Hutang</b>
+        <span id="debtHistoryCount" class="num" style="font-size:13.2px;color:#92400e;font-weight:500">0 data</span>
+      </div>
+      <div id="debtHistoryList" style="max-height:40vh;overflow-y:auto"></div>
+      <button class="btn secondary" onclick="closeDebtModal()" style="margin-top:14px">Tutup</button>
+    </div>
+  </div>
+
+  <!-- Modal Operasional Toko -->
+  <div id="opsModal" class="modal hidden">
+    <div class="box" style="max-width:400px;width:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px">
+        <div>
+          <h3>Pengeluaran Operasional</h3>
+          <small class="small" style="display:block;margin-top:2px">Mengurangi pendapatan hari ini · Masuk total pengeluaran</small>
+        </div>
+        <button class="x" onclick="closeOpsModal()">×</button>
+      </div>
+      <div class="field"><input type="text" id="opsDesc" placeholder="Misal: plastik, bensin, dll"></div>
+      <div class="field amount-wrap">
+        <input type="number" id="opsAmount" placeholder="Nominal" oninput="handleOpsAmountPreview(this)">
+        <span id="opsAmountPreview" class="preview"></span>
+      </div>
+      <div class="row" style="margin-bottom:12px">
+        <button class="btn secondary" onclick="closeOpsModal()">Batal</button>
+        <button class="btn" style="background:var(--orange)" onclick="addOpsExpense()">Simpan</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <b style="font-size:14.3px;font-weight:800">Operasional Hari Ini</b>
+        <span id="opsTodayTotal" class="num" style="font-size:14.3px;color:var(--orange);font-weight:500">Rp 0</span>
+      </div>
+      <div id="opsTodayList" class="list" style="max-height:35vh;overflow-y:auto"></div>
+      <button class="btn secondary" onclick="closeOpsModal()" style="margin-top:12px">Tutup</button>
+    </div>
+  </div>
+
+  <!-- Modal Semua Pengeluaran -->
+  <div id="expenseListModal" class="modal hidden">
+    <div class="box" style="max-width:420px;width:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px">
+        <div>
+          <h3>Semua Pengeluaran</h3>
+          <small id="expenseListSubtitle" class="small" style="display:block;margin-top:2px"></small>
+        </div>
+        <button class="x" onclick="closeExpenseListModal()">×</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--red-light);border-radius:var(--r);margin-bottom:12px">
+        <span style="font-size:13.2px;font-weight:800;color:var(--red)">Total Pengeluaran</span>
+        <b id="expenseListTotal" class="num red" style="font-size:17.6px">Rp 0</b>
+      </div>
+      <div id="expenseListContent" class="list" style="max-height:55vh;overflow-y:auto"></div>
+      <button class="btn secondary" onclick="closeExpenseListModal()" style="margin-top:14px">Tutup</button>
+    </div>
+  </div>
+
+  <!-- Modal Pendapatan Luar Server -->
+  <div id="manualIncomeListModal" class="modal hidden">
+    <div class="box" style="max-width:420px;width:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px">
+        <div>
+          <h3>Pendapatan Luar Server</h3>
+          <small id="manualIncomeListSubtitle" class="small" style="display:block;margin-top:2px"></small>
+        </div>
+        <button class="x" onclick="closeManualIncomeListModal()">×</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#f0fdf4;border-radius:var(--r);margin-bottom:12px;border:1px solid #bbf7d0">
+        <span style="font-size:13.2px;font-weight:800;color:#166534">Total</span>
+        <b id="manualIncomeListTotal" class="num" style="font-size:17.6px;color:#166534">Rp 0</b>
+      </div>
+      <div id="manualIncomeListContent" class="list" style="max-height:55vh;overflow-y:auto"></div>
+      <button class="btn secondary" onclick="closeManualIncomeListModal()" style="margin-top:14px">Tutup</button>
+    </div>
+  </div>
+
+  <!-- Modal Beli Emas -->
+  <div id="goldBuyModal" class="modal hidden">
+    <div class="box" style="max-width:420px;width:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:14px">
+        <div>
+          <h3>Beli Tabungan Emas</h3>
+          <small id="goldBuyPriceInfo" class="small" style="color:#8a5b00;font-weight:800;display:block;margin-top:2px">Harga Pegadaian dimuat...</small>
+        </div>
+        <button class="x" style="font-size:26.4px" onclick="closeGoldBuyModal()">×</button>
+      </div>
+
+      <div class="gold-preview-card">
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+          <span style="font-size:11px;font-weight:900;color:#8a5b00;text-transform:uppercase;letter-spacing:.4px">Harga Beli Pegadaian</span>
+          <b id="goldBuyPricePerGram" class="num" style="font-size:18.7px;color:#805300">Rp 0</b>
+        </div>
+        <div id="goldBuySource" class="small" style="margin-top:4px;color:#8a5b00;font-weight:700">Sumber: -</div>
+      </div>
+
+      <div class="gold-buy-shell">
+        <div class="gold-buy-input-card">
+          <div class="gold-buy-input-top">
+            <div id="goldBuyMainLabel" class="gold-buy-label">Berat emas</div>
+            <div class="gold-mode-toggle" aria-label="Pilih input rupiah atau gram">
+              <button type="button" id="goldModeRupiah" onclick="setGoldBuyMode('rupiah')">Rp</button>
+              <button type="button" id="goldModeGram" class="active" onclick="setGoldBuyMode('gram')">gr</button>
+            </div>
+          </div>
+          <input id="goldBuyValue" class="gold-main-input" type="number" min="0" step="0.0001" placeholder="0" inputmode="decimal" oninput="handleGoldBuyValueInput()">
+          <div id="goldBuyConverted" class="gold-converted-line">Nominal Pembelian Rp 0</div>
+        </div>
+
+        <div id="goldBuyMinNote" class="gold-min-note">Minimal pembelian 0,0100 gr</div>
+        <div id="goldPresetGrid" class="gold-preset-grid"></div>
+      </div>
+
+      <input type="hidden" id="goldBuyGram">
+      <input type="hidden" id="goldBuyNominal">
+      <span id="goldBuyNominalPreview" class="preview" style="display:none"></span>
+
+      <div id="goldBuyPreview" class="small" style="background:#fff9df;border:1px solid #efd06c;border-radius:var(--r);padding:10px 12px;margin-bottom:12px;color:#8a5b00;font-weight:800">Isi gram atau nominal untuk hitung otomatis.</div>
+
+      <details class="gold-manual-details">
+        <summary>Harga manual / gram kalau realtime gagal</summary>
+        <div class="field">
+          <input type="number" min="0" id="goldManualPrice" placeholder="Contoh 2633000" oninput="handleGoldManualPriceInput()">
+          <div class="small" style="margin-top:5px;color:#8a5b00;font-weight:700">Kosongkan kalau mau pakai harga Pegadaian realtime.</div>
+        </div>
+      </details>
+
+      <div class="gold-fee-row">
+        <span>Biaya Admin</span>
+        <b id="goldAdminFeePreview" class="num">Rp 2.500</b>
+      </div>
+
+      <div class="gold-total-pay">
+        <div>
+          <span>Total Pembayaran</span>
+          <b id="goldTotalPaymentPreview" class="num">Rp 0</b>
+        </div>
+        <button class="btn gold" onclick="saveGoldPurchase()" style="width:auto;min-width:120px;border-radius:999px">Bayar</button>
+      </div>
+
+      <div class="row">
+        <button class="btn secondary" onclick="closeGoldBuyModal()">Batal</button>
+        <button class="btn secondary" onclick="refreshGoldPrice(true)">Refresh Harga</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Input Transaksi -->
+  <div id="transactionModal" class="modal hidden">
+    <div class="box">
+      <h3 style="margin-bottom:14px;text-align:center">Input Transaksi</h3>
+      <div class="row">
+        <div class="field"><input type="date" id="inputDate"></div>
+        <div class="field">
+          <select id="type" onchange="updatePlaceholder()">
+            <option value="income">Pemasukan</option>
+            <option value="expense">Pengeluaran</option>
+          </select>
+        </div>
+      </div>
+      <div class="field amount-wrap">
+        <input type="number" inputmode="decimal" enterkeyhint="done" id="amount" placeholder="Nominal" oninput="handleSmartAmount(this)">
+        <span id="liveAmountPreview" class="preview"></span>
+      </div>
+      <details id="transactionAdvanced" class="advanced-fields">
+        <summary>+ Detail lanjutan</summary>
+        <div id="expenseCategoryField" class="field hidden">
+          <div style="display:grid;grid-template-columns:1fr auto;gap:8px">
+            <select id="expenseCategorySelect"></select>
+            <button class="mini-btn" style="min-width:80px" onclick="openCategoryModal()" type="button">+ Kategori</button>
+          </div>
+          <div class="small" style="margin-top:5px;color:var(--red);font-weight:700">Kalau tidak dipilih, sistem pakai kategori default.</div>
+        </div>
+        <div class="field"><input type="text" id="description" placeholder="Catatan / deskripsi opsional"></div>
+      </details>
+      <div class="row">
+        <button class="btn secondary" onclick="closeTransactionModal()">Batal</button>
+        <button class="btn" onclick="addTransaction()">Simpan</button>
+      </div>
+      <p class="small" style="margin-top:10px;text-align:center">Nominal otomatis dikali 1.000</p>
+    </div>
+  </div>
+
+  <!-- ====== MAIN APP ====== -->
+  <main class="app">
+    <div class="top">
+      <div class="brand">
+        <div>
+          <h1>alfajri</h1>
+          <small>Finance &amp; Zakat</small>
+        </div>
+        <div class="top-actions">
+          <button id="kasRefreshBtn" class="refresh-btn" type="button" onclick="refreshKasApp()">Refresh</button>
+          <div id="statusBadge" class="pill"><span id="statusText">Aman</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== HOME PAGE ====== -->
+    <section id="pageHome" class="page active">
+
+      <!-- Hero Saldo -->
+      <div class="hero">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div class="label">Saldo Bersih · Semua Data Supabase</div>
+          <button id="fontSwitchBtn" type="button" onclick="toggleAppFont()">Aa Font</button>
+        </div>
+        <div id="netBalance" class="value num">Rp 0</div>
+        <div class="mini">
+          <span>Masuk <b id="totalIncome">Rp 0</b></span>
+          <span>Keluar <b id="totalExpense" onclick="showExpenseListTodayModal()" style="cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px">Rp 0</b></span>
+          <span>Laba 20% <b id="autoProfitHero">Rp 0</b></span>
+        </div>
+      </div>
+
+      <!-- Mini Salary Fund Bar -->
+      <div style="margin-bottom:12px; display:flex; align-items:center; gap:10px; padding: 0 4px;">
+        <div style="background:#e9d5ff; border-radius:99px; height:6px; width:100%; overflow:hidden;">
+          <div id="miniSalaryFill" style="background:var(--purple); height:100%; width:0%; transition:width 0.4s ease; border-radius:99px;"></div>
+        </div>
+        <span id="miniSalaryPct" style="font-size:13.2px; font-weight:700; color:var(--purple); min-width:32px; text-align:right;">0%</span>
+      </div>
+
+      <div class="section-divider"><span>Section Utama</span></div>
+
+      <!-- Cash Fisik Card -->
+      <div id="cashFisikCard" class="cash-fisik-card home-section is-collapsed tone-cash">
+        <div class="cash-fisik-header" onclick="toggleHomeSection('cashFisikCard')" style="cursor:pointer">
+          <div>
+            <div class="cash-fisik-title">Cash Fisik Hari Ini</div>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 4px;" onclick="event.stopPropagation()">
+              <div id="cashFisikTotal" class="cash-fisik-amount num" style="margin:0;" onclick="event.stopPropagation();openCashOutModal()">Rp 0</div>
+              <div class="cash-fisik-btns" style="display: flex; gap: 6px;">
+                <button onclick="openOpsModal()" class="cash-fisik-btn-small" style="background:var(--orange-light);color:var(--orange);border-color:#ffd7a0">+ Ops</button>
+                <button onclick="openCashOutModal()" class="cash-fisik-btn-small" style="background:var(--blue-light);color:var(--blue);border-color:#bfdbfe">+ QRIS</button>
+                <button onclick="openCashDrawerAuditModal()" class="cash-fisik-btn-small" style="background:#eef2ff;color:#4338ca;border-color:#c7d2fe">Cek Cash</button>
+              </div>
+            </div>
+            <div id="todayFirebaseIncomeInfo" class="small" style="margin-top:6px">Server Pusat − Ops − QRIS − Tabungan</div>
+          </div>
+          <div class="cash-fisik-actions" onclick="event.stopPropagation()">
+            <span class="cash-fisik-badge">HARI INI</span>
+          </div>
+        </div>
+        <div class="home-section-body">
+          <div class="cash-drawer-home">
+            <div id="cashDrawerStatusLine" class="cash-drawer-status empty">Belum dicek hari ini</div>
+          <div id="cashDrawerLatestNote" class="cash-drawer-note">Input cash fisik hari ini untuk tahu minus, pas, atau lebih.</div>
+        </div>
+        <div class="cash-fisik-breakdown">
+          <div class="breakdown-row">
+            <span class="breakdown-label">Operasional Toko</span>
+            <b id="opsTodayHomeTotal" class="breakdown-val num" style="color:var(--orange)" onclick="openOpsModal()">Rp 0</b>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-label">QRIS</span>
+            <b id="cashOutQrisTotal" class="breakdown-val num" style="color:var(--blue)" onclick="openCashOutModal()">Rp 0</b>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-label">Tabungan</span>
+            <b id="cashOutTabunganTotal" class="breakdown-val num" style="color:#854d0e" onclick="openCashOutModal()">Rp 0</b>
+          </div>
+          <div class="breakdown-row">
+            <span class="breakdown-label">Selisih Cash Fisik</span>
+            <b id="cashDrawerAdjustmentTotal" class="breakdown-val num" style="color:var(--muted)" onclick="openCashDrawerAuditModal()">Rp 0</b>
+          </div>
+        </div>
+        </div>
+      </div>
+
+
+
+      <!-- Total Dana Darurat Terkumpul -->
+      <div id="emergencyFundTotalCard" class="stat" style="margin-bottom:8px;border-color:#bfdbfe;background:var(--blue-light)">
+        <span>Total Dana Darurat Terkumpul</span>
+        <b id="emergencyFundTotalSavedDisplay" class="num" style="color:var(--blue);font-size:16.5px">Rp 0</b>
+      </div>
+
+      <!-- Harga Emas Real-Time -->
+      <div id="goldLiveCard" class="gold-live-card home-section is-collapsed tone-gold">
+        <div class="gold-live-head" onclick="toggleHomeSection('goldLiveCard')" style="cursor:pointer">
+          <div style="min-width:0">
+            <div class="gold-live-title">Harga Emas Indonesia</div>
+            <div id="goldPricePerGram" class="gold-live-price num">Memuat...</div>
+            <div id="goldPriceInfo" class="small" style="margin-top:4px;color:#8a5b00;font-weight:800">Realtime · Rupiah / gram</div>
+          </div>
+          <div class="gold-live-actions" onclick="event.stopPropagation()">
+            <span id="goldPriceStatus" class="gold-live-badge">LIVE</span>
+          </div>
+        </div>
+        <div class="home-section-body">
+          <div class="gold-home-tabs">
+            <button id="goldHomeTab-buy" class="active" type="button" onclick="setGoldHomeTab('buy')">Beli</button>
+            <button id="goldHomeTab-history" type="button" onclick="setGoldHomeTab('history')">Riwayat</button>
+            <button id="goldHomeTab-calc" type="button" onclick="setGoldHomeTab('calc')">Kalkulasi</button>
+          </div>
+          <div id="goldPanel-buy" class="gold-home-panel active">
+            <div class="panel-action-row">
+              <button class="gold-live-mini-btn" onclick="refreshGoldPrice(true)" type="button">Refresh Harga</button>
+              <button class="gold-live-mini-btn buy" onclick="openGoldBuyModal()" type="button">Beli Emas</button>
+            </div>
+          </div>
+        <div id="goldPanel-history" class="gold-live-breakdown gold-home-panel">
+          <div class="gold-live-box"><span>Total Beli Emas</span><b id="goldTotalAmount">Rp 0</b></div>
+          <div class="gold-live-box"><span>Gram Tercatat</span><b id="goldTotalGram">0 gr</b></div>
+          <div class="gold-live-box"><span>Total Terpotong</span><b id="goldTotalPaid">Rp 0</b></div>
+        </div>
+          <div id="goldPanel-calc" class="gold-home-panel">
+            <div class="gold-live-box spotlight"><span>Gram Saat Ini</span><b id="goldCurrentGram">0 gr</b></div>
+        <div id="goldGramCalcInfo" class="small" style="margin-top:8px;color:#8a5b00;font-weight:800">Gram Saat Ini = Total Beli Emas ÷ harga emas sekarang.</div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- Hidden elements tetap ada agar JS tidak error -->
+      <div id="todayIncomeCard" class="hidden"></div>
+      <div id="todayFirebaseIncomeHome" class="hidden"></div>
+      <div id="todayIncomeSectionTitle" class="hidden"></div>
+
+      <!-- Ringkasan Laba -->
+      <div class="profit-summary-card">
+        <div class="ps-head">
+          <div class="ps-title">Ringkasan Laba</div>
+          <div class="ps-filters">
+            <button class="ps-tab active" id="ps-tab-today" onclick="setProfitFilter('today')">Hari Ini</button>
+            <button class="ps-tab" id="ps-tab-month" onclick="setProfitFilter('month')">Bulan</button>
+            <button class="ps-tab" id="ps-tab-year" onclick="setProfitFilter('year')">Tahun</button>
+            <button class="ps-tab" id="ps-tab-custom" onclick="setProfitFilter('custom')">Custom</button>
+          </div>
+        </div>
+        <div id="psCustomRange" class="ps-range-row" style="display:none;margin-bottom:12px">
+          <input type="date" id="psStartDate" onchange="renderProfitSummary()">
+          <input type="date" id="psEndDate" onchange="renderProfitSummary()">
+        </div>
+        <div class="ps-value num" id="psLaba">Rp 0</div>
+        <div class="ps-desc" id="psDesc">Sisa operasional = limit 20% − pengeluaran</div>
+        <div class="ps-grid">
+          <div class="ps-box"><span>Pendapatan</span><b id="psPendapatan" class="num">Rp 0</b></div>
+          <div class="ps-box"><span>Terpakai</span><b id="psPengeluaran" class="num" style="color:#ff8a80">Rp 0</b></div>
+          <div class="ps-box"><span>Limit 20%</span><b id="psLabaBersih" class="num" style="color:#69f0ae">Rp 0</b></div>
+        </div>
+      </div>
+
+      <!-- Stat Grid -->
+      <div class="grid2">
+        <div class="stat">
+          <span>Laba 20% (Semua)</span>
+          <b id="autoProfit" class="blue num">Rp 0</b>
+        </div>
+        <div class="stat" onclick="showExpenseListTodayModal()" style="cursor:pointer;border-color:#ffd7d0;background:#fffaf9">
+          <span>Pengeluaran Hari Ini</span>
+          <b id="spendingLimit" class="red num">Rp 0</b>
+          <div style="font-size:9.9px;color:var(--red);font-weight:700;margin-top:3px">Tap untuk detail</div>
+        </div>
+      </div>
+
+      <!-- Sisa Operasional -->
+      <div id="operationalCard" class="ops-status-card safe home-section is-collapsed">
+        <div onclick="toggleHomeSection('operationalCard')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;width:100%">
+          <div style="min-width:0">
+            <b style="font-size:14.3px;font-weight:800">Sisa Operasional</b>
+          </div>
+          <b id="operationalUsed" class="num" style="font-size:17.6px;white-space:nowrap;font-family:var(--mono);font-weight:500">Rp 0</b>
+        </div>
+        <div class="home-section-body">
+          <div class="small" style="margin-top:2px">Ikut filter Ringkasan Laba · Limit 20%: <span id="operationalTotal">Rp 0</span> · Terpakai: <span id="operationalSpent">Rp 0</span></div>
+          <div id="limitWarning" class="small red" style="font-weight:800;margin-top:4px"></div>
+        </div>
+      </div>
+
+      <!-- Zakat Mal -->
+      <div id="zakatMalCard" class="zakat-card home-section is-collapsed tone-zakat">
+        <div class="zakat-header" onclick="toggleHomeSection('zakatMalCard')" style="cursor:pointer">
+          <div>
+            <div class="section-title" style="margin:0 0 4px">Zakat Mal</div>
+            <div id="zakatAmountLarge" class="num gold" style="font-size:22px;font-weight:500">Rp 0</div>
+          </div>
+          <div class="section-action-stack" onclick="event.stopPropagation()">
+            <button id="payZakatBtn" class="btn gold" style="width:auto;min-width:90px;padding:10px" onclick="markZakatPaid()">Bayar</button>
+          </div>
+        </div>
+        <div class="home-section-body">
+        <div id="zakatPaymentStatusText" class="small" style="margin-top:3px">Menunggu</div>
+        <div class="zakat-grid">
+          <div class="stat"><span>Laba 20% Final s.d H-1</span><b id="totalProfitDisplay" class="num">Rp 0</b></div>
+          <div class="stat"><span>Belum Dizakatkan Final</span><b id="unpaidProfitDisplay" class="num">Rp 0</b></div>
+        </div>
+        <div id="zakatBasisInfo" class="small" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line)">Zakat = 2.5% × laba 20% dari data final sampai kemarin. Transaksi hari ini masuk hitungan besok setelah Server Pusat sync/LOCK.</div>
+        <div style="display:none"><span id="totalZakatPaidProfit">Rp 0</span></div>
+        <div id="zakatHistoryPreview" class="zakat-mini" style="display:none">
+          <div id="zakatHistoryMiniList" class="zakat-mini"></div>
+          <button class="tab" onclick="showZakatHistoryModal()">Semua</button>
+        </div>
+        </div>
+      </div>
+
+      <!-- Dana Darurat -->
+      <div id="emergencyFundCard" class="zakat-card home-section is-collapsed tone-emergency" style="border-color:#bfdbfe;background:var(--blue-light)">
+        <div class="zakat-header" onclick="toggleHomeSection('emergencyFundCard')" style="cursor:pointer">
+          <div>
+            <div class="section-title" style="margin:0 0 4px;color:var(--blue)">Dana Darurat</div>
+            <div id="emergencyFundAmountLarge" class="num blue" style="font-size:22px;font-weight:500">Rp 0</div>
+          </div>
+          <div class="section-action-stack" onclick="event.stopPropagation()">
+            <button id="payEmergencyFundBtn" class="btn" style="width:auto;min-width:90px;padding:10px;background:var(--blue)" onclick="markEmergencyFundSaved()">Nabung</button>
+          </div>
+        </div>
+        <div class="home-section-body">
+        <div id="emergencyFundStatusText" class="small" style="margin-top:3px;color:var(--blue);font-weight:700">Menunggu</div>
+        <div class="zakat-grid">
+          <div class="stat"><span>Cash Fisik Bulan Ini s.d H-1</span><b id="emergencyFundIncomeDisplay" class="num">Rp 0</b></div>
+          <div class="stat"><span>Belum Ditabungkan</span><b id="emergencyFundUnpaidDisplay" class="num">Rp 0</b></div>
+        </div>
+        <div id="emergencyFundBasisInfo" class="small" style="margin-top:10px;padding-top:10px;border-top:1px solid #bfdbfe;color:var(--blue);font-weight:700">Dana Darurat = 5% × Cash Fisik bulan berjalan sampai kemarin. Cash Fisik hari ini masuk hitungan besok.</div>
+        </div>
+      </div>
+
+      <!-- Dana Gaji -->
+      <div id="salaryFundCard" class="zakat-card home-section is-collapsed" style="border-color:#e9d5ff;background:#faf5ff">
+        <div class="zakat-header" onclick="toggleHomeSection('salaryFundCard')" style="cursor:pointer">
+          <div style="min-width:0;flex:1">
+            <div class="section-title" style="margin:0 0 4px;color:#7c3aed">Dana Gaji Karyawan</div>
+            <div id="salaryFundAmountLarge" class="num" style="font-size:22px;font-weight:500;color:#7c3aed">Rp 0</div>
+          </div>
+          <div class="section-action-stack" onclick="event.stopPropagation()">
+            <button id="paySalaryFundBtn" class="btn" style="width:auto;min-width:90px;padding:10px;background:#7c3aed" onclick="openSalaryFundModal()">Sisihkan</button>
+          </div>
+        </div>
+        <div class="home-section-body">
+          <div id="salaryFundStatusText" class="small" style="margin-bottom:6px;color:#7c3aed;font-weight:700">Set target dulu</div>
+          <!-- Progress Bar -->
+          <div class="salary-fund-progress-wrap">
+            <div class="salary-fund-progress-bar">
+              <div id="salaryFundProgressFill" class="salary-fund-progress-fill" style="width:0%"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px">
+              <span id="salaryFundProgressPct" class="small" style="font-weight:800;color:#7c3aed">0%</span>
+              <span id="salaryFundProgressLabel" class="small" style="color:#6b7280">Target: Rp 0</span>
+            </div>
+            <!-- Bonus breakdown line -->
+            <div id="salaryFundBonusLine" class="small" style="display:none;margin-top:3px;color:#6b7280;font-size:11px"></div>
+          </div>
+          <div class="zakat-grid" style="margin-top:8px">
+            <div class="stat"><span>Terkumpul Bulan Ini</span><b id="salaryFundSavedDisplay" class="num" style="color:#7c3aed">Rp 0</b></div>
+            <div class="stat"><span>Sisa Kurang</span><b id="salaryFundDueDisplay" class="num" style="color:#ef4444">Rp 0</b></div>
+            <div class="stat"><span>Saran Hari Ini</span><b id="salaryFundDailyHint" class="num" style="color:#7c3aed">Rp 0</b></div>
+            <div class="stat"><span>Sisa Hari</span><b id="salaryFundDaysLeft" class="num">0 hari</b></div>
+          </div>
+          <div id="salaryFundBasisInfo" class="small" style="margin-top:10px;padding-top:10px;border-top:1px solid #e9d5ff;color:#7c3aed;font-weight:700">Sisihkan tiap hari agar tidak berat di akhir bulan. Tap Sisihkan untuk mencatat.</div>
+        </div>
+      </div>
+
+      <!-- Auto Debet Harian -->
+      <div id="autoDebitCard" class="zakat-card home-section is-collapsed" style="border-color:#fde68a;background:#fffbeb">
+        <div class="zakat-header" onclick="toggleHomeSection('autoDebitCard')" style="cursor:pointer">
+          <div style="min-width:0;flex:1">
+            <div class="section-title" style="margin:0 0 4px;color:#000">Auto Debet Harian</div>
+            <div id="autoDebitAmountLarge" class="num" style="font-size:22px;font-weight:500;color:#000">Rp 0 / hari</div>
+          </div>
+          <div class="section-action-stack" onclick="event.stopPropagation()">
+            <button id="openAutoDebitBtn" class="btn" style="width:auto;min-width:90px;padding:10px;background:#b45309" onclick="openAutoDebitModal()">Atur</button>
+          </div>
+        </div>
+        <div class="home-section-body">
+          <div id="autoDebitStatusText" class="small" style="margin-bottom:6px;color:#000;font-weight:700">Nonaktif</div>
+          <div class="zakat-grid">
+            <div class="stat"><span style="color:#000">Terpotong Bulan Ini</span><b id="autoDebitMonthTotal" class="num" style="color:#000">Rp 0</b></div>
+            <div class="stat"><span style="color:#000">Terpotong Semua</span><b id="autoDebitAllTotal" class="num" style="color:#000">Rp 0</b></div>
+          </div>
+          <div id="autoDebitBasisInfo" class="small" style="margin-top:10px;padding-top:10px;border-top:1px solid #fde68a;color:#000;font-weight:700">Potong Saldo Bersih otomatis tiap hari, seperti auto debet ATM. Ganti nominal tidak mengubah potongan yang sudah lewat.</div>
+        </div>
+      </div>
+
+      <!-- Hutang Section Paling Bawah -->
+      <!-- Hutang Card -->
+      <div id="debtHomeCard" class="debt-card home-section is-collapsed tone-debt">
+        <div onclick="toggleHomeSection('debtHomeCard')" style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;cursor:pointer">
+          <div style="min-width:0">
+            <div class="debt-title">Hutang Uang Aktif</div>
+            <div id="debtActiveTotal" class="debt-amount num" onclick="event.stopPropagation();openDebtModal()">Rp 0</div>
+          </div>
+          <div class="debt-actions" onclick="event.stopPropagation()">
+            <button class="debt-mini-btn" onclick="openDebtBorrowModal()">+ Pinjam</button>
+          </div>
+        </div>
+        <div class="home-section-body">
+          <div id="debtTodayInfo" class="small" style="margin-bottom:8px;color:#92400e;font-weight:700">Pinjaman menambah Saldo Bersih, bayar pokok mengurangi Saldo Bersih.</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;margin-bottom:10px;border-top:1px solid #fde68a;padding-top:12px">
+            <b style="font-size:14.3px;font-weight:800;color:#92400e">Daftar Hutang Berjalan</b>
+            <span id="debtPersonListCount" class="num" style="font-size:13.2px;color:#92400e;font-weight:500">0 data</span>
+          </div>
+          <div id="debtPersonList" class="list" style="margin-bottom:10px"></div>
+          <div class="debt-note">Tidak masuk pendapatan, pengeluaran, laba, atau zakat. Hanya mutasi Saldo Bersih dan sisa hutang.</div>
+        </div>
+      </div>
+
+      <div class="grid2 debt-extra">
+        <div class="stat" onclick="openDebtModal()" style="cursor:pointer;background:#fffbeb;border-color:#fde68a">
+          <span>Total Pinjaman</span>
+          <b id="debtTotalBorrowed" class="num" style="color:#92400e">Rp 0</b>
+        </div>
+        <div class="stat" onclick="openDebtModal()" style="cursor:pointer;background:#f0fdf4;border-color:#bbf7d0">
+          <span>Sudah Dibayar</span>
+          <b id="debtTotalPaid" class="num" style="color:#15803d">Rp 0</b>
+        </div>
+      </div>
+      <div class="stat debt-extra" onclick="openDebtModal()" style="cursor:pointer;background:#fff7ed;border-color:#fed7aa;margin-bottom:10px">
+        <span>Belum Dibayar</span>
+        <b id="debtTotalUnpaid" class="num" style="color:#c2410c">Rp 0</b>
+      </div>
+      <!-- ====== BUKU PIUTANG (Di dalam Home) ====== -->
+      <div id="piutangHomeCard" class="debt-card home-section is-collapsed" style="background:#fff1f2;border-color:#fecdd3;margin-top:20px">
+        <div onclick="toggleHomeSection('piutangHomeCard')" style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;cursor:pointer">
+          <div style="min-width:0">
+            <div class="debt-title" style="color:#be123c">Buku Piutang & Kasbon</div>
+            <div id="piutangTotalAmount" class="debt-amount num" style="color:#e11d48">Rp 0</div>
+          </div>
+          <div class="debt-actions" onclick="event.stopPropagation()">
+            <button class="debt-mini-btn" style="background:#e11d48;color:white;border:none" onclick="openPiutangModal()">+ Catat</button>
+          </div>
+        </div>
+        <div class="home-section-body">
+          <div class="small" style="margin-bottom:8px;color:#be123c;font-weight:700">Piutang potong Saldo Bersih, cicilan nambah Saldo Bersih.</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;margin-bottom:10px;border-top:1px solid #fecdd3;padding-top:12px">
+            <b style="font-size:14.3px;font-weight:800;color:#be123c">Daftar Piutang Berjalan</b>
+            <span id="piutangListCount" class="num" style="font-size:13.2px;color:#be123c;font-weight:500">0 data</span>
+          </div>
+          <div id="piutangList" class="list" style="margin-bottom:10px"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ====== HISTORY PAGE ====== -->
+    <section id="pageHistory" class="page">
+      <div id="netSummaryCard" class="summary-net-card">
+        <div class="summary-net-head">
+          <div>
+            <b>Ringkasan Pendapatan Bersih</b>
+            <small>Pendapatan Server Pusat + Manual dikurangi Pengeluaran</small>
+          </div>
+          <span class="pill">Supabase</span>
+        </div>
+        <div class="summary-net-grid">
+          <div class="summary-net-box"><span>Hari Ini</span><b id="netTodaySummary" class="num green">Rp 0</b></div>
+          <div class="summary-net-box"><span>Bulan Ini</span><b id="netMonthSummary" class="num blue">Rp 0</b></div>
+          <div class="summary-net-box"><span>Semua</span><b id="netAllSummary" class="num gold">Rp 0</b></div>
+          <div class="summary-net-box" id="netRangeBox" style="display:none"><span id="netRangeLabel">Custom</span><b id="netRangeSummary" class="num">Rp 0</b></div>
+        </div>
+        <div id="netSummaryNote" class="small" style="margin-top:10px;color:var(--blue);font-weight:700">Semua angka = pemasukan (Server Pusat + manual) <b>dikurangi pengeluaran</b> per periode.</div>
+      </div>
+
+      <div class="history-filter-panel">
+      <div class="tabs">
+        <button onclick="changeFilter('today')" id="filter-today" class="tab active">Hari Ini</button>
+        <button onclick="changeFilter('month')" id="filter-month" class="tab">Bulan Ini</button>
+        <button onclick="changeFilter('range')" id="filter-range" class="tab">Custom</button>
+        <button onclick="changeFilter('all')" id="filter-all" class="tab">Semua</button>
+      </div>
+      <div id="rangeSelectorHistory" class="card hidden" style="margin-bottom:10px">
+        <div class="row">
+          <input type="date" id="filterStartDateHistory" onchange="onHistoryRangeChange()">
+          <input type="date" id="filterEndDateHistory" onchange="onHistoryRangeChange()">
+        </div>
+      </div>
+      <div id="activeFilterChips" class="active-filter-chips"></div>
+      </div>
+
+      <div class="grid2">
+        <div class="stat" onclick="showExpenseListModalFiltered()" style="cursor:pointer;border-color:#ffd7d0;background:#fffaf9">
+          <span id="expenseFilteredLabel">Pengeluaran Hari Ini</span>
+          <b id="expenseFilteredSummary" class="red num">Rp 0</b>
+          <div style="font-size:9.9px;color:var(--red);font-weight:700;margin-top:3px">Tap untuk detail</div>
+        </div>
+        <div class="stat" onclick="showExpenseListModal()" style="cursor:pointer;border-color:#ffd7d0;background:#fffaf9">
+          <span>Total Semua Pengeluaran</span>
+          <b id="expenseAllSummary" class="red num">Rp 0</b>
+          <div style="font-size:9.9px;color:var(--red);font-weight:700;margin-top:3px">Tap untuk semua</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:10px">
+        <button class="btn" style="background:var(--green-dark)" onclick="downloadMonthlyFinanceReport()">⬇ Download Laporan Bulanan XLS</button>
+        <div class="small" style="margin-top:6px;color:var(--blue);font-weight:700;text-align:center">Isi laporan XLS: ringkasan total, rekap harian, semua transaksi, pendapatan, pengeluaran, cash out, dan zakat.</div>
+      </div>
+
+      <div class="card danger-card" style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px">
+          <div>
+            <b style="color:var(--red);font-size:14.3px;font-weight:800">Hapus Semua Data Full</b>
+            <div class="small" style="margin-top:3px">Hapus semua transaksi manual, Server Pusat sync/LOCK, cash out, ops, zakat, dan audit cash fisik.</div>
+          </div>
+          <span class="lock-badge" style="background:var(--red-light);color:var(--red);border-color:#ffd7d0">PIN</span>
+        </div>
+        <button class="btn red" onclick="requestFullReset()">Hapus Semua Data Full</button>
+        <div class="small" style="margin-top:6px;color:var(--red);font-weight:700">Data mentah di Server Pusat kasir tidak dihapus (read only).</div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <b id="currentPeriodLabel" style="font-size:14.3px;font-weight:800">Riwayat</b>
+          <button class="tab" style="color:var(--red)" onclick="requestClearAll()">Reset Manual</button>
+        </div>
+        <div id="transactionList" class="list"></div>
+        <div id="transactionListMore"></div>
+      </div>
+    </section>
+
+    <!-- ====== CASH FISIK PAGE ====== -->
+    <section id="pageLaci" class="page">
+      <div class="card cash-drawer-page-head" style="background:#f8fbff;border-color:#bfdbfe;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <div>
+            <div class="section-title" style="color:var(--blue)">Riwayat Cek Cash Fisik</div>
+            <b style="font-size:15.4px;font-weight:800">Audit Cash Fisik</b>
+            <div class="small" style="margin-top:3px">Status dibandingkan ke patokan aplikasi sebelum transaksi selisih kas.</div>
+          </div>
+          <button class="mini-btn" onclick="openCashDrawerAuditModal()">+ Cek Cash</button>
+        </div>
+      </div>
+
+      <div class="grid2" style="margin-bottom:10px">
+        <div class="report-kpi"><span>Patokan Hari Ini</span><b id="cashDrawerPageBase" class="num blue">Rp 0</b></div>
+        <div class="report-kpi"><span>Cash Tampil</span><b id="cashDrawerPageCurrent" class="num green">Rp 0</b></div>
+        <div class="report-kpi"><span>Selisih Aktif</span><b id="cashDrawerPageAdjustment" class="num">Rp 0</b></div>
+        <div class="report-kpi"><span>Status Terakhir</span><b id="cashDrawerPageStatus" class="cash-drawer-status empty">Belum dicek</b></div>
+      </div>
+
+      <div class="tabs">
+        <button onclick="setCashDrawerFilter('today')" id="drawer-filter-today" class="tab active">Hari Ini</button>
+        <button onclick="setCashDrawerFilter('month')" id="drawer-filter-month" class="tab">Bulan Ini</button>
+        <button onclick="setCashDrawerFilter('all')" id="drawer-filter-all" class="tab">Semua</button>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px">
+          <b style="font-size:14.3px;font-weight:800">Data Cek Cash Fisik</b>
+          <span id="cashDrawerHistoryCount" class="small" style="font-weight:800;color:var(--blue)">0 data</span>
+        </div>
+        <div id="cashDrawerHistoryList"></div>
+      </div>
+    </section>
+
+    <!-- ====== LAPORAN PAGE ====== -->
+    <section id="pageLaporan" class="page">
+      <div class="card" style="background:#f5fcf8;border-color:#ccefd9;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <div>
+            <div class="section-title" style="color:var(--green)">Laporan Keuangan Rinci</div>
+            <b style="font-size:15.4px;font-weight:800">Ringkasan + Pengeluaran per Kategori</b>
+            <div class="small" style="margin-top:3px">Cash out QRIS/Tabungan bukan pengeluaran bisnis.</div>
+          </div>
+          <button class="mini-btn" onclick="openCategoryModal()">Kategori</button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button onclick="setFinanceReportFilter('today')" id="report-filter-today" class="tab">Hari Ini</button>
+        <button onclick="setFinanceReportFilter('month')" id="report-filter-month" class="tab active">Bulan Ini</button>
+        <button onclick="setFinanceReportFilter('range')" id="report-filter-range" class="tab">Custom</button>
+        <button onclick="setFinanceReportFilter('all')" id="report-filter-all" class="tab">Semua</button>
+      </div>
+      <div id="reportRangeBox" class="card hidden" style="margin-bottom:10px">
+        <div class="report-filter-row">
+          <input type="date" id="reportStartDate" onchange="renderFinanceReport()">
+          <input type="date" id="reportEndDate" onchange="renderFinanceReport()">
+        </div>
+      </div>
+
+      <div class="grid2" style="margin-bottom:10px">
+        <div class="report-kpi"><span>Pendapatan</span><b id="reportIncome" class="num green">Rp 0</b></div>
+        <div class="report-kpi"><span>Pengeluaran</span><b id="reportExpense" class="num red">Rp 0</b></div>
+        <div class="report-kpi"><span>Saldo Bersih</span><b id="reportNet" class="num blue">Rp 0</b></div>
+        <div class="report-kpi"><span>Cash Out</span><b id="reportCashOut" class="num gold">Rp 0</b></div>
+        <div class="report-kpi"><span>Laba 20%</span><b id="reportProfit20" class="num blue">Rp 0</b></div>
+        <div class="report-kpi"><span>Sisa Operasional</span><b id="reportOpsRemain" class="num green">Rp 0</b></div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px">
+          <b style="font-size:14.3px;font-weight:800">Pengeluaran per Kategori</b>
+          <span id="reportPeriodLabel" class="small" style="font-weight:800;color:var(--green)">Bulan Ini</span>
+        </div>
+        <div id="reportCategoryList"></div>
+        <button class="btn secondary" style="margin-top:10px;border-color:var(--green);color:var(--green);font-weight:700" onclick="downloadExpenseByCategoryDetailXls()">Download Detail Kategori (XLS)</button>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px">
+          <b style="font-size:14.3px;font-weight:800">Detail Transaksi</b>
+          <span id="reportCount" class="small">0 data</span>
+        </div>
+        <div id="reportDetailList" class="report-detail-list list"></div>
+      </div>
+
+      <div class="grid2" style="margin-bottom:10px">
+        <button class="btn" onclick="downloadMonthlyFinanceReport()">Download XLS</button>
+        <button class="btn secondary" onclick="downloadCsvReportFromFinancePage()">Download CSV</button>
+      </div>
+    </section>
+
+
+    <!-- ====== SERVER PAGE ====== -->
+    <section id="pageFirebase" class="page">
+      <div class="card" style="background:var(--blue-light);border-color:#bfdbfe;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <div>
+            <div class="section-title" style="color:var(--blue)">Halaman Server Pusat</div>
+            <b style="font-size:15.4px;font-weight:800">Data Kasir Khusus</b>
+            <div class="small" style="margin-top:3px">Cek, audit, dan upload omset Server Pusat ke Supabase. Hari ini tetap dikunci.</div>
+          </div>
+          <span class="pill" style="background:#dbeafe;color:var(--blue)">READ ONLY</span>
+        </div>
+      </div>
+
+      <!-- Total Pendapatan Manual -->
+      <div id="manualIncomeTotalCard" class="stat" style="margin-bottom:12px;border-color:#bbf7d0;background:#f0fdf4;cursor:pointer" onclick="showManualIncomeListModalFiltered()">
+        <span>Total Pendapatan (Luar Server)</span>
+        <b id="manualIncomeTotalDisplay" class="num" style="color:#166534;font-size:16.5px">Rp 0</b>
+      </div>
+
+      <div id="monthValidityCard" class="month-valid-card idle">
+        <div class="month-valid-left">
+          <div id="monthValidityTitle" class="month-valid-title">Validasi Bulan</div>
+          <div id="monthValidityDesc" class="month-valid-desc">Klik cek untuk memastikan semua omset Server Pusat bulan ini sudah masuk Supabase.</div>
+        </div>
+        <button id="btnCheckMonthValid" class="btn secondary" style="width:auto;min-width:80px;padding:8px 12px;min-height:38px;border-radius:var(--r-sm);font-size:13.2px" onclick="checkMonthValidity()">Cek</button>
+      </div>
+
+      <div id="rangeSelector" class="card hidden">
+        <div class="row">
+          <input type="date" id="filterStartDate" onchange="render()">
+          <input type="date" id="filterEndDate" onchange="render()">
+        </div>
+      </div>
+
+      <div id="firebaseUploadCard" class="card firebase-upload-card" style="margin-bottom:10px">
+        <div class="firebase-upload-head">
+          <div>
+            <b style="font-size:14.3px;font-weight:800">Omset Kasir Server Pusat</b>
+            <div class="small" style="margin-top:2px">Sync manual dari Server Pusat ke Kas Pribadi</div>
+          </div>
+          <span id="firebaseUploadStatus" class="firebase-status st-pending">Memuat</span>
+        </div>
+        <div class="row">
+          <input type="date" id="firebaseUploadDate" onchange="changeFirebaseUploadDate(this.value)">
+          <button class="btn secondary" onclick="refreshFirebaseUpload()">Refresh</button>
+        </div>
+        <div class="firebase-row">
+          <div>
+            <div class="firebase-label">Total dari Server Pusat</div>
+            <div id="firebaseUploadTotal" class="num blue" style="font-size:24.2px;font-family:var(--mono);font-weight:500">Rp 0</div>
+            <div id="firebaseUploadInfo" class="small" style="margin-top:2px">Belum ada data</div>
+          </div>
+          <button id="btnUploadFirebaseIncome" class="btn" style="width:auto;min-width:100px;padding:10px" onclick="uploadFirebaseIncome()">Sync</button>
+        </div>
+        <div id="firebaseAuditInfo" class="audit-box audit-warn">Audit: menunggu data Server Pusat...</div>
+        <div class="small" style="margin-top:8px;color:var(--blue);font-weight:700">Data Server Pusat tidak otomatis masuk Riwayat. Klik Sync agar data Kas Pribadi sama dengan Server Pusat. Data hasil Sync tetap LOCK dan tidak bisa dihapus.</div>
+      </div>
+
+      <div id="firebasePendingCard" class="card" style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px">
+          <div>
+            <b style="font-size:14.3px;font-weight:800">Cek Belum Sync</b>
+            <div class="small" style="margin-top:2px">Scan pendapatan Server Pusat lama yang belum/salah sync ke Kas Pribadi</div>
+          </div>
+          <span id="pendingScanStatus" class="firebase-status st-pending">Idle</span>
+        </div>
+        <div class="row">
+          <input type="date" id="pendingStartDate">
+          <input type="date" id="pendingEndDate">
+        </div>
+        <div class="compact-actions" style="margin-top:8px">
+          <button class="btn secondary" onclick="setPendingThisMonth()">Bulan Ini</button>
+          <button class="btn" onclick="scanPendingFirebaseUploads()">Cek Data</button>
+        </div>
+        <div id="pendingUploadSummary" class="audit-box audit-warn" style="margin-top:10px">Pilih rentang tanggal lalu klik Cek Data untuk mencari yang belum sync.</div>
+        <div id="pendingUploadList" class="pending-upload-list"></div>
+      </div>
+    </section>
+  </main>
+
+  <button class="fab" onclick="openFabTransactionModal()" aria-label="Input transaksi">+</button>
+
+  <nav class="nav">
+    <button id="nav-laci" onclick="goPage('laci')">Cash Fisik</button>
+    <button id="nav-home" class="active" onclick="goPage('home')">🏠 Home</button>
+    <button id="nav-history" onclick="goPage('history')">📋 Riwayat</button>
+    <button id="nav-laporan" onclick="goPage('laporan')">📊 Laporan</button>
+    <button id="nav-firebase" onclick="goPage('firebase')">🌐 Server</button>
+  </nav>
+
+<script src="assets/js/app.js?v=salary-bonus-del-20260715"></script>
+</body>
+</html>
