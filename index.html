@@ -1029,12 +1029,12 @@
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px">
           <div>
             <b style="color:var(--red);font-size:14.3px;font-weight:800">Hapus Semua Data Full</b>
-            <div class="small" style="margin-top:3px">Hapus semua transaksi manual, Server Pusat sync/LOCK, cash out, ops, zakat, dan audit cash fisik.</div>
+            <div class="small" style="margin-top:3px">Hapus semua transaksi manual, sync/LOCK, cash out, ops, zakat, piutang, dan audit cash fisik.</div>
           </div>
           <span class="lock-badge" style="background:var(--red-light);color:var(--red);border-color:#ffd7d0">PIN</span>
         </div>
         <button class="btn red" onclick="requestFullReset()">Hapus Semua Data Full</button>
-        <div class="small" style="margin-top:6px;color:var(--red);font-weight:700">Data mentah di Server Pusat kasir tidak dihapus (read only).</div>
+        <div class="small" style="margin-top:6px;color:var(--red);font-weight:700">Tabel yang TIDAK dihapus: auto_debit_settings & expense_categories (Aman).</div>
       </div>
 
       <div class="card">
@@ -1231,6 +1231,6 @@
     <button id="nav-firebase" onclick="goPage('firebase')">🌐 Server</button>
   </nav>
 
-<script src="assets/js/app.js?v=salary-bonus-del-20260715"></script>
+<script src="assets/js/app.js?v=report-reset-20261031_02"></script>
 </body>
 </html>

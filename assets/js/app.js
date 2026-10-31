@@ -1671,28 +1671,58 @@ async function clearAllTransactions(){
 }
 async function clearFullSupabaseData(){
   if(!supabaseClient)throw new Error('Supabase belum aktif');
-  // Reset FULL hanya menghapus ISI data: transaksi, data sync/LOCK, cash out, ops, dan riwayat zakat.
-  // Master kategori pengeluaran sengaja TIDAK dihapus. Kategori hanya bisa dihapus manual dari modal Kategori.
-  const txDel=await supabaseClient.from('transactions').delete().eq('owner_id',OWNER_ID);
-  if(txDel.error)throw txDel.error;
-  const zkDel=await supabaseClient.from('zakat_history').delete().eq('owner_id',OWNER_ID);
-  if(zkDel.error)throw zkDel.error;
-  try{
-    const cdDel=await supabaseClient.from(CASH_DRAWER_TABLE).delete().eq('owner_id',OWNER_ID);
-    if(cdDel.error)throw cdDel.error;
-  }catch(e){console.warn('Reset audit cash fisik dilewati:',e)}
+
+  // TABEL YANG DILINDUNGI & TIDAK BOLEH DIHAPUS:
+  const PROTECTED_TABLES = new Set([
+    'auto_debit_settings',
+    'expense_categories'
+  ]);
+
+  // TABEL OPERASIONAL YANG DIKOSONGKAN SAAT FULL RESET:
+  const DELETABLE_TABLES = [
+    'transactions',
+    'manual_incomes',
+    'zakat_history',
+    CASH_DRAWER_TABLE, // 'cash_drawer_audits'
+    'receivables',
+    'salary_targets'
+  ];
+
+  // Pengecekan keamanan ketat: pastikan tabel terlindungi tidak pernah terhapus
+  for(const table of DELETABLE_TABLES){
+    if(PROTECTED_TABLES.has(table)){
+      throw new Error('Tabel ' + table + ' dilindungi dan tidak boleh dihapus!');
+    }
+  }
+
+  for(const table of DELETABLE_TABLES){
+    try{
+      const { error } = await supabaseClient.from(table).delete().eq('owner_id', OWNER_ID);
+      if(error) console.warn('Hapus data ' + table + ' info:', error);
+    }catch(err){
+      console.warn('Gagal hapus tabel ' + table + ':', err);
+    }
+  }
+
+  // Muat ulang kategori & pastikan kategori tetap ada
   try{
     await loadExpenseCategories();
     await ensureDefaultExpenseCategories();
     await loadExpenseCategories();
   }catch(e){console.warn('Kategori tetap dipertahankan, tapi gagal dimuat ulang:',e);}
+
+  // Muat ulang auto debit settings agar pengaturan tetap aktif
+  try{
+    await loadAutoDebitSettings();
+  }catch(e){}
 }
 function resetLocalAfterFullDelete(){
   transactions=[];
   zakatHistory=[];
   emergencyFundHistory=[];
   cashDrawerAudits=[];
-  // Kategori tidak direset di sini supaya master kategori tetap tampil setelah Hapus Semua Data Full.
+  receivables=[];
+  // auto_debit_settings & expense_categories TIDAK direset agar tetap aktif & tampil
   pendingFirebaseUploads=[];
   firebaseIncomeRows=[];
   firebaseIncomeTotal=0;
@@ -2240,7 +2270,22 @@ async function requestFullReset(){
   openPasswordModal(async()=>{
     const totalTx=(transactions||[]).length;
     const totalCat=(expenseCategories||[]).length;
-    const ok1=confirm('PERINGATAN!\n\nHapus SEMUA ISI data Supabase aplikasi?\n- Semua transaksi manual\n- Semua data Server Pusat sync/LOCK\n- Semua cash out QRIS/Tabungan\n- Semua operasional toko\n- Semua riwayat zakat\n- Semua audit cash fisik\n\nKategori pengeluaran TIDAK dihapus. Contoh kategori Internet tetap ada, hanya transaksi seperti beli kuota 15.000 yang terhapus.\nKategori hanya bisa dihapus manual dari menu Kategori.\n\nTotal transaksi yang akan dihapus: '+totalTx+' data.\nTotal kategori yang dipertahankan: '+totalCat+' kategori.\n\nLanjutkan?');
+    const autoDebitLabel=autoDebitSettings?.enabled ? ('Aktif (' + formatRupiah(autoDebitSettings.amount||0) + '/hari)') : 'Nonaktif';
+    const ok1=confirm(
+      'PERINGATAN HAPUS SEMUA DATA FULL!\n\n' +
+      'Data yang AKAN DIHAPUS:\n' +
+      '• Semua transaksi manual & Server Pusat sync/LOCK\n' +
+      '• Semua pemasukan manual (manual_incomes)\n' +
+      '• Semua cash out QRIS/Tabungan & operasional\n' +
+      '• Semua riwayat zakat & audit cash fisik\n' +
+      '• Semua buku piutang (receivables)\n' +
+      '• Semua target gaji (salary_targets)\n\n' +
+      'TABEL YANG AMAN (TIDAK BOLEH & TIDAK AKAN DIHAPUS):\n' +
+      '✓ auto_debit_settings (Status: ' + autoDebitLabel + ')\n' +
+      '✓ expense_categories (' + totalCat + ' Kategori Pengeluaran)\n\n' +
+      'Total transaksi yang akan dihapus: ' + totalTx + ' data.\n\n' +
+      'Lanjutkan?'
+    );
     if(!ok1)return;
     const ok2=confirm('Konfirmasi terakhir: data yang dihapus tidak bisa dikembalikan dari aplikasi. Tetap hapus semua data full?');
     if(!ok2)return;
@@ -2250,12 +2295,14 @@ async function requestFullReset(){
       await loadTransactions();
       try{await loadCashDrawerAudits();}catch(e){}
       try{await loadZakatHistory();}catch(e){}
+      try{await loadReceivables();}catch(e){}
       try{await loadEmergencyFundHistory();}catch(e){}
+      try{await loadAutoDebitSettings();}catch(e){}
       try{await loadExpenseCategories();await ensureDefaultExpenseCategories();await loadExpenseCategories();}catch(e){}
       renderCategorySelects();
       render();
       renderFirebaseUploadCard();
-      showToast('Semua isi data dihapus. Kategori tetap aman.');
+      showToast('Semua data dihapus. auto_debit_settings & expense_categories tetap aman.');
     }catch(e){showToast('Gagal hapus full: '+e.message)}
   });
 }
@@ -4695,14 +4742,53 @@ function downloadExpenseByCategoryDetailXls(){
   showToast(`Laporan Detail Kategori XLS didownload`);
 }
 
-function downloadMonthlyFinanceReport(){
-  if(typeof XLSX==='undefined'){showToast('Library XLS belum siap, coba lagi');return;}
+async function downloadMonthlyFinanceReport(){
+  if(typeof XLSX==='undefined'){
+    showToast('Menyiapkan pustaka Excel...');
+    const loaded = await new Promise(res=>{
+      const s=document.createElement('script');
+      s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+      s.onload=()=>res(true);
+      s.onerror=()=>{
+        const s2=document.createElement('script');
+        s2.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+        s2.onload=()=>res(true);
+        s2.onerror=()=>res(false);
+        document.head.appendChild(s2);
+      };
+      document.head.appendChild(s);
+    });
+    if(!loaded || typeof XLSX==='undefined'){
+      showToast('Gagal memuat pustaka XLS. Silakan periksa koneksi internet.', true);
+      return;
+    }
+  }
 
-  const targetMonth=getMonthlyReportTargetMonth();
-  const monthLabel=getMonthlyReportMonthLabel(targetMonth);
-  const startDate=`${targetMonth}-01`;
-  const endDate=getMonthEndDate(targetMonth);
-  const rows=getMonthlyReportRows(targetMonth);
+  const period = typeof getCsvReportPeriod==='function' ? getCsvReportPeriod() : { mode:'month', label:'Bulan Ini', start:getLocalDateString().slice(0,7)+'-01', end:getLocalDateString() };
+  let targetMonth = getMonthlyReportTargetMonth();
+  let monthLabel = getMonthlyReportMonthLabel(targetMonth);
+  let startDate = `${targetMonth}-01`;
+  let endDate = getMonthEndDate(targetMonth);
+
+  // Jika sedang aktif filter Custom Range atau Semua, sesuaikan periode laporan
+  if(currentFilter === 'range' && period.start && period.end){
+    startDate = period.start;
+    endDate = period.end;
+    monthLabel = period.label;
+  } else if(currentFilter === 'all'){
+    monthLabel = 'Semua Periode Data';
+    startDate = period.start || 'Awal';
+    endDate = period.end || 'Akhir';
+  }
+
+  let rows = [];
+  if(currentFilter === 'all'){
+    rows = (getDashboardTransactions()||[]).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||(Number(a.id)||0)-(Number(b.id)||0));
+  } else if(currentFilter === 'range' && period.start && period.end){
+    rows = (getDashboardTransactions()||[]).filter(t=>isDateInCsvPeriod(t.date, period)).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||''))||(Number(a.id)||0)-(Number(b.id)||0));
+  } else {
+    rows = getMonthlyReportRows(targetMonth);
+  }
 
   const incomeRows=rows.filter(t=>t.type==='income');
   const firebaseLockIncomeRows=rows.filter(t=>t.type==='income'&&isFirebaseUploaded(t)&&!t.__firebasePreview);
@@ -4891,8 +4977,55 @@ function downloadMonthlyFinanceReport(){
   const wsZakat=makeSheetFromAoa(zakatData,[6,22,20,20,14,48],[2,3],'A1:F1');
   XLSX.utils.book_append_sheet(wb,wsZakat,'Zakat');
 
-  const safeMonth=targetMonth.replace(/[^0-9A-Za-z_-]/g,'');
-  const filename=`alfajri_laporan_bulanan_${safeMonth}.xlsx`;
+  // SHEET PIUTANG (RECEIVABLES)
+  try {
+    const rRows = Array.isArray(receivables) ? receivables : [];
+    const piutangData = [
+      ['No', 'Tanggal', 'Nama Peminjam', 'Nominal Piutang (Rp)', 'Sudah Dibayar (Rp)', 'Sisa Piutang (Rp)', 'Status', 'Jatuh Tempo', 'Catatan'],
+      ...(rRows.length ? rRows.map((r, i) => [
+        i + 1,
+        r.date || r.created_at ? String(r.date || r.created_at).slice(0, 10) : '-',
+        r.name || '-',
+        Math.round(Number(r.amount || 0)),
+        Math.round(Number(r.paid_amount || 0)),
+        Math.round(Number(r.amount || 0) - Number(r.paid_amount || 0)),
+        r.status === 'paid' ? 'Lunas' : 'Belum Lunas',
+        r.due_date || '-',
+        r.note || ''
+      ]) : [['Belum ada data piutang', '', '', '', '', '', '', '', '']]),
+      [],
+      ['', '', 'TOTAL PIUTANG', rRows.reduce((s, r) => s + Number(r.amount || 0), 0), rRows.reduce((s, r) => s + Number(r.paid_amount || 0), 0), rRows.reduce((s, r) => s + (Number(r.amount || 0) - Number(r.paid_amount || 0)), 0), '', '', '']
+    ];
+    const wsPiutang = makeSheetFromAoa(piutangData, [6, 14, 26, 20, 20, 20, 15, 15, 30], [3, 4, 5], 'A1:I1');
+    XLSX.utils.book_append_sheet(wb, wsPiutang, 'Buku Piutang');
+  } catch(e) { console.warn('Gagal append sheet piutang:', e); }
+
+  // SHEET AUTODEBET & KATEGORI (PROTECTED TABLES)
+  try {
+    const adRows = rows.filter(t => isAutoQrisCashOut(t) || String(t.description||'').toLowerCase().includes('autodebet'));
+    const autodebetData = [
+      ['PENGATURAN & RIWAYAT AUTODEBET (auto_debit_settings)'],
+      ['Status Autodebet', autoDebitSettings?.enabled ? 'Aktif' : 'Nonaktif'],
+      ['Nominal Autodebet Harian', Number(autoDebitSettings?.amount || 0)],
+      ['Terakhir Dijalankan', autoDebitSettings?.last_run_date || '-'],
+      [],
+      ['No', 'Tanggal', 'Keterangan', 'Nominal (Rp)', 'Sumber'],
+      ...(adRows.length ? adRows.map((t, i) => [
+        i + 1,
+        t.date,
+        cleanCashOutDesc(t.description) || 'Autodebet',
+        Math.round(Number(t.amount || 0)),
+        getMonthlyReportSource(t)
+      ]) : [['Belum ada mutasi autodebet pada periode ini', '', '', '', '']]),
+      [],
+      ['', '', 'TOTAL AUTODEBET PERIODE INI', adRows.reduce((s, t) => s + Number(t.amount || 0), 0), '']
+    ];
+    const wsAutoDebit = makeSheetFromAoa(autodebetData, [6, 14, 38, 20, 20], [3], null);
+    XLSX.utils.book_append_sheet(wb, wsAutoDebit, 'Autodebet');
+  } catch(e) { console.warn('Gagal append sheet autodebet:', e); }
+
+  const safePeriod = (currentFilter === 'range' ? (startDate + '_sd_' + endDate) : (currentFilter === 'all' ? 'SEMUA_DATA' : targetMonth)).replace(/[^0-9A-Za-z_-]/g, '_');
+  const filename=`kas_pribadi_laporan_${safePeriod}.xlsx`;
   XLSX.writeFile(wb,filename,{bookType:'xlsx'});
   showToast(`Laporan XLS ${monthLabel} didownload`);
 }
