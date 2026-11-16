@@ -9,7 +9,7 @@ const SERVER_PUSAT_URL='https://ismjupxoiywttkrekmfg.supabase.co';
 const SERVER_PUSAT_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzbWp1cHhvaXl3dHRrcmVrbWZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyNzc4MDEsImV4cCI6MjA5NDg1MzgwMX0.WVwqEdkPQ_x9NWR8QXTm85mIAvN8d9V2FaMJ2NiAMC0';
 let serverPusatClient=null;
 const CASH_DRAWER_TABLE='cash_drawer_audits';
-const ROCKY_STAFF_NOTIFY_WORKER_BASE_URL='https://rocky-notif-worker.alfajrihanif24.workers.dev';
+const ROCKY_STAFF_NOTIFY_WORKER_BASE_URL='https://rocky-notif.pages.dev';
 const ROCKY_STAFF_NOTIFY_CASH_DRAWER_URL=ROCKY_STAFF_NOTIFY_WORKER_BASE_URL+'/notify-cash-drawer-status';
 const ROCKY_STAFF_NOTIFY_SECRET='rockyNotifRahasia2026';
 
