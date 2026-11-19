@@ -3027,6 +3027,7 @@ function getBackupPayload(){
     owner_id:OWNER_ID,
     transactions:(transactions||[]),
     zakatHistory:getZakatHistory?getZakatHistory():(zakatHistory||[]),
+    emergencyFundHistory:getEmergencyFundHistory?getEmergencyFundHistory():(emergencyFundHistory||[]),
     cashDrawerAudits:(cashDrawerAudits||[]).map(normalizeCashDrawerAudit),
     expenseCategories:(expenseCategories||[]).map(normalizeCategoryForBackup).filter(c=>c.name)
   };
@@ -3099,7 +3100,7 @@ async function importFromText(){try{const raw=$('importDataText').value.trim();i
   } else if(parsed&&Array.isArray(parsed.transactions)){
     importedTx=parsed.transactions;
     importedZakat=Array.isArray(parsed.zakatHistory)?parsed.zakatHistory:[];
-    importedEmergency=[];
+    importedEmergency=Array.isArray(parsed.emergencyFundHistory)?parsed.emergencyFundHistory:[];
     importedCategories=Array.isArray(parsed.expenseCategories)?parsed.expenseCategories:[];
     importedCashDrawer=Array.isArray(parsed.cashDrawerAudits)?parsed.cashDrawerAudits:[];
   } else throw new Error('format');
@@ -3500,7 +3501,7 @@ function getTodayCashOutTotals(){
   const rows=(transactions||[]).filter(t=>isCashOut(t)&&t.date===today);
   const qris=rows.filter(t=>getCashOutType(t)==='qris').reduce((s,t)=>s+Number(t.amount||0),0);
   const tabungan=rows.filter(t=>getCashOutType(t)==='tabungan').reduce((s,t)=>s+Number(t.amount||0),0);
-  const lainnya=rows.filter(t=>getCashOutType(t)==='lainnya').reduce((s,t)=>s+Number(t.amount||0),0);
+  const lainnya=rows.filter(t=>!['qris','tabungan'].includes(getCashOutType(t))).reduce((s,t)=>s+Number(t.amount||0),0);
   return {qris,tabungan,lainnya,total:qris+tabungan+lainnya};
 }
 
