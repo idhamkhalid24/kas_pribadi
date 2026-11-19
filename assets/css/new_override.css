@@ -243,6 +243,7 @@ input:focus, select:focus, textarea:focus {
   /* Tidak ada nowrap agar text panjang bisa turun ke bawah */
 }
 .cashout-badge.qris { background: var(--blue-light) !important; border-color: var(--blue-light) !important; color: var(--blue) !important; }
+.cashout-badge.bonus { background: #dcfce7 !important; border-color: #86efac !important; color: #15803d !important; }
 
 /* Section Toggle / Pills */
 .section-toggle, .pill {

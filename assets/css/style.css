@@ -476,6 +476,7 @@
     .cashout-badge { font-size: 9.9px; border-radius: 999px; padding: 2px 7px; font-weight: 700; }
     .cashout-badge.qris { background: #dbeafe; color: #1d4ed8; }
     .cashout-badge.tabungan { background: #fef9c3; color: #854d0e; }
+    .cashout-badge.bonus { background: #dcfce7; color: #15803d; }
     .cashout-badge.lainnya { background: #f3f4f6; color: #374151; }
 
     /* === CATEGORY MODAL === */

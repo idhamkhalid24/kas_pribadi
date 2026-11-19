@@ -2049,6 +2049,8 @@ async function syncFirebaseStaffBonus(date){
       getU(t.user||t.username).earned+=amt;
     });
     const memosToSave=[];
+    let todayBonusWdSum = 0;
+    const todayStr = getLocalDateString();
     (manualRes.data||[]).forEach(r=>{
       const t=r.data||{};
       if(isFirebaseRecordDeleted(t)||isTrialServerRecord(t))return;
@@ -2063,6 +2065,9 @@ async function syncFirebaseStaffBonus(date){
           const memoId=Number(String(autoQrisHash(t.id||(wName+wDate))).padStart(6,'0')+'990002');
           memosToSave.push({id:memoId,date:wDate,name:wName,amount:wAmount});
           getU(wName).withdrawn+=wAmount;
+          if(wDate===todayStr && (t.status==='approved'||t.status==='success'||(!t.status && t.source==='bonus_withdrawal'))){
+            todayBonusWdSum += wAmount;
+          }
         }
         return;
       }
@@ -2073,6 +2078,7 @@ async function syncFirebaseStaffBonus(date){
       total+=amt;
       getU(t.user||t.username||t.name).earned+=amt;
     });
+    window.__todayServerPusatBonusWd = todayBonusWdSum;
     (closingRes.data||[]).forEach(r=>{
       const c=r.data||{};
       if(isFirebaseRecordDeleted(c)||c.closed!==true||c.canceled===true)return;
@@ -3437,6 +3443,10 @@ function openCashOutModal(){
 }
 function closeCashOutModal(){$('cashOutModal').classList.add('hidden')}
 
+function isAutoBonusCashOut(t){
+  return isCashOut(t) && getCashOutType(t) === 'bonus';
+}
+
 function renderCashOutTodayList(){
   const today=getLocalDateString();
   const rows=(transactions||[]).filter(t=>isCashOut(t)&&t.date===today);
@@ -3444,17 +3454,19 @@ function renderCashOutTodayList(){
   const total=rows.reduce((s,t)=>s+Number(t.amount||0),0);
   const te=$('cashOutTodayTotal');if(te)te.innerText=formatRupiah(total);
   const list=$('cashOutTodayList');if(!list)return;
-  if(!rows.length){list.innerHTML='<div class="empty" style="font-size:12px;padding:14px;text-align:center;color:#758071">Belum ada QRIS/Tabungan hari ini</div>';return;}
-  const typeLabel={qris:'QRIS',tabungan:'Tabungan',lainnya:'Lainnya'};
+  if(!rows.length){list.innerHTML='<div class="empty" style="font-size:12px;padding:14px;text-align:center;color:#758071">Belum ada QRIS/Tabungan/Bonus hari ini</div>';return;}
+  const typeLabel={qris:'QRIS',tabungan:'Tabungan',bonus:'Bonus Kasir',lainnya:'Lainnya'};
   list.innerHTML=rows.map(t=>{
     const tp=getCashOutType(t);
     const desc=cleanCashOutDesc(t.description)||typeLabel[tp]||tp;
-    const locked=isAutoQrisCashOut(t);
+    const isBonus=tp==='bonus';
+    const locked=isAutoQrisCashOut(t)||isBonus;
+    const badgeStyle=isBonus?'background:#dcfce7;color:#059669;border:1px solid #86efac;':(locked?'background:#eef2ff;color:#1d4ed8;border:1px solid #bfdbfe;':'');
     const action=locked
-      ? `<span class="cashout-badge qris" style="background:#eef2ff;color:#1d4ed8;border:1px solid #bfdbfe;font-size:9px;white-space:nowrap">🔒 Staff</span>`
+      ? `<span class="cashout-badge ${tp}" style="${badgeStyle}font-size:9px;white-space:nowrap">${isBonus?'🔒 Staff Bonus':'🔒 Staff'}</span>`
       : `<button class="x" style="color:var(--red);font-size:18px;padding:4px 8px" onclick="deleteCashOutWithPin(${t.id})">×</button>`;
-    const sub=locked?'QRIS otomatis · hapus dari aplikasi staff':t.date;
-    return `<div class="cashout-list-item"><div style="min-width:0;flex:1;display:flex;align-items:center;gap:7px"><span class="cashout-badge ${tp}">${typeLabel[tp]||tp}</span><div style="min-width:0"><b style="font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(desc)}</b><span style="font-size:10px;color:var(--muted)">${escapeHtml(sub)}</span></div></div><b class="num" style="font-size:14px;color:#2563eb;white-space:nowrap">-${formatRupiah(t.amount).replace('Rp','')}</b>${action}</div>`;
+    const sub=isAutoQrisCashOut(t)?'QRIS otomatis · hapus dari aplikasi staff':(isBonus?'Persetujuan Admin · Uang laci':t.date);
+    return `<div class="cashout-list-item"><div style="min-width:0;flex:1;display:flex;align-items:center;gap:7px"><span class="cashout-badge ${tp}" style="${badgeStyle}">${typeLabel[tp]||tp}</span><div style="min-width:0"><b style="font-size:13px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(desc)}</b><span style="font-size:10px;color:var(--muted)">${escapeHtml(sub)}</span></div></div><b class="num" style="font-size:14px;color:#2563eb;white-space:nowrap">-${formatRupiah(t.amount).replace('Rp','')}</b>${action}</div>`;
   }).join('');
 }
 
@@ -3463,6 +3475,10 @@ function deleteCashOutWithPin(id){
   const t=(transactions||[]).find(x=>Number(x.id)===Number(id));
   if(t&&isAutoQrisCashOut(t)){
     showToast('QRIS otomatis tidak bisa dihapus di sini. Hapus transaksi aslinya dari aplikasi staff.');
+    return;
+  }
+  if(t&&isAutoBonusCashOut(t)){
+    showToast('Penarikan bonus laci dikelola melalui persetujuan Admin.');
     return;
   }
   closeCashOutModal();
@@ -3501,8 +3517,10 @@ function getTodayCashOutTotals(){
   const rows=(transactions||[]).filter(t=>isCashOut(t)&&t.date===today);
   const qris=rows.filter(t=>getCashOutType(t)==='qris').reduce((s,t)=>s+Number(t.amount||0),0);
   const tabungan=rows.filter(t=>getCashOutType(t)==='tabungan').reduce((s,t)=>s+Number(t.amount||0),0);
-  const lainnya=rows.filter(t=>!['qris','tabungan'].includes(getCashOutType(t))).reduce((s,t)=>s+Number(t.amount||0),0);
-  return {qris,tabungan,lainnya,total:qris+tabungan+lainnya};
+  const bonusFromTx=rows.filter(t=>getCashOutType(t)==='bonus').reduce((s,t)=>s+Number(t.amount||0),0);
+  const bonus=Math.max(bonusFromTx, Number(window.__todayServerPusatBonusWd||0));
+  const lainnya=rows.filter(t=>!['qris','tabungan','bonus'].includes(getCashOutType(t))).reduce((s,t)=>s+Number(t.amount||0),0);
+  return {qris,tabungan,bonus,lainnya,total:qris+tabungan+bonus+lainnya};
 }
 
 // =====================================================
@@ -4062,19 +4080,22 @@ function renderCashFisik(){
     if(opsTotal>0)parts.push(`Ops -${formatRupiah(opsTotal)}`);
     if(co.qris>0)parts.push(`QRIS -${formatRupiah(co.qris)}`);
     if(co.tabungan>0)parts.push(`Tabungan -${formatRupiah(co.tabungan)}`);
+    if(co.bonus>0)parts.push(`Tarik Bonus -${formatRupiah(co.bonus)}`);
     if(data.adjustmentAmount!==0)parts.push(`Cash fisik ${formatSignedRupiah(data.adjustmentAmount)}`);
     if(manualIncome>0)parts.push(`Manual ${formatRupiah(manualIncome)} tidak masuk cash`);
-    infoEl.innerText=parts.length?parts.join(' · '):'Server Pusat - Ops Toko - QRIS - Tabungan · Hutang masuk Saldo Bersih';
+    infoEl.innerText=parts.length?parts.join(' · '):'Server Pusat - Ops Toko - QRIS - Tabungan - Tarik Bonus · Hutang masuk Saldo Bersih';
   }
   // Update ops total di breakdown
   const opsTodayHomeEl=$('opsTodayHomeTotal');if(opsTodayHomeEl)opsTodayHomeEl.innerText=formatRupiah(opsTotal);
   const qEl=$('cashOutQrisTotal');if(qEl)qEl.innerText=formatRupiah(co.qris);
   const tEl=$('cashOutTabunganTotal');if(tEl)tEl.innerText=formatRupiah(co.tabungan);
+  const bEl=$('cashOutBonusTotal');if(bEl)bEl.innerText=formatRupiah(co.bonus);
   renderCashDrawerHomeStatus(data);
   // Update modal ringkasan
   const mf=$('cashOutModalFisikTotal');if(mf){mf.innerText=formatRupiah(cashFisik);mf.style.color=cashFisik<0?'var(--red)':'#1d4ed8';}
   const mq=$('cashOutModalQris');if(mq)mq.innerText=formatRupiah(co.qris);
   const mt=$('cashOutModalTabungan');if(mt)mt.innerText=formatRupiah(co.tabungan);
+  const mb=$('cashOutModalBonus');if(mb)mb.innerText=formatRupiah(co.bonus);
   renderCashDrawerPreview();
 }
 
